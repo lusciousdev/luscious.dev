@@ -658,7 +658,7 @@ function selectItem(itemId)
   
   var addingItem = false;
   
-  if (!window.ctrlheld)
+  if (selectedItem == undefined)
   {
     selectedItem = itemId;
   }
