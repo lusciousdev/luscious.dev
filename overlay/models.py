@@ -44,11 +44,11 @@ class AbstractItem(NonConsecutiveModel):
   item_type = models.CharField(max_length = 32, default = "AbstractItem", editable = False)
   name = models.CharField(max_length = 256, default = "My Item")
   
-  x = models.IntegerField(default = -100)
+  x = models.IntegerField(default = -300)
   y = models.IntegerField(default = -100)
   z = models.IntegerField(default = 50)
-  width = models.IntegerField(default = 50)
-  height = models.IntegerField(default = 50)
+  width = models.IntegerField(default = 300)
+  height = models.IntegerField(default = 100)
   rotation = models.FloatField(default = 0)
   visible = models.BooleanField(default = True)
   
@@ -79,7 +79,8 @@ class ImageItem(AbstractItem):
     return d
   
 class AbstractTextItem(AbstractItem):
-  font_size = models.IntegerField(default = 12)
+  font = models.CharField(max_length=128, default="Roboto Mono")
+  font_size = models.IntegerField(default = 32)
   color = models.CharField(max_length = 64, default = "#FFFFFF")
   background = models.CharField(max_length = 64, default = "#000000")
   background_enabled = models.BooleanField(default = False)
@@ -89,6 +90,7 @@ class AbstractTextItem(AbstractItem):
   
   def to_data_dict(self):
     d = super().to_data_dict()
+    d["font"] = self.font
     d["font_size"] = self.font_size
     d["color"] = self.color
     d["background"] = self.background

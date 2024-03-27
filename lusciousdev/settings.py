@@ -118,7 +118,11 @@ DATABASES = {
         'USER': MARIADB_USER,
         'PASSWORD': MARIADB_PASSWORD,
         'HOST': MARIADB_HOST,
-        'PORT': MARIADB_PORT
+        'PORT': MARIADB_PORT,
+        'OPTIONS': {
+          'charset': 'utf8mb4',
+          'use_unicode': True
+        },
     }
 }
 
@@ -175,6 +179,7 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": "./logs/debug.log",
+            "encoding": "utf-8",
         },
     },
     "loggers": {

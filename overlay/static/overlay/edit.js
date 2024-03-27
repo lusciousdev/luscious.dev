@@ -5,8 +5,11 @@ const getOverlayItemsUrl  = data.getitemsurl;
 const addOverlayItemsUrl  = data.additemsurl;
 const editOverlayItemsUrl = data.edititemsurl;
 const deleteOverlayItemUrl = data.deleteitemurl;
-const overlayWidth = parseInt(data.overlaywidth, 10)
-const overlayHeight = parseInt(data.overlayheight, 10)
+
+var scaledOverlayWidth = -1;
+var scaledOverlayHeight = -1;
+const overlayWidth = parseInt(data.overlaywidth, 10);
+const overlayHeight = parseInt(data.overlayheight, 10);
 
 var itemDict = {};
 var selectedItem = undefined;
@@ -19,6 +22,84 @@ const GrabTypes = {
   BottomRight: 4,
 };
 var grabType = GrabTypes.Move;
+
+function editToViewScale(distance)
+{
+  return (overlayWidth * distance) / scaledOverlayWidth;
+}
+
+function viewToEditScale(distance)
+{
+  return (scaledOverlayWidth * distance) / overlayWidth;
+}
+
+class Point 
+{
+  constructor(x, y)
+  {
+    this.x = x;
+    this.y = y;
+  }
+
+  add(other)
+  {
+    this.x += other.x;
+    this.y += other.y;
+  }
+
+  sub(other)
+  {
+    this.x -= other.x;
+    this.y -= other.y;
+  }
+
+  div(divisor)
+  {
+    this.x /= divisor;
+    this.y /= divisor;
+  }
+
+  mult(multiplier)
+  {
+    this.x *= multiplier;
+    this.y *= multiplier;
+  }
+
+  angle()
+  {
+    var angle = 0;
+    if (this.x == 0)
+      angle = (this.y >= 0) ? (Math.PI / 2) : (3 * Math.PI / 2);
+    else
+      angle = Math.atan(this.y / this.x);
+
+    if (this.x < 0)
+      angle += Math.PI;
+
+    return angle;
+  }
+
+  magnitude()
+  {
+    return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+  }
+
+  rotate(angle)
+  {
+    var r = this.magnitude();
+    var currAngle = this.angle();
+
+    var newAngle = currAngle + angle;
+
+    this.x = r * Math.cos(newAngle);
+    this.y = r * Math.sin(newAngle);
+  }
+}
+
+function distance(x1, y1, x2, y2)
+{
+  return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
+}
 
 function addGrabbers(itemId)
 {
@@ -35,9 +116,6 @@ function addGrabbers(itemId)
 
 function handleGetItemsResponse(data)
 {
-  var overlayElemWidth = $("#overlay").width();
-  var overlayElemHeight = $("#overlay").height();
-
   var itemSeen = {};
   for (itemId in itemDict)
   {
@@ -74,10 +152,11 @@ function handleGetItemsResponse(data)
       continue;
     }
 
-    var left   = (overlayElemWidth  * itemData['x']) / overlayWidth;
-    var top    = (overlayElemHeight * itemData['y']) / overlayHeight;
-    var width  = (overlayElemWidth  * itemData['width']) / overlayWidth;
-    var height = (overlayElemHeight * itemData['height']) / overlayHeight;
+    var left   = viewToEditScale(itemData['x']);
+    var top    = viewToEditScale(itemData['y']);
+    var width  = viewToEditScale(itemData['width']);
+    var height = viewToEditScale(itemData['height']);
+
     var z = itemData['z'];
     var rotation = itemData['rotation'];
 
@@ -150,27 +229,27 @@ function onResize(event)
   var mcWidth = $("#main-container").width();
   var mcHeight = $("#main-container").height();
 
-  var overlayElemWidth = 0.8 * mcWidth;
-  var overlayElemHeight = 9.0 / 16.0 * overlayElemWidth;
+  scaledOverlayWidth = 0.8 * mcWidth;
+  scaledOverlayHeight = 9.0 / 16.0 * scaledOverlayWidth;
 
-  if (overlayElemHeight > (0.667 * mcHeight))
+  if (scaledOverlayHeight > (0.667 * mcHeight))
   {
-    overlayElemHeight = 0.667 * mcHeight;
-    overlayElemWidth = 16.0 / 9.0 * overlayElemHeight;
+    scaledOverlayHeight = 0.667 * mcHeight;
+    scaledOverlayWidth = 16.0 / 9.0 * scaledOverlayHeight;
   }
 
-  $("#overlay").width(overlayElemWidth);
-  $("#overlay").height(overlayElemHeight);
+  $("#overlay").width(scaledOverlayWidth);
+  $("#overlay").height(scaledOverlayHeight);
 
   for (const prop in itemDict)
   {
     var itemData = itemDict[prop]['item_data'];
     var itemId = itemData['id'];
 
-    var left   = (overlayElemWidth  * itemData['x']) / overlayWidth;
-    var top    = (overlayElemHeight * itemData['y']) / overlayHeight;
-    var width  = (overlayElemWidth  * itemData['width']) / overlayWidth;
-    var height = (overlayElemHeight * itemData['height']) / overlayHeight;
+    var left   = viewToEditScale(itemData['x']);
+    var top    = viewToEditScale(itemData['y']);
+    var width  = viewToEditScale(itemData['width']);
+    var height = viewToEditScale(itemData['height']);
     
     if (itemDict[prop]['item_type'] == "ImageItem")
     {
@@ -192,19 +271,58 @@ function onMousedownItem(e) {
   dragData.pageYn = e.pageY;
   dragData.elem = this;
 
-
-  if (selectedItem !== undefined)
+  function getGrabberPos(grabber)
   {
-    $("#{0}".format(selectedItem)).removeClass("selected").addClass("unselected");
+    return new Point(
+      grabber.offset().left + (grabber.outerWidth() / 2),
+      grabber.offset().top  + (grabber.outerHeight() / 2)
+    );
   }
+
+  dragData.initialGrabberCoords = [
+    {
+      elem: $(dragData.elem).find(".topleft"),
+      point: getGrabberPos($(dragData.elem).find(".topleft")),
+    },
+    {
+      elem: $(dragData.elem).find(".topright"),
+      point: getGrabberPos($(dragData.elem).find(".topright")),
+    },
+    {
+      elem: $(dragData.elem).find(".bottomleft"),
+      point: getGrabberPos($(dragData.elem).find(".bottomleft")),
+    },
+    {
+      elem: $(dragData.elem).find(".bottomright"),
+      point: getGrabberPos($(dragData.elem).find(".bottomright")),
+    },
+  ]
+  
+  var maxDist = distance(dragData.initialGrabberCoords[0].point.x, dragData.initialGrabberCoords[0].point.y, dragData.pageX0, dragData.pageY0);
+  dragData.furthestCorner = dragData.initialGrabberCoords[0];
+
+  for (var i = 1; i < dragData.initialGrabberCoords.length; i++)
+  {
+    var dist = distance(dragData.initialGrabberCoords[i].point.x, dragData.initialGrabberCoords[i].point.y, dragData.pageX0, dragData.pageY0);
+
+    if (dist > maxDist)
+    {
+      maxDist = dist;
+      dragData.furthestCorner = dragData.initialGrabberCoords[i];
+    }
+  }
+
+  dragData.elemX0 = parseFloat($(dragData.elem).css('left'));
+  dragData.elemY0 = parseFloat($(dragData.elem).css('top'));
+
+  dragData.distX0 = dragData.furthestCorner.point.x - e.pageX;
+  dragData.distY0 = dragData.furthestCorner.point.x - e.pageY;
 
   selectItem(dragData.elem.id);
   itemDict[selectedItem]['locked'] = true;
 
-  function handleDragging(e){
-    var diffX = (e.pageX - dragData.pageXn);
-    var diffY = (e.pageY - dragData.pageYn);
-
+  function handleDragging(e)
+  {
     var elemTop = parseFloat($(dragData.elem).css('top'));
     var absTop = $(dragData.elem).offset().top;
     var elemLeft = parseFloat($(dragData.elem).css('left'));
@@ -212,133 +330,89 @@ function onMousedownItem(e) {
     var elemWidth = parseFloat($(dragData.elem).css('width'));
     var elemHeight = parseFloat($(dragData.elem).css('height'));
 
-    var points = {
-      topleft: {
-        x: absLeft,
-        y: absTop,
-      },
-      topright: {
-        x: absLeft + elemWidth,
-        y: absTop
-      },
-      bottomleft: {
-        x: absLeft,
-        y: absTop + elemHeight
-      },
-      bottomright: {
-        x: absLeft + elemWidth,
-        y: absTop + elemHeight
-      }
-    };
-
     var newTop = elemTop;
     var newLeft = elemLeft;
     var newWidth = elemWidth;
     var newHeight = elemHeight;
 
-    switch (grabType)
+    if (grabType == GrabTypes.Move)
     {
-      case GrabTypes.TopLeft:
-        newTop += diffY;
-        newLeft += diffX;
-        newWidth -= diffX;
-        newHeight -= diffY;
-        break;
-      case GrabTypes.TopRight:
-        newTop += diffY;
-        newWidth += diffX;
-        newHeight -= diffY;
-        break;
-      case GrabTypes.BottomLeft:
-        newLeft += diffX;
-        newWidth -= diffX;
-        newHeight += diffY;
-        break;
-      case GrabTypes.BottomRight:
-        newWidth += diffX;
-        newHeight += diffY;
-        break;
-      case GrabTypes.Move:
-      default:
-        newTop += diffY;
-        newLeft += diffX;
-        break;
-    }
+      var diffX = (e.pageX - dragData.pageX0);
+      var diffY = (e.pageY - dragData.pageY0);
 
-    if (itemDict[selectedItem]['item_type'] == "ImageItem")
-    {
-      if (!window.shiftheld && grabType != GrabTypes.Move)
+      newTop = dragData.elemY0 + diffY;
+      newLeft = dragData.elemX0 + diffX;
+
+      if (itemDict[selectedItem].item_data.rotation == 0)
       {
-        var attemptedWidth = 0;
-        var attemptedHeight = 0;
-
-        switch (grabType)
-        {
-          case GrabTypes.TopLeft:
-            attemptedWidth = points.bottomright.x - e.pageX;
-            attemptedHeight = points.bottomright.y - e.pageY;
-            break;
-          case GrabTypes.TopRight:
-            attemptedWidth = e.pageX - points.bottomleft.x;
-            attemptedHeight = points.bottomleft.y - e.pageY;
-            break;
-          case GrabTypes.BottomLeft:
-            attemptedWidth = points.topright.x - e.pageX;
-            attemptedHeight = e.pageY - points.topright.y;
-            break;
-          case GrabTypes.BottomRight:
-            attemptedWidth = e.pageX - points.topleft.x;
-            attemptedHeight = e.pageY - points.topleft.y;
-            break;
-          case GrabTypes.Move:
-          default:
-            break;
-        }
-
-        var imgNaturalWidth = $("#{0}-img".format(selectedItem)).get(0).naturalWidth;
-        var imgNaturalHeight = $("#{0}-img".format(selectedItem)).get(0).naturalHeight;
-        
-        var widthScale = attemptedWidth / imgNaturalWidth;
-        var heightScale = attemptedHeight / imgNaturalHeight;
-
-        var correctedWidth = attemptedWidth;
-        var correctedHeight = attemptedHeight;
-        if (heightScale >= widthScale)
-        {
-          correctedWidth = imgNaturalWidth * heightScale;
-        }
-        else
-        {
-          correctedHeight = imgNaturalHeight * widthScale;
-        }
-
-        var correctionX = correctedWidth - newWidth;
-        var correctionY = correctedHeight - newHeight;
-
-        switch (grabType)
-        {
-          case GrabTypes.TopLeft:
-            newTop -= correctionY;
-            newLeft -= correctionX;
-            break;
-          case GrabTypes.TopRight:
-            newTop -= correctionY;
-            break;
-          case GrabTypes.BottomLeft:
-            newLeft -= correctionX;
-            break;
-          case GrabTypes.BottomRight:
-          case GrabTypes.Move:
-          default:
-            break;
-        }
-
-        newWidth = Math.max(5, correctedWidth);
-        newHeight = Math.max(5, correctedHeight);
+        if (Math.abs(scaledOverlayHeight - (newTop + newHeight)) < (0.01 * scaledOverlayHeight))
+          newTop = scaledOverlayHeight - newHeight;
+    
+        if (Math.abs(scaledOverlayWidth - (newLeft + newWidth)) < (0.01 * scaledOverlayWidth))
+          newLeft = scaledOverlayWidth - newWidth;
+    
+        if (Math.abs(newTop) < (0.01 * scaledOverlayHeight))
+          newTop = 0;
+    
+        if (Math.abs(newLeft) < (0.01 * scaledOverlayWidth))
+          newLeft = 0;
       }
+    }
+    else
+    {
+      var clickPoint = new Point(e.pageX, e.pageY);
 
-      $("#{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
-      $("#{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
+      var relativePos = new Point(dragData.furthestCorner.point.x, dragData.furthestCorner.point.y);
+      relativePos.sub(clickPoint);
+
+      var itemRotRad = itemDict[selectedItem].item_data.rotation * Math.PI / 180.0;
+      
+      relativePos.rotate(-1 * itemRotRad);
+
+      newWidth = Math.abs(relativePos.x);
+      newHeight = Math.abs(relativePos.y);
+
+      newWidth = Math.max(25, newWidth);
+      newHeight = Math.max(25, newHeight);
+
+      if (itemDict[selectedItem].item_type == "ImageItem")
+      {
+        if (!window.shiftheld)
+        {
+          var imgNaturalWidth = $("#{0}-img".format(selectedItem)).get(0).naturalWidth;
+          var imgNaturalHeight = $("#{0}-img".format(selectedItem)).get(0).naturalHeight;
+
+          var widthScale = newWidth / imgNaturalWidth;
+          var heightScale = newHeight / imgNaturalHeight;
+
+          var correctedWidth = newWidth;
+          var correctedHeight = newHeight;
+          if (heightScale >= widthScale)
+          {
+            correctedWidth = imgNaturalWidth * heightScale;
+          }
+          else
+          {
+            correctedHeight = imgNaturalHeight * widthScale;
+          }
+
+          newWidth = correctedWidth;
+          newHeight = correctedHeight;
+        }
+      }
+    
+      $(dragData.elem).css({
+        width: "{0}px".format(newWidth),
+        height: "{0}px".format(newHeight),
+      });
+
+      var newFurthestCornerPoint = getGrabberPos(dragData.furthestCorner.elem);
+
+      var diffX = newFurthestCornerPoint.x - dragData.furthestCorner.point.x;
+      var diffY = newFurthestCornerPoint.y - dragData.furthestCorner.point.y;
+
+      newTop -= diffY;
+      newLeft -= diffX;
     }
 
     newWidth = Math.max(5, newWidth);
@@ -350,14 +424,17 @@ function onMousedownItem(e) {
       width: "{0}px".format(newWidth),
       height: "{0}px".format(newHeight),
     });
-    
-    var overlayElemWidth = $("#overlay").width();
-    var overlayElemHeight = $("#overlay").height();
 
-    var itemTop    = (overlayHeight * newTop) / overlayElemHeight;
-    var itemLeft   = (overlayWidth * newLeft) / overlayElemWidth;
-    var itemWidth  = (overlayWidth * newWidth) / overlayElemWidth;
-    var itemHeight = (overlayHeight * newHeight) / overlayElemHeight;
+    if (itemDict[selectedItem].item_type == "ImageItem")
+    {
+      $("#{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
+      $("#{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
+    }
+
+    var itemTop    = editToViewScale(newTop);
+    var itemLeft   = editToViewScale(newLeft);
+    var itemWidth  = editToViewScale(newWidth);
+    var itemHeight = editToViewScale(newHeight);
 
     itemDict[selectedItem]['item_data']['x']      = Math.round(itemLeft);
     itemDict[selectedItem]['item_data']['y']      = Math.round(itemTop);
@@ -463,7 +540,7 @@ function inputToValue(inputObj)
 {
   var nodeName = inputObj.prop('nodeName');
 
-  if (nodeName.toUpperCase() == "TEXTAREA")
+  if (nodeName.toUpperCase() == "TEXTAREA" || nodeName.toUpperCase() == "SELECT")
   {
     return inputObj.val();
   }
@@ -507,20 +584,11 @@ function updateItemDataFromInput(itemId, inputObj)
     return;
   }
 
-  var nodeName = inputObj.prop('nodeName');
+  var inputVal = inputToValue(inputObj);
 
-  if (nodeName.toUpperCase() == "TEXTAREA")
+  if (inputVal !== undefined)
   {
-    itemDict[itemId]['item_data'][name] = inputObj.val();
-  }
-  else if (nodeName.toUpperCase() == "INPUT")
-  {
-    var inputVal = inputToValue(inputObj);
-
-    if (inputVal !== undefined)
-    {
-      itemDict[itemId]['item_data'][name] = inputVal;
-    }
+    itemDict[itemId]['item_data'][name] = inputVal;
   }
 }
 
@@ -528,9 +596,9 @@ function submitEditForm(form)
 {
   var itemId = $(form).find("#id_item_id").val();
 
-  for(var i = 0; i < $(form).find("input,textarea").length; i++)
+  for(var i = 0; i < $(form).find("input,textarea,select").length; i++)
   {
-    var inp = $(form).find("input,textarea").eq(i);
+    var inp = $(form).find("input,textarea,select").eq(i);
 
     updateItemDataFromInput(itemId, inp);
   }
@@ -563,8 +631,6 @@ function addFormToDict(form)
       }
     }
   }
-
-  console.log(itemDict);
 
   return itemDict;
 }

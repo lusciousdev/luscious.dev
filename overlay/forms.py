@@ -65,7 +65,23 @@ BASE_WIDGETS = {
   'visible': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
 }
 
+FONT_CHOICES = (
+  ("Roboto Mono", "Roboto Mono"),
+  ("EB Garamond", "EB Garamond"),
+  ("Playfair Display", "Playfair Display"),
+  ("Open Sans", "Open Sans"),
+  ("Roboto", "Roboto"),
+  ("Ubuntu", "Ubuntu"),
+  ("Tangerine", "Tangerine"),
+  ("Dancing Script", "Dancing Script"),
+  ("Permanent Marker", "Permanent Marker"),
+  ("Nabla", "Nabla"),
+  ("Honk", "Honk"),
+  ("Bungee Spice", "Bungee Spice"),
+)
+
 BASE_TEXT_WIDGETS = {
+  'font': forms.Select(attrs={ "field-type": "text" }),
   'font_size': forms.NumberInput(attrs={ "field-type": "integer" }),
   'color': forms.TextInput(attrs={ "field-type": "text" }),
   'background': forms.TextInput(attrs={ "field-type": "text" }),
@@ -78,6 +94,7 @@ class EditItemForm(forms.ModelForm):
   
   class Meta:
     abstract = True
+    exclude = [ "overlay", "id", "item_type" ]
     
 class EditImageItem(EditItemForm):
   def get_pretty_name(self):
@@ -85,7 +102,7 @@ class EditImageItem(EditItemForm):
   
   class Meta:
     model = ImageItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = EditItemForm.Meta.exclude
     
     widgets = {
       'url': forms.Textarea(attrs={ "field-type": "text" }),
@@ -93,13 +110,19 @@ class EditImageItem(EditItemForm):
     
     widgets.update(BASE_WIDGETS)
     
-class EditTextItem(EditItemForm):
+class AbstractEditText(EditItemForm):
+  font = forms.ChoiceField(choices = FONT_CHOICES)
+  
+  class Meta:
+    abstract = True
+    
+class EditTextItem(AbstractEditText):
   def get_pretty_name(self):
     return "Text"
   
   class Meta:
     model = TextItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = EditItemForm.Meta.exclude
     
     widgets = {
       'text': forms.Textarea(attrs={ "field-type": "text" }),
@@ -108,13 +131,13 @@ class EditTextItem(EditItemForm):
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
     
-class EditStopwatchItem(EditItemForm):
+class EditStopwatchItem(AbstractEditText):
   def get_pretty_name(self):
     return "Stopwatch"
   
   class Meta:
     model = StopwatchItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = EditItemForm.Meta.exclude
     
     widgets = {
       'timer_format': forms.Textarea(attrs={ "field-type": "text" }),
@@ -126,13 +149,13 @@ class EditStopwatchItem(EditItemForm):
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
     
-class EditCounterItem(EditItemForm):
+class EditCounterItem(AbstractEditText):
   def get_pretty_name(self):
     return "Counter"
   
   class Meta:
     model = CounterItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = EditItemForm.Meta.exclude
     
     widgets = {
       'counter_format': forms.Textarea(attrs={ "field-type": "text" }),
@@ -145,6 +168,7 @@ class EditCounterItem(EditItemForm):
 class AddItemForm(forms.ModelForm):
   class Meta:
     abstract = True
+    exclude = [ "overlay", "id", "item_type" ]
     
 class AddImageItem(AddItemForm):
   def get_pretty_name(self):
@@ -152,7 +176,7 @@ class AddImageItem(AddItemForm):
   
   class Meta:
     model = ImageItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = AddItemForm.Meta.exclude
     
     widgets = {
       'url': forms.Textarea(attrs={ "field-type": "text" }),
@@ -160,13 +184,20 @@ class AddImageItem(AddItemForm):
     
     widgets.update(BASE_WIDGETS)
     
-class AddTextItem(AddItemForm):
+class AbstractAddText(AddItemForm):
+  font = forms.ChoiceField(choices = FONT_CHOICES)
+  
+  class Meta:
+    abstract = True
+  
+    
+class AddTextItem(AbstractAddText):
   def get_pretty_name(self):
     return "Text"
   
   class Meta:
     model = TextItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = AddItemForm.Meta.exclude
     
     widgets = {
       'text': forms.Textarea(attrs={ "field-type": "text" }),
@@ -175,13 +206,13 @@ class AddTextItem(AddItemForm):
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
     
-class AddStopwatchItem(AddItemForm):
+class AddStopwatchItem(AbstractAddText):
   def get_pretty_name(self):
     return "Stopwatch"
   
   class Meta:
     model = StopwatchItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = AddItemForm.Meta.exclude
     
     widgets = {
       'timer_format': forms.Textarea(attrs={ "field-type": "text" }),
@@ -193,13 +224,13 @@ class AddStopwatchItem(AddItemForm):
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
     
-class AddCounterItem(AddItemForm):
+class AddCounterItem(AbstractAddText):
   def get_pretty_name(self):
     return "Counter"
   
   class Meta:
     model = CounterItem
-    exclude = [ "overlay", "id", "item_type" ]
+    exclude = AddItemForm.Meta.exclude
     
     widgets = {
       'counter_format': forms.Textarea(attrs={ "field-type": "text" }),

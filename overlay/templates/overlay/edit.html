@@ -1,12 +1,19 @@
+{% extends "overlay/overlay_base.html" %}
+
 {% load static %}
 {% load socialaccount %}
 {% load util %}
 
 <!DOCTYPE html>
+
+{% block stylesheets %}
 <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
 <link rel="stylesheet" href="{% static 'global.css' %}">
 <link rel="stylesheet" href="{% static 'overlay/overlay.css' %}">
 <link rel="stylesheet" href="{% static 'overlay/edit.css' %}">
+{% endblock %}
+
+{% block scripts %}
 <script src="{% static 'util.js' %}"></script>
 <script src="{% static 'ajaxhelpers.js' %}"></script>
 <script src="{% static 'jquery-3.7.1.min.js' %}"></script>
@@ -22,7 +29,9 @@
         data-overlaywidth="{{ collaborativeoverlay.width }}"
         data-overlayheight="{{ collaborativeoverlay.height }}">
 </script>
+{% endblock %}
 
+{% block content %}
 <html lang="en">
   <head>
     <meta charset="UTF-8">
@@ -125,3 +134,4 @@
     </div>
   </body>
 </html>
+{% endblock %}
