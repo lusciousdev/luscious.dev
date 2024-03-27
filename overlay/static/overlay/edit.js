@@ -610,25 +610,16 @@ function addFormToDict(form)
 {
   var itemDict = {}
 
-  for(var i = 0; i < $(form).find("input,textarea").length; i++)
+  for(var i = 0; i < $(form).find("input,textarea,select").length; i++)
   {
-    var inputObj = $(form).find("input,textarea").eq(i);
+    var inputObj = $(form).find("input,textarea,select").eq(i);
 
     var name = inputObj.attr('name');
-    var nodeName = inputObj.prop('nodeName');
-  
-    if (nodeName.toUpperCase() == "TEXTAREA")
+    var inputVal = inputToValue(inputObj);
+
+    if (inputVal !== undefined)
     {
-      itemDict[name] = inputObj.val();
-    }
-    else if (nodeName.toUpperCase() == "INPUT")
-    {
-      var inputVal = inputToValue(inputObj);
-  
-      if (inputVal !== undefined)
-      {
-        itemDict[name] = inputVal;
-      }
+      itemDict[name] = inputVal;
     }
   }
 
@@ -639,8 +630,6 @@ function submitAddForm(form)
 {
   var itemType = $(form).find("#id_item_type").val();
   var itemData = addFormToDict(form);
-
-  console.log({ 'overlay_id': overlayId, "item_type": itemType, "item_data": itemData });
 
   AjaxPost(addOverlayItemsUrl, { 'overlay_id': overlayId, "item_type": itemType, "item_data": itemData }, (e) => {}, handleAjaxError);
 
