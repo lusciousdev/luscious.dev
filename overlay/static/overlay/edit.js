@@ -1,5 +1,8 @@
 const data = document.currentScript.dataset;
 
+window.shiftheld = false;
+window.ctrlheld = false;
+
 const overlayId = data.overlayid;
 const getOverlayItemsUrl  = data.getitemsurl;
 const addOverlayItemsUrl  = data.additemsurl;
@@ -13,8 +16,9 @@ const overlayWidth = parseInt(data.overlaywidth, 10);
 const overlayHeight = parseInt(data.overlayheight, 10);
 
 var itemDict = {};
+
 var selectedItem = undefined;
-var otherSelectedItems = []
+var otherSelectedItems = [];
 
 const GrabTypes = {
   Move: 0,
@@ -35,6 +39,11 @@ function viewToEditScale(distance)
   return (scaledOverlayWidth * distance) / overlayWidth;
 }
 
+function getItemDiv(itemId)
+{
+  return $("#{0}".format(itemId));
+}
+
 class Point 
 {
   constructor(x, y)
@@ -47,24 +56,56 @@ class Point
   {
     this.x += other.x;
     this.y += other.y;
+
+    return this;
+  }
+
+  addX(val)
+  {
+    this.x += val;
+    return this;
+  }
+
+  addY(val)
+  {
+    this.y += val;
+    return this;
   }
 
   sub(other)
   {
     this.x -= other.x;
     this.y -= other.y;
+
+    return this;
+  }
+
+  subX(val)
+  {
+    this.x -= val;
+    return this;
+  }
+
+  subY(val)
+  {
+    this.y -= val;
+    return this;
   }
 
   div(divisor)
   {
     this.x /= divisor;
     this.y /= divisor;
+
+    return this;
   }
 
   mult(multiplier)
   {
     this.x *= multiplier;
     this.y *= multiplier;
+
+    return this;
   }
 
   angle()
@@ -95,6 +136,18 @@ class Point
 
     this.x = r * Math.cos(newAngle);
     this.y = r * Math.sin(newAngle);
+
+    return this;
+  }
+
+  static add2(p1, p2)
+  {
+    return new Point(p1.x + p2.x, p1.y + p2.y);
+  }
+
+  static sub2(p1, p2)
+  {
+    return new Point(p1.x - p2.x, p1.y - p2.y);
   }
 }
 
@@ -105,10 +158,10 @@ function distance(x1, y1, x2, y2)
 
 function addGrabbers(itemId)
 {
-  $("#{0}".format(itemId)).append("<div class='grabber topleft'></div>");
-  $("#{0}".format(itemId)).append("<div class='grabber topright'></div>");
-  $("#{0}".format(itemId)).append("<div class='grabber bottomleft'></div>");
-  $("#{0}".format(itemId)).append("<div class='grabber bottomright'></div>");
+  getItemDiv(itemId).append("<div class='grabber topleft'></div>");
+  getItemDiv(itemId).append("<div class='grabber topright'></div>");
+  getItemDiv(itemId).append("<div class='grabber bottomleft'></div>");
+  getItemDiv(itemId).append("<div class='grabber bottomright'></div>");
 
   $('#{0} .topleft'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopLeft; });
   $('#{0} .topright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopRight; });
@@ -171,7 +224,7 @@ function handleGetItemsResponse(data)
   {
     if (!itemSeen[itemId])
     {
-      $("#{0}".format(itemId)).remove();
+      getItemDiv(itemId).remove();
       $("#{0}-list-entry".format(itemId)).remove();
 
       if (itemId == selectedItem)
@@ -184,7 +237,7 @@ function handleGetItemsResponse(data)
 
 function addItemCallback(itemId, itemType)
 {
-  $("#{0}".format(itemId)).mousedown(onMousedownItem);
+  getItemDiv(itemId).mousedown(onMousedownItem);
   addGrabbers(itemId);
 
   var item = itemDict[itemId]
@@ -332,10 +385,9 @@ function onMousedownItem(e)
   e.stopImmediatePropagation();
 
   window.dragData = {};
-  dragData.pageX0 = e.pageX;
-  dragData.pageY0 = e.pageY;
-  dragData.pageXn = e.pageX;
-  dragData.pageYn = e.pageY;
+  dragData.pageP0 = new Point(e.pageX, e.pageY);
+  dragData.pagePn = new Point(e.pageX, e.pageY);
+  dragData.pagePn_m1 = new Point(e.pageX, e.pageY);
   dragData.elem = this;
 
   function getGrabberPos(grabber)
@@ -343,6 +395,22 @@ function onMousedownItem(e)
     return new Point(
       grabber.offset().left + (grabber.outerWidth() / 2),
       grabber.offset().top  + (grabber.outerHeight() / 2)
+    );
+  }
+
+  function getItemPos(itemId)
+  {
+    return new Point(
+      parseFloat(getItemDiv(itemId).css('left')),
+      parseFloat(getItemDiv(itemId).css('top')),
+    );
+  }
+
+  function getItemDim(itemId)
+  {
+    return new Point(
+      parseFloat(getItemDiv(itemId).css('width')),
+      parseFloat(getItemDiv(itemId).css('height')),
     );
   }
 
@@ -365,12 +433,12 @@ function onMousedownItem(e)
     },
   ]
   
-  var maxDist = distance(dragData.initialGrabberCoords[0].point.x, dragData.initialGrabberCoords[0].point.y, dragData.pageX0, dragData.pageY0);
+  var maxDist = distance(dragData.initialGrabberCoords[0].point.x, dragData.initialGrabberCoords[0].point.y, dragData.pageP0.x, dragData.pageP0.y);
   dragData.furthestCorner = dragData.initialGrabberCoords[0];
 
   for (var i = 1; i < dragData.initialGrabberCoords.length; i++)
   {
-    var dist = distance(dragData.initialGrabberCoords[i].point.x, dragData.initialGrabberCoords[i].point.y, dragData.pageX0, dragData.pageY0);
+    var dist = distance(dragData.initialGrabberCoords[i].point.x, dragData.initialGrabberCoords[i].point.y, dragData.pageP0.x, dragData.pageP0.y);
 
     if (dist > maxDist)
     {
@@ -379,70 +447,89 @@ function onMousedownItem(e)
     }
   }
 
-  dragData.elemX0 = parseFloat($(dragData.elem).css('left'));
-  dragData.elemY0 = parseFloat($(dragData.elem).css('top'));
-
-  dragData.distX0 = dragData.furthestCorner.point.x - e.pageX;
-  dragData.distY0 = dragData.furthestCorner.point.x - e.pageY;
-
   selectItem(dragData.elem.id);
+
+  dragData.elemP0 = new Point(parseFloat($(dragData.elem).css('left')), parseFloat($(dragData.elem).css('top')));
+  dragData.distP0 = Point.sub2(dragData.furthestCorner.point, new Point(e.pageX, e.pageY));
+
+  dragData.selectedElem = {
+    point0: getItemPos(selectedItem)
+  }
   itemDict[selectedItem]['locked'] = true;
+
+  dragData.otherElems = {}
+  otherSelectedItems.forEach((itemId) => {
+    dragData.otherElems[itemId] = {};
+    dragData.otherElems[itemId]["point0"] = getItemPos(itemId)
+    itemDict[itemId]['locked'] = true;
+  });
 
   function handleDragging(e)
   {
-    var elemTop = parseFloat($(dragData.elem).css('top'));
-    var absTop = $(dragData.elem).offset().top;
-    var elemLeft = parseFloat($(dragData.elem).css('left'));
-    var absLeft = $(dragData.elem).offset().left;
-    var elemWidth = parseFloat($(dragData.elem).css('width'));
-    var elemHeight = parseFloat($(dragData.elem).css('height'));
-
-    var newTop = elemTop;
-    var newLeft = elemLeft;
-    var newWidth = elemWidth;
-    var newHeight = elemHeight;
+    dragData.pagePn = new Point(e.pageX, e.pageY);
 
     if (grabType == GrabTypes.Move)
     {
-      var diffX = (e.pageX - dragData.pageX0);
-      var diffY = (e.pageY - dragData.pageY0);
+      var offsetPosition = Point.sub2(dragData.pagePn, dragData.pageP0);
 
-      newTop = dragData.elemY0 + diffY;
-      newLeft = dragData.elemX0 + diffX;
-
-      if (itemDict[selectedItem].item_data.rotation == 0)
+      var movedItemNewPos = Point.add2(dragData.elemP0, offsetPosition);
+      var movedItemDim = getItemDim(dragData.elem.id);
+      if (itemDict[dragData.elem.id].item_data.rotation == 0)
       {
-        if (Math.abs(scaledOverlayHeight - (newTop + newHeight)) < (0.01 * scaledOverlayHeight))
-          newTop = scaledOverlayHeight - newHeight;
+        if (Math.abs(scaledOverlayHeight - (movedItemNewPos.y + movedItemDim.y)) < (0.01 * scaledOverlayHeight))
+          offsetPosition.addY(scaledOverlayHeight - (movedItemNewPos.y + movedItemDim.y));
     
-        if (Math.abs(scaledOverlayWidth - (newLeft + newWidth)) < (0.01 * scaledOverlayWidth))
-          newLeft = scaledOverlayWidth - newWidth;
+        if (Math.abs(scaledOverlayWidth - (movedItemNewPos.x + movedItemDim.x)) < (0.01 * scaledOverlayWidth))
+          offsetPosition.addX(scaledOverlayWidth - (movedItemNewPos.x + movedItemDim.x));
     
-        if (Math.abs(newTop) < (0.01 * scaledOverlayHeight))
-          newTop = 0;
+        if (Math.abs(movedItemNewPos.y) < (0.01 * scaledOverlayHeight))
+          offsetPosition.subY(movedItemNewPos.y);
     
-        if (Math.abs(newLeft) < (0.01 * scaledOverlayWidth))
-          newLeft = 0;
+        if (Math.abs(movedItemNewPos.x) < (0.01 * scaledOverlayWidth))
+          offsetPosition.subX(movedItemNewPos.x);
       }
+  
+      var newPos = Point.add2(dragData.selectedElem.point0, offsetPosition);
+      getItemDiv(selectedItem).css({
+        top: "{0}px".format(newPos.y), 
+        left: "{0}px".format(newPos.x),
+      });
+
+      var itemTop  = editToViewScale(newPos.y);
+      var itemLeft = editToViewScale(newPos.x);
+      itemDict[selectedItem]['item_data']['x'] = Math.round(itemLeft);
+      itemDict[selectedItem]['item_data']['y'] = Math.round(itemTop);
+      itemDict[selectedItem]['local_changes'] = true;
+
+      otherSelectedItems.forEach((itemId) => {
+        newPos = Point.add2(dragData.otherElems[itemId].point0, offsetPosition);
+        getItemDiv(itemId).css({
+          top: "{0}px".format(newPos.y), 
+          left: "{0}px".format(newPos.x),
+        });
+
+        var itemTop  = editToViewScale(newPos.y);
+        var itemLeft = editToViewScale(newPos.x);
+        itemDict[itemId]['item_data']['x'] = Math.round(itemLeft);
+        itemDict[itemId]['item_data']['y'] = Math.round(itemTop);
+        itemDict[itemId]['local_changes'] = true;
+      });
     }
     else
     {
-      var clickPoint = new Point(e.pageX, e.pageY);
+      var relativePos = Point.sub2(dragData.furthestCorner.point, dragData.pagePn);
 
-      var relativePos = new Point(dragData.furthestCorner.point.x, dragData.furthestCorner.point.y);
-      relativePos.sub(clickPoint);
-
-      var itemRotRad = itemDict[selectedItem].item_data.rotation * Math.PI / 180.0;
+      var itemRotRad = itemDict[dragData.elem.id].item_data.rotation * Math.PI / 180.0;
       
       relativePos.rotate(-1 * itemRotRad);
 
-      newWidth = Math.abs(relativePos.x);
-      newHeight = Math.abs(relativePos.y);
+      var newWidth = Math.abs(relativePos.x);
+      var newHeight = Math.abs(relativePos.y);
 
       newWidth = Math.max(25, newWidth);
       newHeight = Math.max(25, newHeight);
 
-      if (itemDict[selectedItem].item_type == "ImageItem")
+      if (itemDict[dragData.elem.id].item_type == "ImageItem")
       {
         if (!window.shiftheld)
         {
@@ -467,6 +554,9 @@ function onMousedownItem(e)
           newHeight = correctedHeight;
         }
       }
+
+      newWidth = Math.max(5, newWidth);
+      newHeight = Math.max(5, newHeight);
     
       $(dragData.elem).css({
         width: "{0}px".format(newWidth),
@@ -474,50 +564,41 @@ function onMousedownItem(e)
       });
 
       var newFurthestCornerPoint = getGrabberPos(dragData.furthestCorner.elem);
+      var offsetPosition = Point.sub2(dragData.furthestCorner.point, newFurthestCornerPoint);
 
-      var diffX = newFurthestCornerPoint.x - dragData.furthestCorner.point.x;
-      var diffY = newFurthestCornerPoint.y - dragData.furthestCorner.point.y;
+      var newPos = Point.add2(getItemPos(dragData.elem.id), offsetPosition);
+      $(dragData.elem).css({
+        top: "{0}px".format(newPos.y), 
+        left: "{0}px".format(newPos.x),
+      });
 
-      newTop -= diffY;
-      newLeft -= diffX;
-    }
-
-    newWidth = Math.max(5, newWidth);
-    newHeight = Math.max(5, newHeight);
+      if (itemDict[dragData.elem.id].item_type == "ImageItem")
+      {
+        $("#{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
+        $("#{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
+      }
   
-    $(dragData.elem).css({
-      top: "{0}px".format(newTop), 
-      left: "{0}px".format(newLeft),
-      width: "{0}px".format(newWidth),
-      height: "{0}px".format(newHeight),
-    });
+      var itemTop    = editToViewScale(newPos.y);
+      var itemLeft   = editToViewScale(newPos.x);
+      var itemWidth  = editToViewScale(newWidth);
+      var itemHeight = editToViewScale(newHeight);
+  
+      itemDict[dragData.elem.id]['item_data']['x']      = Math.round(itemLeft);
+      itemDict[dragData.elem.id]['item_data']['y']      = Math.round(itemTop);
+      itemDict[dragData.elem.id]['item_data']['width']  = Math.round(itemWidth);
+      itemDict[dragData.elem.id]['item_data']['height'] = Math.round(itemHeight);
 
-    if (itemDict[selectedItem].item_type == "ImageItem")
-    {
-      $("#{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
-      $("#{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
+      itemDict[dragData.elem.id]['local_changes'] = true;
     }
-
-    var itemTop    = editToViewScale(newTop);
-    var itemLeft   = editToViewScale(newLeft);
-    var itemWidth  = editToViewScale(newWidth);
-    var itemHeight = editToViewScale(newHeight);
-
-    itemDict[selectedItem]['item_data']['x']      = Math.round(itemLeft);
-    itemDict[selectedItem]['item_data']['y']      = Math.round(itemTop);
-    itemDict[selectedItem]['item_data']['width']  = Math.round(itemWidth);
-    itemDict[selectedItem]['item_data']['height'] = Math.round(itemHeight);
-
-    itemDict[selectedItem]['local_changes'] = true;
-
+  
     setEditFormInputs(selectedItem);
 
-    dragData.pageXn = e.pageX;
-    dragData.pageYn = e.pageY;
+    dragData.pagePn_m1 = new Point(e.pageX, e.pageY);
   }
 
   function handleMouseUp(e){
     itemDict[selectedItem]['locked'] = false;
+    otherSelectedItems.forEach((itemId) => itemDict[itemId]['locked'] = false);
     grabType = GrabTypes.Move;
     $('#main-container').off('mousemove', handleDragging).off('mouseup', handleMouseUp);
   }
@@ -537,9 +618,18 @@ function clearSelectedItem()
 {
   if (selectedItem !== undefined)
   {
-    $("#{0}".format(selectedItem)).removeClass("selected").addClass("unselected");
+    getItemDiv(selectedItem).removeClass("selected").addClass("unselected");
     $("#{0}-list-entry".format(selectedItem)).removeClass("selected-list-entry");
+
+    selectedItem = undefined;
   }
+
+  otherSelectedItems.forEach((itemId) => {
+    getItemDiv(itemId).removeClass("selected").addClass("unselected");
+    $("#{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
+  });
+
+  otherSelectedItems = [];
   
   for (var i = 0; i < $(".edit-container").length; i++)
   {
@@ -556,26 +646,45 @@ function clearSelectedItem()
 
 function selectItem(itemId)
 {
-  if (selectedItem !== undefined)
+  if (otherSelectedItems.includes(itemId))
+    return;
+  if (itemId == selectedItem)
+    return;
+
+  if (selectedItem !== undefined && !window.ctrlheld)
   {
     clearSelectedItem();
   }
-
-  selectedItem = itemId;
-  $("#{0}".format(selectedItem)).removeClass("unselected").addClass("selected");
-  $("#{0}-list-entry".format(itemId)).addClass("selected-list-entry");
-
-  var itemType = itemDict[selectedItem]['item_type'];
-  var containerId = "#edit-{0}-container".format(itemType);
-
-  $(containerId).removeClass("hidden");
-
-  if ("paused" in itemDict[selectedItem]["item_data"])
+  
+  var addingItem = false;
+  
+  if (!window.ctrlheld)
   {
-    $("{0} .pause-item".format(containerId)).text(itemDict[selectedItem]["item_data"]["paused"] ? "Unpause" : "Pause");
+    selectedItem = itemId;
+  }
+  else
+  {
+    otherSelectedItems.push(itemId);
+    addingItem = true;
   }
 
-  setEditFormInputs(selectedItem);
+  getItemDiv(itemId).removeClass("unselected").addClass("selected");
+  $("#{0}-list-entry".format(itemId)).addClass("selected-list-entry");
+
+  if (!addingItem)
+  {
+    var itemType = itemDict[selectedItem]['item_type'];
+    var containerId = "#edit-{0}-container".format(itemType);
+  
+    $(containerId).removeClass("hidden");
+  
+    if ("paused" in itemDict[selectedItem]["item_data"])
+    {
+      $("{0} .pause-item".format(containerId)).text(itemDict[selectedItem]["item_data"]["paused"] ? "Unpause" : "Pause");
+    }
+  
+    setEditFormInputs(selectedItem);
+  }
 }
 
 function setEditFormInputs(itemId)
@@ -790,7 +899,7 @@ function openAddItemTab(event, tabId)
     $(".tablink").eq(i).removeClass("active");
   }
 
-  $("#{0}".format(tabId)).css({ "visibility": "visible" });
+  getItemDiv(tabId).css({ "visibility": "visible" });
   $(event.currentTarget).addClass("active");
 }
 
@@ -814,6 +923,22 @@ function toggleEmbeddedTwitchStream(e)
   }
 }
 
+function selectedVisibilityChange(e)
+{
+  otherSelectedItems.forEach((itemId) => {
+    itemDict[itemId]["item_data"]["visible"] = $(e.target).is(":checked");
+    itemDict[itemId]["local_changes"] = true;
+  });
+}
+
+function selectedMinimizedChange(e)
+{
+  otherSelectedItems.forEach((itemId) => {
+    itemDict[itemId]["item_data"]["minimized"] = $(e.target).is(":checked");
+    itemDict[itemId]["local_changes"] = true;
+  });
+}
+
 $(window).on('load', function() {
   onResize();
   getOverlayItems();
@@ -824,7 +949,7 @@ $(window).on('load', function() {
   
   $('#main-container').on("mousedown", onMousedownBody);
   
-  $(document).on('keyup keydown', function(e){window.shiftheld = e.shiftKey} );
+  $(document).on('keyup keydown', function(e){window.shiftheld = e.shiftKey; window.ctrlheld = e.ctrlKey;} );
   
   $(".edit-form").submit((e) => {
     e.preventDefault();
@@ -864,5 +989,13 @@ $(window).on('load', function() {
 
   $(".pause-item").click((e) => {
     pauseSelectedItem(e);
+  });
+
+  $(".edit-container input[id=id_visible]").each((i, visibleCheckbox) => {
+    $(visibleCheckbox).change((e) => selectedVisibilityChange(e));
+  });
+
+  $(".edit-container input[id=id_minimized]").each((i, minimizedCheckbox) => {
+    $(minimizedCheckbox).change((e) => selectedMinimizedChange(e));
   });
 });
