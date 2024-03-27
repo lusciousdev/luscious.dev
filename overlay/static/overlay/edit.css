@@ -107,8 +107,8 @@ body {
 
   z-index: 0;
 
-  --border-width: 4px;
-  --grabber-radius: 6px;
+  --border-width: 2px;
+  --grabber-radius: 5px;
   --grabber-offset: calc(calc(0px - var(--grabber-radius)) - calc(var(--border-width) / 2));
 }
 

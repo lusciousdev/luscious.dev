@@ -1,5 +1,6 @@
 {% load static %}
 {% load socialaccount %}
+{% load util %}
 
 <!DOCTYPE html>
 <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
@@ -41,7 +42,7 @@
       <div class="form-container edit-container hidden" id="edit-{{ k }}-container">
         <form class="item-form edit-form" id="edit-{{ k }}-form">
           <div class="item-title">
-            Edit {{ k }}
+            Edit {{ form.get_pretty_name }}
           </div>
           {{ form.non_field_errors }}
           {% for field in form.hidden_fields %}
@@ -62,7 +63,13 @@
           {% endfor %}
             <tr>
               <td></td>
-              <td><div class="medium-button delete-item" id="delete-{{ k }}">Delete</div></td>
+              <td>
+                {% if k == "StopwatchItem" %}
+                <div class="medium-button pause-item" id="pause-{{ k }}">Pause</div>
+                <div class="medium-button reset-item" id="reset-{{ k }}">Reset</div>
+                {% endif %}
+                <div class="medium-button delete-item" id="delete-{{ k }}">Delete</div>
+              </td>
             </tr>
           </table>
         </form>
@@ -81,7 +88,7 @@
         <div class="tab-nav">
           <div class="tab" id="add-item-tabs">
             {% for k, form in forms.add.items %}
-            <button class="tablink" onclick="openAddItemTab(event, 'add-{{ k }}')">{{ k }}</button>
+            <button class="tablink" onclick="openAddItemTab(event, 'add-{{ k }}')">{{ form.get_pretty_name }}</button>
             {% endfor %}
           </div>
 

@@ -14,6 +14,25 @@ const escapeHtml = (unsafe) => {
   return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 }
 
+Number.prototype.pad = function(size) {
+  var s = String(this);
+  while (s.length < (size || 2)) {s = "0" + s;}
+  return s;
+}
+
+function secondsToTimeFormat(totalSeconds)
+{
+  var hours = Math.floor(totalSeconds / (60 * 60));
+  var rem = totalSeconds % (60 * 60);
+
+  var minutes = Math.floor(rem / 60);
+  rem = rem % 60;
+
+  var seconds = rem;
+
+  return "{0}:{1}:{2}".format(hours.pad(), minutes.pad(), seconds.pad());
+}
+
 function setTextItemContent(overlayElement, itemId, itemText, itemData)
 {
   var overlayElemWidth = $(overlayElement).width();
@@ -24,7 +43,7 @@ function setTextItemContent(overlayElement, itemId, itemText, itemData)
   $(textElemId).css({
     "font-size": "{0}pt".format(fontSize),
     "color": itemData['color'],
-    "background-color": (itemData['outline_enabled']) ? itemData['outline'] : "#00000000",
+    "background-color": (itemData['background_enabled']) ? itemData['background'] : "#00000000",
     "visibility": (itemData['visible']) ? "visible" : "hidden",
   });
 }
@@ -54,6 +73,18 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
       case "TextItem":
         $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
         setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
+        break;
+      case "StopwatchItem":
+        $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
+
+        var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
+        if (itemData['paused'])
+        {
+          elapsedTime = itemData['pause_time'] - itemData['timer_start'];
+        }
+        var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
+        
+        setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
       case "CounterItem":
         $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
@@ -87,6 +118,16 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
       case "TextItem":
         setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
         break;
+      case "StopwatchItem":
+        var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
+        if (itemData['paused'])
+        {
+          elapsedTime = itemData['pause_time'] - itemData['timer_start']
+        }
+        var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
+        
+        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        break
       case "CounterItem":
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(overlayElement, itemId, textContent, itemData);

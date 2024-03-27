@@ -424,6 +424,11 @@ function selectItem(itemId)
 
   $(containerId).removeClass("hidden");
 
+  if ("paused" in itemDict[selectedItem]["item_data"])
+  {
+    $("{0} .pause-item".format(containerId)).text(itemDict[selectedItem]["item_data"]["paused"] ? "Unpause" : "Pause");
+  }
+
   setEditFormInputs(selectedItem);
 }
 
@@ -465,27 +470,30 @@ function inputToValue(inputObj)
   else if (nodeName.toUpperCase() == "INPUT")
   {
     var inputType = inputObj.attr('type');
+    var fieldType = inputObj.attr('field-type');
+    var inputVal = inputObj.val();
 
-    switch (inputType)
+    if (inputType == "submit")
+      return undefined;
+
+    switch (fieldType)
     {
-      case "submit":
-        return undefined;
-      case "number":
-        var numberVal = parseInt(inputObj.val(), 10);
+      case "integer":
+        var numberVal = parseInt(inputVal, 10);
 
-        if (!isNaN(numberVal))
-        {
-          return numberVal;
-        }
+        return !isNaN(numberVal) ? numberVal : 0;
+      case "float":
+        var floatVal = parseFloat(inputVal);
+
+        return !isNaN(floatVal) ? floatVal : 0.0;
+      case "boolean":
+        if (inputType == "checkbox")
+          return inputObj.is(":checked");
         else
-        {
-          return 0;
-        }
-      case "checkbox":
-        return inputObj.is(":checked");
+          return (inputVal == "true") ? true : false;
       case "text":
       default:
-        return inputObj.val();
+        return inputVal;
     }
   }
 }
@@ -566,39 +574,6 @@ function submitAddForm(form)
   var itemType = $(form).find("#id_item_type").val();
   var itemData = addFormToDict(form);
 
-  // itemData['name'] = $(form).find("#id_name").val();
-  // itemData['x'] = parseInt($(form).find("#id_x").val(), 10);
-  // itemData['y'] = parseInt($(form).find("#id_y").val(), 10);
-  // itemData['z'] = parseInt($(form).find("#id_z").val(), 10);
-  // itemData['width'] = parseInt($(form).find("#id_width").val(), 10);
-  // itemData['height'] = parseInt($(form).find("#id_height").val(), 10);
-  // itemData['rotation'] = parseInt($(form).find("#id_rotation").val(), 10);
-  // itemData['visible'] = $(form).find("#id_visible").is(":checked");
-// 
-  // switch (itemType)
-  // {
-  //   case "ImageItem":
-  //     itemData['url'] = $(form).find("#id_url").val();
-  //     break;
-  //   case "TextItem":
-  //     itemData['text'] = $(form).find("#id_text").val();
-  //     itemData['font_size'] = parseInt($(form).find("#id_font_size").val(), 10);
-  //     itemData['color'] = $(form).find("#id_color").val();
-  //     itemData['outline'] = $(form).find("#id_outline").val();
-  //     itemData['outline_enabled'] = $(form).find("#id_outline_enabled").is(":checked");
-  //     break;
-  //   case "CounterItem":
-  //     itemData['counter_format'] = $(form).find("#id_text").val();
-  //     itemData['count'] = parseInt($(form).find("#id_count").val(), 10);
-  //     itemData['font_size'] = parseInt($(form).find("#id_font_size").val(), 10);
-  //     itemData['color'] = $(form).find("#id_color").val();
-  //     itemData['outline'] = $(form).find("#id_outline").val();
-  //     itemData['outline_enabled'] = $(form).find("#id_outline_enabled").is(":checked");
-  //     break;
-  //   default:
-  //     break;
-  // };
-
   console.log({ 'overlay_id': overlayId, "item_type": itemType, "item_data": itemData });
 
   AjaxPost(addOverlayItemsUrl, { 'overlay_id': overlayId, "item_type": itemType, "item_data": itemData }, (e) => {}, handleAjaxError);
@@ -606,7 +581,7 @@ function submitAddForm(form)
   $("#close-add-item").click();
 }
 
-function deleteSelectedItem()
+function deleteSelectedItem(e)
 {
   if (selectedItem === undefined)
   {
@@ -619,6 +594,64 @@ function deleteSelectedItem()
   
     AjaxPost(deleteOverlayItemUrl, { "overlay_id": overlayId, "item_type": itemType, "item_id": selectedItem }, (e) => {}, (e) => {});
   }
+}
+
+function resetSelectedItem(e)
+{
+  if (selectedItem === undefined)
+  {
+    return;
+  }
+
+  var itemType = itemDict[selectedItem]['item_type'];
+  
+  switch (itemType)
+  {
+    case "StopwatchItem":
+      itemDict[selectedItem]["item_data"]["timer_start"] = Math.round(Date.now() / 1000);
+      itemDict[selectedItem]["item_data"]["pause_time"] = itemDict[selectedItem]["item_data"]["timer_start"];
+      break;
+    default:
+      break;
+  }
+
+  itemDict[selectedItem]["local_changes"] = true;
+}
+
+function pauseSelectedItem(e)
+{
+  if (selectedItem === undefined)
+  {
+    return;
+  }
+
+  var itemType = itemDict[selectedItem]['item_type'];
+  
+  switch (itemType)
+  {
+    case "StopwatchItem":
+      var wasPaused = itemDict[selectedItem]["item_data"]["paused"];
+      var timeNow = Math.round(Date.now() / 1000);
+
+      if (wasPaused)
+      {
+        var timeSincePause = timeNow - itemDict[selectedItem]["item_data"]["pause_time"];
+        itemDict[selectedItem]["item_data"]["timer_start"] += timeSincePause;
+        $(e.currentTarget).text("Pause");
+      }
+      else 
+      {
+        $(e.currentTarget).text("Unpause");
+      }
+
+      itemDict[selectedItem]["item_data"]["pause_time"] = timeNow;
+      itemDict[selectedItem]["item_data"]["paused"] = !wasPaused;
+      break;
+    default:
+      break;
+  }
+
+  itemDict[selectedItem]["local_changes"] = true;
 }
 
 function openAddItemTab(event, tabId)
@@ -673,6 +706,14 @@ $(window).on('load', function() {
   }
 
   $(".delete-item").click((e) => {
-    deleteSelectedItem();
+    deleteSelectedItem(e);
+  });
+
+  $(".reset-item").click((e) => {
+    resetSelectedItem(e);
+  });
+
+  $(".pause-item").click((e) => {
+    pauseSelectedItem(e);
   });
 });

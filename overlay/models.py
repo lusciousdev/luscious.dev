@@ -78,8 +78,8 @@ class ImageItem(AbstractItem):
 class AbstractTextItem(AbstractItem):
   font_size = models.IntegerField(default = 12)
   color = models.CharField(max_length = 64, default = "#FFFFFF")
-  outline = models.CharField(max_length = 64, default = "#000000")
-  outline_enabled = models.BooleanField(default = False)
+  background = models.CharField(max_length = 64, default = "#000000")
+  background_enabled = models.BooleanField(default = False)
   
   class Meta:
     abstract = True
@@ -88,8 +88,8 @@ class AbstractTextItem(AbstractItem):
     d = super().to_data_dict()
     d["font_size"] = self.font_size
     d["color"] = self.color
-    d["outline"] = self.outline
-    d["outline_enabled"] = self.outline_enabled
+    d["background"] = self.background
+    d["background_enabled"] = self.background_enabled
     return d
   
 class TextItem(AbstractTextItem):
@@ -102,14 +102,21 @@ class TextItem(AbstractTextItem):
     d["text"] = self.text
     return d
   
-class TimerItem(AbstractTextItem):
-  item_type = models.CharField(max_length = 32, default = "TimerItem", editable = False)
+class StopwatchItem(AbstractTextItem):
+  item_type = models.CharField(max_length = 32, default = "StopwatchItem", editable = False)
   
-  timer_start = models.DateTimeField('timer start')
+  timer_format = models.TextField(default = "{0}")
+  timer_start = models.BigIntegerField(default = int(datetime.datetime.now().timestamp()))
+  
+  paused = models.BooleanField(default = False)
+  pause_time = models.BigIntegerField(default = int(datetime.datetime.now().timestamp()))
   
   def to_data_dict(self):
     d = super().to_data_dict()
+    d["timer_format"] = self.timer_format
     d["timer_start"] = self.timer_start
+    d["paused"] = self.paused
+    d["pause_time"] = self.pause_time
     return d
   
 class CounterItem(AbstractTextItem):
@@ -127,6 +134,6 @@ class CounterItem(AbstractTextItem):
 ITEM_TYPES = [
   ImageItem,
   TextItem,
-  TimerItem,
+  StopwatchItem,
   CounterItem,
 ]
