@@ -5,6 +5,7 @@ const getOverlayItemsUrl  = data.getitemsurl;
 const addOverlayItemsUrl  = data.additemsurl;
 const editOverlayItemsUrl = data.edititemsurl;
 const deleteOverlayItemUrl = data.deleteitemurl;
+const overlayOwner = data.overlayOwner;
 
 var scaledOverlayWidth = -1;
 var scaledOverlayHeight = -1;
@@ -240,6 +241,9 @@ function onResize(event)
 
   $("#overlay").width(scaledOverlayWidth);
   $("#overlay").height(scaledOverlayHeight);
+
+  $("#twitch-embed").width(scaledOverlayWidth);
+  $("#twitch-embed").height(scaledOverlayHeight);
 
   for (const prop in itemDict)
   {
@@ -725,6 +729,26 @@ function openAddItemTab(event, tabId)
   $(event.currentTarget).addClass("active");
 }
 
+function toggleEmbeddedTwitchStream(e)
+{
+  var checked = $("#embed-checkbox").is(":checked");
+
+  if (checked)
+  {
+    $("#twitch-embed").html(`<iframe
+    src="https://player.twitch.tv/?channel={0}&parent={1}&muted=true"
+    height="100%"
+    width="100%"
+    class="noselect"
+    frameBorder="0">
+</iframe>`.format(overlayOwner, location.hostname));
+  }
+  else
+  {
+    $("#twitch-embed").html("");
+  }
+}
+
 $(window).on('load', function() {
   onResize();
   getOverlayItems();
@@ -759,6 +783,11 @@ $(window).on('load', function() {
   {
     $(".tabcontent").eq(i).css({ "z-index": i });
   }
+
+  toggleEmbeddedTwitchStream();
+  $("#embed-checkbox").change((e) => {
+    toggleEmbeddedTwitchStream(e);
+  });
 
   $(".delete-item").click((e) => {
     deleteSelectedItem(e);

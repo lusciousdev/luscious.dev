@@ -25,7 +25,8 @@
         data-edititemsurl="{% url 'overlay:api_edit_overlay_items' %}"
         data-deleteitemurl="{% url 'overlay:api_delete_overlay_item' %}"
         data-overlaywidth="{{ collaborativeoverlay.width }}"
-        data-overlayheight="{{ collaborativeoverlay.height }}">
+        data-overlayheight="{{ collaborativeoverlay.height }}"
+        data-overlayowner="{{ collaborativeoverlay.owner.username }}">
 </script>
 {% endblock %}
 
@@ -41,6 +42,12 @@
       <div class="site-title">
         Edit {{ collaborativeoverlay.name }}
       </div>
+
+      <div class="sidebar-item" id="enable-twitch-embed">
+        <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
+        <label for="enable-embed">Embed Twitch Stream</label>
+      </div>
+
       <div class="big-button" id="open-add-item">
         Add item.
       </div>
@@ -85,7 +92,7 @@
     </div>
     <div id="main-container">
       <div id="overlay" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};">
-
+        <div id="twitch-embed" class="noselect" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};" />
       </div>
     </div>
     <div class="modal" id="add-item-modal">

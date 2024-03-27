@@ -35,6 +35,13 @@ body {
   margin-bottom: 50px;
 }
 
+.sidebar-item {
+  font-size: 1.33em;
+  font-weight: bold;
+
+  padding-bottom: 45px; 
+}
+
 .big-button {
   font-size: 1.5em;
   font-weight: bold;
@@ -135,6 +142,8 @@ body {
         -ms-user-select: none; /* Internet Explorer/Edge */
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome, Edge, Opera and Firefox */
+
+  pointer-events: none;
 }
 
 .grabber {
