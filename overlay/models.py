@@ -11,6 +11,9 @@ ID_LENGTH = 16
 def id_gen() -> str:
   return int_to_base36(uuid.uuid4().int)[:ID_LENGTH]
 
+def current_time_seconds() -> int:
+  return int(datetime.datetime.now().timestamp())
+
 class NonConsecutiveModel(models.Model):
   id = models.CharField(max_length = ID_LENGTH, primary_key = True, default = id_gen, editable = False)
   
@@ -106,10 +109,10 @@ class StopwatchItem(AbstractTextItem):
   item_type = models.CharField(max_length = 32, default = "StopwatchItem", editable = False)
   
   timer_format = models.TextField(default = "{0}")
-  timer_start = models.BigIntegerField(default = int(datetime.datetime.now().timestamp()))
+  timer_start = models.BigIntegerField(default = current_time_seconds)
   
   paused = models.BooleanField(default = False)
-  pause_time = models.BigIntegerField(default = int(datetime.datetime.now().timestamp()))
+  pause_time = models.BigIntegerField(default = current_time_seconds)
   
   def to_data_dict(self):
     d = super().to_data_dict()
