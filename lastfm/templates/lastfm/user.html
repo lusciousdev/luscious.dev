@@ -1,0 +1,32 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'global.css' %}">
+<link rel="stylesheet" href="{% static 'lastfm/style.css' %}">
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>last.fm Collage</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="generator-form">
+        <div>
+          <h1>last.fm Collage Generator</h1>
+          <form method="post">
+              {% csrf_token %}
+              {{ form.as_p }}
+              <input type="submit" value="Generate">
+          </form>
+        </div>
+      </div>
+      <div>
+        <div class="grid size-{{ size }}">
+        {% for album in topalbums %}
+          <div class="grid-album"><img src="{{ album.art }}"></div>
+        {% endfor %}
+        </div>
+      </div>
+  </body>
+</html>

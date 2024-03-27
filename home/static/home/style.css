@@ -1,0 +1,42 @@
+html {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--text);
+}
+
+a {
+  color: var(--link);
+}
+
+a:visited {
+  color: var(--link);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  
+  padding: 50px;
+  box-sizing: border-box;
+  box-shadow: 0px 0px 25px 0px #000;
+
+  min-width: 350px;
+  width: 60%;
+  min-height: 100%;
+
+  background: var(--foreground);
+}
