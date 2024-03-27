@@ -51,6 +51,7 @@ class AbstractItem(NonConsecutiveModel):
   height = models.IntegerField(default = 100)
   rotation = models.FloatField(default = 0)
   visible = models.BooleanField(default = True)
+  minimized = models.BooleanField(default = False)
   
   class Meta:
     abstract = True
@@ -66,6 +67,7 @@ class AbstractItem(NonConsecutiveModel):
       "height": self.height,
       "rotation": self.rotation,
       "visible": self.visible,
+      "minimized": self.minimized,
     }
     
 class ImageItem(AbstractItem):

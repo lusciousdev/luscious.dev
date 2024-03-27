@@ -44,7 +44,7 @@ function setTextItemContent(overlayElement, itemId, itemText, itemData)
     "font-size": "{0}pt".format(fontSize),
     "color": itemData['color'],
     "background-color": (itemData['background_enabled']) ? itemData['background'] : "#00000000",
-    "visibility": (itemData['visible']) ? "visible" : "hidden",
+    "visibility": (itemData['visible']) ? "inherit" : "hidden",
     "font-family": "{0}, sans-serif".format(itemData["font"]),
   });
 }
@@ -68,7 +68,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         $(imgElemId).on('dragstart', (event) => { event.preventDefault(); });
 
         $(imgElemId).css({
-          "visibility": (itemData['visible']) ? "visible" : "hidden",
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
       case "TextItem":
@@ -113,7 +113,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         $("#{0}-img".format(itemId)).attr('height', "{0}px".format(height));
 
         $("#{0}-img".format(itemId)).css({
-          "visibility": (itemData['visible']) ? "visible" : "hidden",
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
       case "TextItem":
@@ -139,6 +139,10 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
 
     afterEditCallback();
   }
+
+  $(itemElemId).css({
+    "visibility": (!itemData['minimized']) ? "visible" : "hidden",
+  });
 
   setItemPosition(itemId, top, left, width, height, z, rotation);
 }

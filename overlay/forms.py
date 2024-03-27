@@ -63,6 +63,7 @@ BASE_WIDGETS = {
   'height': forms.NumberInput(attrs={ "field-type": "integer" }),
   'rotation': forms.NumberInput(attrs={ "field-type": "float" }),
   'visible': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
+  'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
 }
 
 FONT_CHOICES = (
@@ -78,6 +79,7 @@ FONT_CHOICES = (
   ("Nabla", "Nabla"),
   ("Honk", "Honk"),
   ("Bungee Spice", "Bungee Spice"),
+  ("Runescape", "Runescape")
 )
 
 BASE_TEXT_WIDGETS = {

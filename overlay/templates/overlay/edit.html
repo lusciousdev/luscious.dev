@@ -36,6 +36,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>"{{ collaborativeoverlay.name }}" - Edit</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   </head>
   <body>
     <div id="sidebar">
@@ -43,52 +44,60 @@
         Edit {{ collaborativeoverlay.name }}
       </div>
 
-      <div class="sidebar-item" id="enable-twitch-embed">
-        <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
-        <label for="enable-embed">Embed Twitch Stream</label>
+      <div class="sidebar-section" id="sidebar-controls">
+        <div class="sidebar-item" id="enable-twitch-embed">
+          <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
+          <label for="enable-embed">Embed Twitch Stream</label>
+        </div>
+
+        <div class="big-button" id="open-add-item">
+          Add item.
+        </div>
       </div>
 
-      <div class="big-button" id="open-add-item">
-        Add item.
+      <div class="sidebar-section" id="item-select-list">
+
       </div>
 
-      {% for k, form in forms.edit.items %}
-      <div class="form-container edit-container hidden" id="edit-{{ k }}-container">
-        <form class="item-form edit-form" id="edit-{{ k }}-form">
-          <div class="item-title">
-            Edit {{ form.get_pretty_name }}
-          </div>
-          {{ form.non_field_errors }}
-          {% for field in form.hidden_fields %}
-          <span class="hidden">{{ field }}</span>
-          {% endfor %}
-          <table>
-          {% for field in form.visible_fields %}
-            <tr>
-              <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
-              <td>
-                {{ field }}
-                {% for error in field.errors %}
-                <br>
-                <span class="field-error">{{ error|escape }}</span>
-                {% endfor %}
-              </td>
-            </tr>
-          {% endfor %}
-            <tr>
-              <td></td>
-              <td>
-                {% if k == "StopwatchItem" %}
-                <div class="medium-button pause-item" id="pause-{{ k }}">Pause</div>
-                <div class="medium-button reset-item" id="reset-{{ k }}">Reset</div>
-                {% endif %}
-                <div class="medium-button delete-item" id="delete-{{ k }}">Delete</div>
-              </td>
-            </tr>
-          </table>
-        </form>
+      <div class="sidebar-section" id="item-edit-forms">
+        {% for k, form in forms.edit.items %}
+        <div class="form-container edit-container hidden" id="edit-{{ k }}-container">
+          <form class="item-form edit-form" id="edit-{{ k }}-form">
+            <div class="item-title">
+              Edit {{ form.get_pretty_name }}
+            </div>
+            {{ form.non_field_errors }}
+            {% for field in form.hidden_fields %}
+            <span class="hidden">{{ field }}</span>
+            {% endfor %}
+            <table>
+            {% for field in form.visible_fields %}
+              <tr>
+                <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+                <td>
+                  {{ field }}
+                  {% for error in field.errors %}
+                  <br>
+                  <span class="field-error">{{ error|escape }}</span>
+                  {% endfor %}
+                </td>
+              </tr>
+            {% endfor %}
+              <tr>
+                <td></td>
+                <td>
+                  {% if k == "StopwatchItem" %}
+                  <div class="medium-button pause-item" id="pause-{{ k }}">Pause</div>
+                  <div class="medium-button reset-item" id="reset-{{ k }}">Reset</div>
+                  {% endif %}
+                  <div class="medium-button delete-item" id="delete-{{ k }}">Delete</div>
+                </td>
+              </tr>
+            </table>
+          </form>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
     <div id="main-container">
       <div id="overlay" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};">

@@ -14,6 +14,7 @@ const overlayHeight = parseInt(data.overlayheight, 10);
 
 var itemDict = {};
 var selectedItem = undefined;
+var otherSelectedItems = []
 
 const GrabTypes = {
   Move: 0,
@@ -162,8 +163,8 @@ function handleGetItemsResponse(data)
     var rotation = itemData['rotation'];
 
     addOrUpdateItem("#overlay", itemId, itemType, top, left, width, height, z, rotation, itemData, 
-      () => { $("#{0}".format(itemId)).mousedown(onMousedownItem); addGrabbers(itemId);},
-      () => {});
+      () => { addItemCallback(itemId, itemType); },
+      () => { updateItemCallback(itemId, itemType); });
   }
 
   for (itemId in itemSeen)
@@ -171,6 +172,7 @@ function handleGetItemsResponse(data)
     if (!itemSeen[itemId])
     {
       $("#{0}".format(itemId)).remove();
+      $("#{0}-list-entry".format(itemId)).remove();
 
       if (itemId == selectedItem)
       {
@@ -178,6 +180,61 @@ function handleGetItemsResponse(data)
       }
     }
   }
+}
+
+function addItemCallback(itemId, itemType)
+{
+  $("#{0}".format(itemId)).mousedown(onMousedownItem);
+  addGrabbers(itemId);
+
+  var item = itemDict[itemId]
+
+  var itemIcon = 'text_snippet'
+  switch (itemType)
+  {
+    case "ImageItem":
+      itemIcon = 'image'
+      break
+    case "StopwatchItem":
+      itemIcon = 'timer'
+      break
+    case "CounterItem":
+      itemIcon = '123'
+      break
+    case "TextItem":
+    default:
+      break;
+  }
+
+  $("#item-select-list").append(`<div class="item-list-entry" id="{0}-list-entry" item_id="{0}">
+    <span class="material-symbols-outlined">{1}</span> - {2}
+  </div>`.format(itemId, itemIcon, item["item_data"]["name"]));
+
+  $("#{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
+}
+
+function updateItemCallback(itemId, itemType)
+{
+  var item = itemDict[itemId]
+
+  var itemIcon = 'text_snippet'
+  switch (itemType)
+  {
+    case "ImageItem":
+      itemIcon = 'image'
+      break
+    case "StopwatchItem":
+      itemIcon = 'timer'
+      break
+    case "CounterItem":
+      itemIcon = '123'
+      break
+    case "TextItem":
+    default:
+      break;
+  }
+
+  $("#{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(itemIcon, item["item_data"]["name"]));
 }
 
 function handleEditItemsSuccess(data)
@@ -265,7 +322,13 @@ function onResize(event)
   }
 }
 
-function onMousedownItem(e) {
+function onMouseDownItemList(e, itemId)
+{
+  selectItem(itemId);
+}
+
+function onMousedownItem(e) 
+{
   e.stopImmediatePropagation();
 
   window.dragData = {};
@@ -475,6 +538,7 @@ function clearSelectedItem()
   if (selectedItem !== undefined)
   {
     $("#{0}".format(selectedItem)).removeClass("selected").addClass("unselected");
+    $("#{0}-list-entry".format(selectedItem)).removeClass("selected-list-entry");
   }
   
   for (var i = 0; i < $(".edit-container").length; i++)
@@ -499,6 +563,7 @@ function selectItem(itemId)
 
   selectedItem = itemId;
   $("#{0}".format(selectedItem)).removeClass("unselected").addClass("selected");
+  $("#{0}-list-entry".format(itemId)).addClass("selected-list-entry");
 
   var itemType = itemDict[selectedItem]['item_type'];
   var containerId = "#edit-{0}-container".format(itemType);
