@@ -1,0 +1,6 @@
+{% load socialaccount %}
+
+<h1>Twitch Collaborative Overlay</h1>
+
+<p>Welcome {{ user.username }} ({{ user.email }})</p>
+<a href="{% url 'account_logout' %}">Logout</a>

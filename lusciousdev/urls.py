@@ -21,4 +21,6 @@ urlpatterns = [
   path("", include("home.urls")),
   path("lastfm/", include("lastfm.urls")),
   path('admin/', admin.site.urls),
+  path('overlay/', include('overlay.urls')),
+  path('accounts/', include('allauth.urls')),
 ]

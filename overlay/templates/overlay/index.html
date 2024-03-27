@@ -1,0 +1,11 @@
+{% load socialaccount %}
+
+<h1>Twitch Collaborative Overlay</h1>
+
+{% if user.is_authenticated %}
+<p>Welcome {{ user.username }}</p>
+<a href="{% url 'account_logout' %}">Logout</a>
+{% else %}
+{% url 'overlay:profile' as next_url %}
+<a href="{% provider_login_url 'twitch' process='login' next=next_url %}">Sign in with Twitch</a>
+{% endif %}

@@ -42,8 +42,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.twitch',
+    
+    'home',
     'lastfm',
-    "home",
+    'overlay',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +61,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'lusciousdev.urls'
@@ -74,16 +83,42 @@ TEMPLATES = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by email
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1
+
+ACCOUNT_EMAIL_VERIFICATION = "none"
+
+LOGIN_REDIRECT_URL = "/"
+
 WSGI_APPLICATION = 'lusciousdev.wsgi.application'
 
+SOCIALACCOUNT_PROVIDERS = {
+  "twitch": {
+    "APP": {
+      "client_id": TWITCH_API_CLIENT_ID,
+      "secret": TWITCH_API_CLIENT_SECRET,
+    }
+  }
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'test_luscious-dev',
+        'USER': MARIADB_USER,
+        'PASSWORD': MARIADB_PASSWORD,
+        'HOST': MARIADB_HOST,
+        'PORT': MARIADB_PORT
     }
 }
 
@@ -152,6 +187,10 @@ LOGGING = {
 }
 
 CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev", "https://www.luscious.dev", "http://luscious.dev", "http://www.luscious.dev" ]
+
+# Celery
+CELERY_BROKER_URL     = f"redis://:{CELERY_PASSWORD}@{CELERY_HOST}:{CELERY_PASSWORD}"
+CELERY_RESULT_BACKEND = f"redis://:{CELERY_PASSWORD}@{CELERY_HOST}:{CELERY_PASSWORD}"
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"
