@@ -114,7 +114,7 @@ SOCIALACCOUNT_PROVIDERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': MARIADB_DATABSE,
+        'NAME': MARIADB_DATABASE,
         'USER': MARIADB_USER,
         'PASSWORD': MARIADB_PASSWORD,
         'HOST': MARIADB_HOST,
