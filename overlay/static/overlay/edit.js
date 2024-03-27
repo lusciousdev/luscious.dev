@@ -5,7 +5,7 @@ const getOverlayItemsUrl  = data.getitemsurl;
 const addOverlayItemsUrl  = data.additemsurl;
 const editOverlayItemsUrl = data.edititemsurl;
 const deleteOverlayItemUrl = data.deleteitemurl;
-const overlayOwner = data.overlayOwner;
+const overlayOwner = data.overlayowner;
 
 var scaledOverlayWidth = -1;
 var scaledOverlayHeight = -1;
