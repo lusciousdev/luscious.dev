@@ -139,3 +139,6 @@ GitHub.sublime-settings
 
 # Credentials
 secrets.py
+
+# Collected static
+staticfiles/
