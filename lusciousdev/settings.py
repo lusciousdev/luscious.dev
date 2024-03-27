@@ -27,8 +27,11 @@ SECRET_KEY = 'django-insecure-u1zo3q74d0oc8!-36-o(_zgpurq#&g(p&wpzv8g-k_3-c&xmy2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [
+    ".luscious.dev",
+    "127.0.0.1",
+    ".localhost"
+]
 
 # Application definition
 
@@ -147,6 +150,8 @@ LOGGING = {
         },
     },
 }
+
+CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev", "https://www.luscious.dev", "http://luscious.dev", "http://www.luscious.dev" ]
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"
