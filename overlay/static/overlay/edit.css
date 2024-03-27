@@ -1,0 +1,258 @@
+body {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  min-width: 100vw !important;
+}
+
+#sidebar, #main-container {
+  min-height: 100vh !important;
+}
+
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 25px;
+
+  min-width: 40ch;
+  width: 30%;
+  max-width: 80ch;
+
+  box-sizing: border-box;
+  box-shadow: 0px 0px 25px 0px #000;
+
+  background: var(--foreground);
+}
+
+.site-title {
+  font-size: 2.5em;
+  font-weight: bold;
+  margin-bottom: 50px;
+}
+
+.big-button {
+  font-size: 1.5em;
+  font-weight: bold;
+
+  background-color: var(--link);
+  cursor: pointer;
+  padding: 10px;
+}
+
+.medium-button {
+  font-size: 1.0em;
+  display: inline-block;
+
+  background-color: var(--link);
+  cursor: pointer;
+  padding: 5px 10px;
+  margin: 0px 3px;
+}
+
+.hidden {
+  display: none;
+}
+
+.edit-form {
+  margin-top: 25px;
+}
+
+.item-title {
+  font-size: 1.33em;
+}
+
+.form-container {
+  font-size: 1em;
+}
+
+.item-form input, textarea {
+  font-family: inherit;
+  font-size: 1.0em;
+}
+
+.item-form input[type=submit] {
+  font-size: 1.0em;
+  font-family: inherit;
+  color: var(--text);
+  background-color: var(--link);
+  
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  margin: 0px 3px;
+}
+
+#main-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+
+  min-width: 800px;
+
+  overflow: hidden;
+  z-index: 0;
+}
+
+#overlay {
+  background-color: #000;
+  position: relative;
+
+  z-index: 0;
+
+  --border-width: 4px;
+  --grabber-radius: 6px;
+  --grabber-offset: calc(calc(0px - var(--grabber-radius)) - calc(var(--border-width) / 2));
+}
+
+.unselected {
+  border-color: gray;
+  border-width: var(--border-width);
+  border-style: solid;
+}
+
+.selected {
+  border-color: var(--link);
+  border-width: var(--border-width);
+  border-style: solid;
+
+  cursor: move;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
+.grabber {
+  position: absolute;
+  display: inline-block;
+
+  border-color: inherit;
+  border-style: solid;
+  border-width: var(--grabber-radius);
+  border-radius: var(--grabber-radius);
+
+  width: 0px;
+  height: 0px;
+}
+
+.topleft {
+  top: var(--grabber-offset);
+  left: var(--grabber-offset);
+
+  cursor: nwse-resize!important;
+}
+
+.topright {
+  top: var(--grabber-offset);
+  right: var(--grabber-offset);
+
+  cursor: nesw-resize!important;
+}
+
+.bottomleft {
+  bottom: var(--grabber-offset);
+  left: var(--grabber-offset);
+
+  cursor: nesw-resize!important;
+}
+
+.bottomright {
+  bottom: var(--grabber-offset);
+  right: var(--grabber-offset);
+
+  cursor: nwse-resize!important;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 99999999999;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: auto;
+  background-color: rgb(0, 0, 0);
+  background-color: rgba(0, 0, 0, 0.4);
+
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: var(--background);
+  padding: 25px;
+}
+
+.close {
+  color: var(--link);
+  float: right;
+  font-size: 3em;
+  font-weight: bold;
+  margin: 0px 0px 0px 25px;;
+}
+
+.close:hover,
+.close:focus {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tab-nav {
+  float: right;
+}
+
+.tab-container {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.tab {
+  overflow: hidden;
+  border: 1px solid var(--foreground);
+  background-color: var(--lighter);
+}
+
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+}
+
+.tab button:hover {
+  background-color: var(--foreground);
+}
+
+.tab button.active {
+  background-color: var(--link);
+}
+
+.tabcontent {
+  visibility: hidden;
+  grid-row-start: 1;
+  grid-column-start: 1;
+  top: 0;
+  left: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--foreground);
+  border-top: none;
+}

@@ -1,0 +1,38 @@
+{% extends "overlay/base.html" %}
+
+{% load static %}
+{% load socialaccount %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'overlay/style.css' %}">
+{% endblock %}
+
+{% block title %}{{ action|capfirst }} Overlay - Collaborative Overlay{% endblock %}
+
+{% block content%}
+<h1 class="site-title">{{ action|capfirst }} a collaborative overlay</h1>
+<div class="editor-form">
+  <div>
+    <form method="post" class="editor-form">
+        {% csrf_token %}
+        <table>
+        {% for field in form %}
+          <tr>
+            <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+            <td>
+              {{ field }}
+              {% for error in field.errors %}
+              <br>
+              <span class="field-error">{{ error|escape }}</span>
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+          <tr>
+            <td></td>
+            <td><input type="submit" value="{{ action|capfirst }}"></td>
+          </tr>
+        </table>
+    </form>
+  </div>
+{% endblock %}

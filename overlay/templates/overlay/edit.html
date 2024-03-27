@@ -1,0 +1,120 @@
+{% load static %}
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+<link rel="stylesheet" href="{% static 'global.css' %}">
+<link rel="stylesheet" href="{% static 'overlay/overlay.css' %}">
+<link rel="stylesheet" href="{% static 'overlay/edit.css' %}">
+<script src="{% static 'util.js' %}"></script>
+<script src="{% static 'ajaxhelpers.js' %}"></script>
+<script src="{% static 'jquery-3.7.1.min.js' %}"></script>
+
+<script src="{% static 'overlay/util.js' %}"></script>
+<script src="{% static 'overlay/edit.js' %}"
+        defer
+        data-overlayid="{{ collaborativeoverlay.id }}"
+        data-getitemsurl="{% url 'overlay:api_get_overlay_items' %}"
+        data-additemsurl="{% url 'overlay:api_add_overlay_item' %}"
+        data-edititemsurl="{% url 'overlay:api_edit_overlay_items' %}"
+        data-deleteitemurl="{% url 'overlay:api_delete_overlay_item' %}"
+        data-overlaywidth="{{ collaborativeoverlay.width }}"
+        data-overlayheight="{{ collaborativeoverlay.height }}">
+</script>
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>"{{ collaborativeoverlay.name }}" - Edit</title>
+  </head>
+  <body>
+    <div id="sidebar">
+      <div class="site-title">
+        Edit {{ collaborativeoverlay.name }}
+      </div>
+      <div class="big-button" id="open-add-item">
+        Add item.
+      </div>
+
+      {% for k, form in forms.edit.items %}
+      <div class="form-container edit-container hidden" id="edit-{{ k }}-container">
+        <form class="item-form edit-form" id="edit-{{ k }}-form">
+          <div class="item-title">
+            Edit {{ k }}
+          </div>
+          {{ form.non_field_errors }}
+          {% for field in form.hidden_fields %}
+          <span class="hidden">{{ field }}</span>
+          {% endfor %}
+          <table>
+          {% for field in form.visible_fields %}
+            <tr>
+              <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+              <td>
+                {{ field }}
+                {% for error in field.errors %}
+                <br>
+                <span class="field-error">{{ error|escape }}</span>
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+            <tr>
+              <td></td>
+              <td><div class="medium-button delete-item" id="delete-{{ k }}">Delete</div></td>
+            </tr>
+          </table>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    <div id="main-container">
+      <div id="overlay" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};">
+
+      </div>
+    </div>
+    <div class="modal" id="add-item-modal">
+      <div class="modal-content">
+        <span class="close" id="close-add-item">&times;</span>
+
+        <div class="tab-nav">
+          <div class="tab" id="add-item-tabs">
+            {% for k, form in forms.add.items %}
+            <button class="tablink" onclick="openAddItemTab(event, 'add-{{ k }}')">{{ k }}</button>
+            {% endfor %}
+          </div>
+
+          <div class="tab-container">
+            {% for k, form in forms.add.items %}
+            <div class="form-container tabcontent" id="add-{{ k }}">
+              <form class="item-form add-form" id="add-{{ k }}-form">
+                <input type='hidden' id="id_item_type" name="item_type" value="{{ k }}">
+                {{ form.non_field_errors }}
+                <table>
+                {% for field in form.visible_fields %}
+                  <tr>
+                    <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+                    <td>
+                      {{ field }}
+                      {% for error in field.errors %}
+                      <br>
+                      <span class="field-error">{{ error|escape }}</span>
+                      {% endfor %}
+                    </td>
+                  </tr>
+                {% endfor %}
+                  <tr>
+                    <td></td>
+                    <td><input type="submit" value="Add"></td>
+                  </tr>
+                </table>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

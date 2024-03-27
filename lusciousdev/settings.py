@@ -114,7 +114,7 @@ SOCIALACCOUNT_PROVIDERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test_luscious-dev',
+        'NAME': MARIADB_DATABSE,
         'USER': MARIADB_USER,
         'PASSWORD': MARIADB_PASSWORD,
         'HOST': MARIADB_HOST,

@@ -1,0 +1,28 @@
+{% load static %}
+{% load socialaccount %}
+
+<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+<link rel="stylesheet" href="{% static 'overlay/overlay.css' %}">
+<script src="{% static 'util.js' %}"></script>
+<script src="{% static 'ajaxhelpers.js' %}"></script>
+<script src="{% static 'jquery-3.7.1.min.js' %}"></script>
+
+<script src="{% static 'overlay/util.js' %}"></script>
+<script src="{% static 'overlay/view.js' %}"
+        defer
+        data-overlayid="{{ collaborativeoverlay.id }}"
+        data-getitemsurl="{% url 'overlay:api_get_overlay_items' %}"
+        data-overlaywidth="{{ collaborativeoverlay.width }}"
+        data-overlayheight="{{ collaborativeoverlay.height }}">
+</script>
+
+<html lang="en" style="background-color: #00000000;">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>"{{ collaborativeoverlay.name }}" - View</title>
+  </head>
+  <body style="position: relative; top: 0; left: 0; width: {{ collaborativeoverlay.width }}; height: {{ collaborativeoverlay.height }}; background-color: #00000000; overflow: hidden;">
+    
+  </body>
+</html>

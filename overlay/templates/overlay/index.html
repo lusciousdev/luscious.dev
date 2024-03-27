@@ -1,11 +1,26 @@
+{% extends "overlay/base.html" %}
+
+{% load static %}
 {% load socialaccount %}
 
-<h1>Twitch Collaborative Overlay</h1>
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'overlay/index.css' %}">
+{% endblock %}
+
+{% block title %}Collaborative Overlay{% endblock %}
+
+{% block content %}
+<h1>Collaborative Overlay</h1>
 
 {% if user.is_authenticated %}
-<p>Welcome {{ user.username }}</p>
-<a href="{% url 'account_logout' %}">Logout</a>
+<p>Welcome <i>{{ user.username }}</i></p>
+<p><a href="{% url "overlay:profile" %}">Your profile</a></p>
+<form action="{% url 'account_logout' %}?next={% url 'overlay:index' %}" method="post">{% csrf_token %}<input class="small-button" id="logout-button" type="submit" value="Log out"></form>
 {% else %}
 {% url 'overlay:profile' as next_url %}
-<a href="{% provider_login_url 'twitch' process='login' next=next_url %}">Sign in with Twitch</a>
+<form action="{% provider_login_url 'twitch' next=next_url %}" method="post">
+  {% csrf_token %}
+  <button class="small-button" id="login-button" id="twitch-login" type="submit">Log in with Twitch</button>
+</form>
 {% endif %}
+{% endblock %}
