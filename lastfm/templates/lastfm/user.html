@@ -2,6 +2,7 @@
 
 <link rel="stylesheet" href="{% static 'global.css' %}">
 <link rel="stylesheet" href="{% static 'lastfm/style.css' %}">
+<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
 
 <html lang="en">
   <head>
@@ -11,13 +12,23 @@
   </head>
   <body>
     <div class="container">
+      <h1 class="site-title">last.fm Collage Generator</h1>
       <div class="generator-form">
         <div>
-          <h1>last.fm Collage Generator</h1>
-          <form method="post">
+          <form method="post" class="generator-form">
               {% csrf_token %}
-              {{ form.as_p }}
-              <input type="submit" value="Generate">
+              <table>
+              {% for field in form %}
+                <tr>
+                  <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+                  <td>{{ field }}</td>
+                </tr>
+              {% endfor %}
+                <tr>
+                  <td></td>
+                  <td><input type="submit" value="Generate"></td>
+                </tr>
+              </table>
           </form>
         </div>
       </div>
@@ -27,6 +38,15 @@
           <div class="grid-album"><img src="{{ album.art }}"></div>
         {% endfor %}
         </div>
+        <table class="album-list">
+          {% for album in topalbums %}
+            <tr>
+              <td class="album-rank">{{ forloop.counter }}.</td>
+              <td class="album-name">{{ album.name }}</td>
+              <td class="album-artist">{{ album.artist }}<td>
+            </tr>
+          {% endfor %}
+        </table>
       </div>
   </body>
 </html>

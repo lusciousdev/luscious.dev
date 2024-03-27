@@ -6,70 +6,30 @@ html {
   color: var(--text);
 }
 
-a {
-  color: var(--link);
-}
-
-a:visited {
-  color: var(--link);
-}
-
-body {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-.container {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  
-  padding: 50px;
-  box-sizing: border-box;
-  box-shadow: 0px 0px 25px 0px #000;
-
-  min-width: 350px;
-  width: 60%;
-  min-height: 100%;
-
-  background: var(--foreground);
-}
-
 .generator-form {
   display: flex;
-  flex-flow: column;
+  flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
+}
+
+.generator-form td {
+  text-align: right;
+}
+
+.generator-form td select {
+  width: 100%;
+}
+
+.generator-form .label {
+  margin-right: 5px;
 }
 
 .grid {
   display: flex;
   flex-flow: row wrap;
-  margin-left: auto;
-  margin-right: auto;
-  justify-content: center;
+  justify-content: flex-start;
   width: 100%;
-}
-
-.size-3 {
-  max-width: 600px;
-}
-
-.size-4 {
-  max-width: 600px;
-}
-
-.size-5 {
-  max-width: 600px;
-}
-
-.size-6 {
   max-width: 600px;
 }
 
@@ -104,4 +64,25 @@ body {
 .grid-album img {
   width: 100%;
   height: auto;
+}
+
+.album-list {
+  border-collapse: collapse;
+  margin-top: 25px;
+}
+
+.album-list .album-rank {
+  text-align: right;
+}
+
+.album-list td {
+  padding-right: 10px;
+}
+
+.album-list .album-name {
+  font-weight: bold;
+}
+
+.album-list tr:nth-child(even) {
+  background: #00000030;
 }

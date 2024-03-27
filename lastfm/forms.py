@@ -9,14 +9,14 @@ PERIOD_CHOICES = (
   ("overall", "All"),
 )
 
-SIZE_CHOICES = {
+SIZE_CHOICES = (
   (3, "3x3"),
   (4, "4x4"),
   (5, "5x5"),
   (6, "6x6")
-}
+)
 
 class InfoForm(forms.Form):
-  username = forms.CharField(label="Username", max_length=128)
-  period   = forms.ChoiceField(choices = PERIOD_CHOICES, label = "Period")
-  size     = forms.ChoiceField(choices = SIZE_CHOICES, label = "Size")
+  username = forms.CharField(label="Username", max_length=128, widget=forms.TextInput(attrs={'class': 'char-field'}))
+  period   = forms.ChoiceField(choices = PERIOD_CHOICES, label = "Period", widget=forms.Select(attrs={'class': 'choice-field'}))
+  size     = forms.ChoiceField(choices = SIZE_CHOICES, label = "Size", widget=forms.Select(attrs={'class': 'choice-field'}))
