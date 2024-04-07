@@ -727,8 +727,8 @@ function selectItem(itemId)
     if (window.ctrlheld)
     {
       unselectItem(itemId);
-      return;
     }
+    return;
   }
 
   if (selectedItem !== undefined && !window.ctrlheld)
