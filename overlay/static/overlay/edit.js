@@ -729,12 +729,6 @@ function selectItem(itemId)
       unselectItem(itemId);
       return;
     }
-    else if (itemId != selectedItem && otherSelectedItems.length > 0)
-    {
-      clearSelectedItem();
-      selectItem(itemId);
-      return;
-    }
   }
 
   if (selectedItem !== undefined && !window.ctrlheld)
