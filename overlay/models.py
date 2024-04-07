@@ -81,7 +81,7 @@ class ImageItem(AbstractItem):
   
   def to_data_dict(self):
     d = super().to_data_dict()
-    d['image_url'] = self.image.url
+    d['image_url'] = "" if not self.image else self.image.url
     d['url'] = self.url
     return d
   
