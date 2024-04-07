@@ -55,13 +55,13 @@ class DeleteCollaborativeOverlayForm(forms.Form):
     
 
 BASE_WIDGETS = {
-  'name': forms.TextInput(attrs={ "field-type": "text" }),
-  'x': forms.NumberInput(attrs={ "field-type": "integer" }),
-  'y': forms.NumberInput(attrs={ "field-type": "integer" }),
-  'z': forms.NumberInput(attrs={ "field-type": "integer" }),
-  'width': forms.NumberInput(attrs={ "field-type": "integer" }),
-  'height': forms.NumberInput(attrs={ "field-type": "integer" }),
-  'rotation': forms.NumberInput(attrs={ "field-type": "float" }),
+  'name': forms.TextInput(attrs={ "field-type": "text", 'size': 40 }),
+  'x': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'y': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'z': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'width': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'height': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'rotation': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
   'visible': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
   'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
 }
@@ -84,9 +84,9 @@ FONT_CHOICES = (
 
 BASE_TEXT_WIDGETS = {
   'font': forms.Select(attrs={ "field-type": "text" }),
-  'font_size': forms.NumberInput(attrs={ "field-type": "integer" }),
-  'color': forms.TextInput(attrs={ "field-type": "text" }),
-  'background': forms.TextInput(attrs={ "field-type": "text" }),
+  'font_size': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'color': forms.TextInput(attrs={ "field-type": "text", 'size': 40 }),
+  'background': forms.TextInput(attrs={ "field-type": "text", 'size': 40 }),
   'background_enabled': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
 }
     
@@ -99,15 +99,20 @@ class EditItemForm(forms.ModelForm):
     exclude = [ "overlay", "id", "item_type" ]
     
 class EditImageItem(EditItemForm):
+  image_url = forms.CharField(max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", 'readonly': 'readonly', 'size': 40 }), label = "Uploaded Image URL")
+  
   def get_pretty_name(self):
     return "Image"
+  
+  field_order = ["name", "x", "y", "z", "width", "height", "rotation", "visible", "minimized", "image", "image_url", "url"]
   
   class Meta:
     model = ImageItem
     exclude = EditItemForm.Meta.exclude
     
     widgets = {
-      'url': forms.Textarea(attrs={ "field-type": "text" }),
+      'url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
+      'image': forms.ClearableFileInput(attrs={ "field-type": "file" }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -127,7 +132,7 @@ class EditTextItem(AbstractEditText):
     exclude = EditItemForm.Meta.exclude
     
     widgets = {
-      'text': forms.Textarea(attrs={ "field-type": "text" }),
+      'text': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -142,7 +147,7 @@ class EditStopwatchItem(AbstractEditText):
     exclude = EditItemForm.Meta.exclude
     
     widgets = {
-      'timer_format': forms.Textarea(attrs={ "field-type": "text" }),
+      'timer_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
       'timer_start': forms.HiddenInput(attrs={ "field-type": "integer" }),
       'pause_time': forms.HiddenInput(attrs={ "field-type": "integer" }),
       'paused': forms.HiddenInput(attrs={ "field-type": "boolean" }),
@@ -181,7 +186,8 @@ class AddImageItem(AddItemForm):
     exclude = AddItemForm.Meta.exclude
     
     widgets = {
-      'url': forms.Textarea(attrs={ "field-type": "text" }),
+      'url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
+      'image': forms.ClearableFileInput(attrs={ "field-type": "file" }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -202,7 +208,7 @@ class AddTextItem(AbstractAddText):
     exclude = AddItemForm.Meta.exclude
     
     widgets = {
-      'text': forms.Textarea(attrs={ "field-type": "text" }),
+      'text': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -217,7 +223,7 @@ class AddStopwatchItem(AbstractAddText):
     exclude = AddItemForm.Meta.exclude
     
     widgets = {
-      'timer_format': forms.Textarea(attrs={ "field-type": "text" }),
+      'timer_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
       'timer_start': forms.HiddenInput(attrs={ "field-type": "integer" }),
       'pause_time': forms.HiddenInput(attrs={ "field-type": "integer" }),
       'paused': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
@@ -235,8 +241,8 @@ class AddCounterItem(AbstractAddText):
     exclude = AddItemForm.Meta.exclude
     
     widgets = {
-      'counter_format': forms.Textarea(attrs={ "field-type": "text" }),
-      'count': forms.NumberInput(attrs={ "field-type": "integer" }),
+      'counter_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
+      'count': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
     }
     
     widgets.update(BASE_WIDGETS)

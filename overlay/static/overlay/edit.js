@@ -6,6 +6,7 @@ window.ctrlheld = false;
 const overlayId = data.overlayid;
 const getOverlayItemsUrl  = data.getitemsurl;
 const addOverlayItemsUrl  = data.additemsurl;
+const editOverlayItemUrl = data.edititemurl;
 const editOverlayItemsUrl = data.edititemsurl;
 const deleteOverlayItemUrl = data.deleteitemurl;
 const overlayOwner = data.overlayowner;
@@ -14,6 +15,9 @@ var scaledOverlayWidth = -1;
 var scaledOverlayHeight = -1;
 const overlayWidth = parseInt(data.overlaywidth, 10);
 const overlayHeight = parseInt(data.overlayheight, 10);
+
+const maxWidthPercent = 0.667;
+const maxHeightPercent = 0.667;
 
 var itemDict = {};
 
@@ -233,6 +237,28 @@ function handleGetItemsResponse(data)
       }
     }
   }
+
+  $(".item-list-entry").sort(function(a, b) {
+    if ($(a).attr("item_name") == $(b).attr("item_name"))
+    {
+      if ($(a).attr("item_id") < $(b).attr("item_id"))
+      {
+        return -1;
+      }
+      else
+      {
+        return 1;
+      }
+    }
+    else if ($(a).attr("item_name") < $(b).attr("item_name"))
+    {
+      return -1;
+    }
+    else
+    {
+      return 1;
+    }
+  }).appendTo("#item-select-list");
 }
 
 function addItemCallback(itemId, itemType)
@@ -259,7 +285,7 @@ function addItemCallback(itemId, itemType)
       break;
   }
 
-  $("#item-select-list").append(`<div class="item-list-entry" id="{0}-list-entry" item_id="{0}">
+  $("#item-select-list").append(`<div class="item-list-entry" id="{0}-list-entry" item_id="{0}" item_name="{2}">
     <span class="material-symbols-outlined">{1}</span> - {2}
   </div>`.format(itemId, itemIcon, item["item_data"]["name"]));
 
@@ -288,6 +314,11 @@ function updateItemCallback(itemId, itemType)
   }
 
   $("#{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(itemIcon, item["item_data"]["name"]));
+
+  if (itemId == selectedItem && !itemDict[itemId]['locked'] && !itemDict[itemId]['local_changes'])
+  {
+    setEditFormInputs(selectedItem);
+  }
 }
 
 function handleEditItemsSuccess(data)
@@ -311,23 +342,32 @@ function getOverlayItems()
 function updateOverlayItems()
 {
   items = []
-  for (const prop in itemDict)
+  for (const itemId in itemDict)
   {
-    if (itemDict[prop]['local_changes'])
+    if (itemDict[itemId]['local_changes'])
     {
-      items.push({
-        "item_id": prop,
-        "item_type": itemDict[prop]['item_type'],
-        "item_data": itemDict[prop]['item_data'],
-      });
+      itemFormData = new FormData();
+      itemFormData.set("overlay_id", overlayId);
+      itemFormData.set("item_id", itemId);
+      itemFormData.set("item_type", itemDict[itemId]['item_type']);
+      
+      for (const itemProp in itemDict[itemId]['item_data'])
+      {
+        itemFormData.set(itemProp, itemDict[itemId]['item_data'][itemProp]);
+      }
 
-      if (!itemDict[prop]['locked']) itemDict[prop]['local_changes'] = false;
+      items.push(itemFormData);
+
+      if (!itemDict[itemId]['locked']) itemDict[itemId]['local_changes'] = false;
     }
   }
 
   if (items.length > 0)
   {
-    AjaxPost(editOverlayItemsUrl, { "overlay_id": overlayId, "items": items }, handleEditItemsSuccess, handleAjaxError);
+    for (const i in items)
+    {
+      AjaxFormPost(editOverlayItemUrl, items[i], handleEditItemsSuccess, handleAjaxError);
+    }
   }
   else
   {
@@ -340,10 +380,10 @@ function onResize(event)
   var mcWidth = $("#main-container").width();
   var mcHeight = $("#main-container").height();
 
-  scaledOverlayWidth = 0.8 * mcWidth;
+  scaledOverlayWidth = maxWidthPercent * mcWidth;
   scaledOverlayHeight = 9.0 / 16.0 * scaledOverlayWidth;
 
-  if (scaledOverlayHeight > (0.667 * mcHeight))
+  if (scaledOverlayHeight > (maxHeightPercent * mcHeight))
   {
     scaledOverlayHeight = 0.667 * mcHeight;
     scaledOverlayWidth = 16.0 / 9.0 * scaledOverlayHeight;
@@ -448,6 +488,11 @@ function onMousedownItem(e)
   }
 
   selectItem(dragData.elem.id);
+
+  if (selectedItem == undefined)
+  {
+    return;
+  }
 
   dragData.elemP0 = new Point(parseFloat($(dragData.elem).css('left')), parseFloat($(dragData.elem).css('top')));
   dragData.distP0 = Point.sub2(dragData.furthestCorner.point, new Point(e.pageX, e.pageY));
@@ -644,12 +689,53 @@ function clearSelectedItem()
   }
 }
 
+function unselectItem(itemId)
+{
+  if (itemId != selectedItem && !otherSelectedItems.includes(itemId))
+  {
+    return
+  }
+
+  if (itemId == selectedItem)
+  {
+    if (otherSelectedItems.length > 0)
+    {
+      selectedItem = otherSelectedItems.splice(0, 1)[0];
+      
+      openEditForm(selectedItem);
+      setEditFormInputs(selectedItem);
+    }
+    else
+    {
+      clearSelectedItem();
+      return;
+    }
+  }
+  else if (otherSelectedItems.includes(itemId))
+  {
+    otherSelectedItems.splice(otherSelectedItems.indexOf(itemId), 1);
+  }
+
+  getItemDiv(itemId).removeClass("selected").addClass("unselected");
+  $("#{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
+}
+
 function selectItem(itemId)
 {
-  if (otherSelectedItems.includes(itemId))
-    return;
-  if (itemId == selectedItem)
-    return;
+  if (otherSelectedItems.includes(itemId) || itemId == selectedItem)
+  {
+    if (window.ctrlheld)
+    {
+      unselectItem(itemId);
+      return;
+    }
+    else if (itemId != selectedItem && otherSelectedItems.length > 0)
+    {
+      clearSelectedItem();
+      selectItem(itemId);
+      return;
+    }
+  }
 
   if (selectedItem !== undefined && !window.ctrlheld)
   {
@@ -673,17 +759,29 @@ function selectItem(itemId)
 
   if (!addingItem)
   {
-    var itemType = itemDict[selectedItem]['item_type'];
-    var containerId = "#edit-{0}-container".format(itemType);
+    openEditForm(selectedItem);
+    setEditFormInputs(selectedItem);
+  }
+}
+
+function openEditForm(itemId)
+{
+  var itemType = itemDict[selectedItem]['item_type'];
+  var editContainerId = "#edit-{0}-container".format(itemType);
+
+  if ($(editContainerId).hasClass('hidden'))
+  {
+    for (var i = 0; i < $(".edit-container").length; i++)
+    {
+      $(".edit-container").eq(i).addClass("hidden");
+    }
   
-    $(containerId).removeClass("hidden");
+    $(editContainerId).removeClass("hidden");
   
     if ("paused" in itemDict[selectedItem]["item_data"])
     {
-      $("{0} .pause-item".format(containerId)).text(itemDict[selectedItem]["item_data"]["paused"] ? "Unpause" : "Pause");
+      $("{0} .pause-item".format(editContainerId)).text(itemDict[selectedItem]["item_data"]["paused"] ? "Unpause" : "Pause");
     }
-  
-    setEditFormInputs(selectedItem);
   }
 }
 
@@ -706,6 +804,8 @@ function setEditFormInputs(itemId)
     {
       case "checkbox":
         input.prop('checked', itemData[key]);
+        break;
+      case "file":
         break;
       default:
         input.prop('value', itemData[key]);
@@ -746,6 +846,17 @@ function inputToValue(inputObj)
           return inputObj.is(":checked");
         else
           return (inputVal == "true") ? true : false;
+      case "file":
+        if (inputObj.prop('files').length > 0)
+        {
+          f = inputObj.prop('files')[0];
+          inputObj.val('');
+          return f;
+        }
+        else
+        {
+          return undefined;
+        }
       case "text":
       default:
         return inputVal;
@@ -756,11 +867,6 @@ function inputToValue(inputObj)
 function updateItemDataFromInput(itemId, inputObj) 
 {
   var name = inputObj.attr('name');
-
-  if (!(name in itemDict[itemId]['item_data']))
-  {
-    return;
-  }
 
   var inputVal = inputToValue(inputObj);
 
@@ -774,9 +880,9 @@ function submitEditForm(form)
 {
   var itemId = $(form).find("#id_item_id").val();
 
-  for(var i = 0; i < $(form).find("input,textarea,select").length; i++)
+  for(var i = 0; i < $(form).find("input,textarea,select,file").length; i++)
   {
-    var inp = $(form).find("input,textarea,select").eq(i);
+    var inp = $(form).find("input,textarea,select,file").eq(i);
 
     updateItemDataFromInput(itemId, inp);
   }
@@ -788,9 +894,9 @@ function addFormToDict(form)
 {
   var itemDict = {}
 
-  for(var i = 0; i < $(form).find("input,textarea,select").length; i++)
+  for(var i = 0; i < $(form).find("input,textarea,file,select").length; i++)
   {
-    var inputObj = $(form).find("input,textarea,select").eq(i);
+    var inputObj = $(form).find("input,textarea,file,select").eq(i);
 
     var name = inputObj.attr('name');
     var inputVal = inputToValue(inputObj);
@@ -809,7 +915,17 @@ function submitAddForm(form)
   var itemType = $(form).find("#id_item_type").val();
   var itemData = addFormToDict(form);
 
-  AjaxPost(addOverlayItemsUrl, { 'overlay_id': overlayId, "item_type": itemType, "item_data": itemData }, (e) => {}, handleAjaxError);
+  var itemFormData = new FormData();
+
+  itemFormData.set("overlay_id", overlayId);
+  itemFormData.set("item_type", itemType);
+  
+  for (const itemProp in itemData)
+  {
+    itemFormData.set(itemProp, itemData[itemProp]);
+  }
+
+  AjaxFormPost(addOverlayItemsUrl, itemFormData, (e) => {}, handleAjaxError);
 
   $("#close-add-item").click();
 }

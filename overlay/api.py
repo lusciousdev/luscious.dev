@@ -1,12 +1,13 @@
 from typing import Any
 from django.shortcuts import render
-from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse, HttpRequest
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from allauth.socialaccount.models import SocialAccount
+from django.core.exceptions import FieldDoesNotExist
 from .forms import *
 import json
 import typing
@@ -40,13 +41,11 @@ def get_overlay_items(request):
   return JsonResponse(response, status = 200)
   
 @login_required
-def add_overlay_item(request):
+def add_overlay_item(request : HttpRequest):
   if request.method != "POST":
     return JsonResponse({ "error": "Invalid request type. "}, status = 501)
   
-  json_data = json.loads(request.body)
-  
-  overlay_id = json_data.get("overlay_id", "")
+  overlay_id = request.POST.get("overlay_id", "")
   
   try:
     overlay = CollaborativeOverlay.objects.get(id = overlay_id)
@@ -64,7 +63,7 @@ def add_overlay_item(request):
     except Editor.DoesNotExist:
       return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
-  item_type = json_data.get("item_type", "")
+  item_type = request.POST.get("item_type", "")
   
   if item_type == "":
     return JsonResponse({ "error": "Improperly formatted request." }, status = 400)
@@ -80,8 +79,24 @@ def add_overlay_item(request):
   if item_model is None:
     return JsonResponse({ "error": "Unrecognized item type." }, status = 400)
   
-  item_data = json_data.get("item_data", {})
-  item_instance = item_model(**item_data)
+  
+  item_instance = item_model()
+ 
+  for attr, val in request.POST.items():
+    try:
+      fieldtype = item_model._meta.get_field(attr).get_internal_type()
+      val = val if fieldtype != "BooleanField" else (val.lower() in ['true', '1', 'yes', 't', 'y'])
+      setattr(item_instance, attr, val)
+    except FieldDoesNotExist:
+      continue
+  
+  for attr, val in request.FILES.items():
+    try:
+      field = item_model._meta.get_field(attr)
+      setattr(item_instance, attr, val)
+    except FieldDoesNotExist:
+      continue
+    
   item_instance.overlay_id = overlay_id
   item_instance.save()
   
@@ -139,15 +154,13 @@ def delete_overlay_item(request):
   return JsonResponse({ "error": "" }, status = 200)
 
 @login_required
-def edit_overlay_item(request):
+def edit_overlay_item(request : HttpRequest):
   if request.method != "POST":
     return JsonResponse({ "error": "Invalid request type." }, status = 501)
   
-  json_data = json.loads(request.body)
-  
-  overlay_id = json_data.get("overlay_id", "")
-  item_id = json_data.get("item_id", "")
-  item_type = json_data.get("item_type", "")
+  overlay_id = request.POST.get("overlay_id", "")
+  item_id = request.POST.get("item_id", "")
+  item_type = request.POST.get("item_type", "")
   
   try:
     overlay = CollaborativeOverlay.objects.get(id = overlay_id)
@@ -181,9 +194,21 @@ def edit_overlay_item(request):
   except item_model.DoesNotExist:
     return JsonResponse({ "error": "That item does not exist." }, status = 404)
   
-  item_data = json_data.get("item_data", {})
-  for attr, val in item_data.items():
-    setattr(item_instance, attr, val)
+  for attr, val in request.POST.items():
+    try:
+      fieldtype = item_model._meta.get_field(attr).get_internal_type()
+      val = val if fieldtype != "BooleanField" else (val.lower() in ['true', '1', 'yes', 't', 'y'])
+      setattr(item_instance, attr, val)
+    except FieldDoesNotExist:
+      continue
+  
+  for attr, val in request.FILES.items():
+    try:
+      field = item_model._meta.get_field(attr)
+      setattr(item_instance, attr, val)
+    except FieldDoesNotExist:
+      continue
+  
   item_instance.save()
   
   return JsonResponse({ "error": "" }, status = 200)
@@ -192,6 +217,8 @@ def edit_overlay_item(request):
 def edit_overlay_items(request):
   if request.method != "POST":
     return JsonResponse({ "error": "Invalid request type." }, status = 501)
+  
+  print(request.body)
   
   json_data = json.loads(request.body)
   

@@ -142,3 +142,6 @@ secrets.py
 
 # Collected static
 staticfiles/
+
+# Media files
+mediafiles/

@@ -30,3 +30,22 @@ function AjaxPost(theUrl, theData, success_callback, error_callback)
     error: error_callback,
   });
 }
+
+function AjaxFormPost(theUrl, formData, success_callback, error_callback)
+{
+  $.ajax({
+    url: theUrl,
+    type: "POST",
+    dataType: "json",
+    cache: false,
+    contentType: false,
+    processData: false,
+    data: formData,
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    success: success_callback,
+    error: error_callback,
+  });
+}

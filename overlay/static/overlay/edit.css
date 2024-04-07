@@ -54,6 +54,8 @@ body {
   font-size: 1.5em;
   font-weight: bold;
 
+  border-radius: 0.3em;
+
   background-color: var(--link);
   cursor: pointer;
   padding: 10px;
@@ -62,6 +64,8 @@ body {
 .medium-button {
   font-size: 1.0em;
   display: inline-block;
+
+  border-radius: 0.2em;
 
   background-color: var(--link);
   cursor: pointer;
@@ -72,9 +76,14 @@ body {
 #item-select-list {
   box-sizing: border-box;
   width: 100%;
-  margin: 1em 0 1em 0;
-  padding: 0 50px 0 0px;
-  max-height: 12em;
+  margin: 1em 0 2em 0;
+  
+  border-color: var(--darker);
+  border-style: solid;
+  border-width: 0.4em;
+  border-radius: 1em;
+
+  max-height: 15em;
   overflow-y: scroll;
   overflow-x: hidden;
 }
@@ -87,16 +96,19 @@ body {
   background-color: var(--lighter);
 
   box-sizing: border-box;
-  box-shadow: 2px 2px 0px 0px #00000040;
 
-  margin: 3px 3px 3px 0px; 
-  padding: 8px;
+  margin: 0px 0px 3px 0px; 
+  padding: 12px;
   width: 100%;
 
   display: flex;
   flex-direction: row;
   justify-content: start;
   align-items: center;
+}
+
+#item-select-list .item-list-entry:last-child {
+  margin: 0 0 0 0!important;
 }
 
 .selected-list-entry {

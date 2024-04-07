@@ -59,7 +59,13 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
     switch (itemType)
     {
       case "ImageItem":
-        $(itemElemId).append("<img id='{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, itemData['url'], width, height));
+        imageUrl = itemData['url'];
+        if (imageUrl == "")
+        {
+          imageUrl = itemData['image_url'];
+        }
+
+        $(itemElemId).append("<img id='{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
         $(itemElemId).data('id', itemData['id']);
         $(itemElemId).data('item_type', itemType);
 
@@ -104,9 +110,15 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
     switch (itemType)
     {
       case "ImageItem":
-        if ($("#{0}-img".format(itemId)).attr('src') != itemData['url'])
+        imageUrl = itemData['url'];
+        if (imageUrl == "")
         {
-          $("#{0}-img".format(itemId)).attr('src', itemData['url']);
+          imageUrl = itemData['image_url'];
+        }
+
+        if ($("#{0}-img".format(itemId)).attr('src') != imageUrl)
+        {
+          $("#{0}-img".format(itemId)).attr('src', imageUrl);
         }
 
         $("#{0}-img".format(itemId)).attr('width', "{0}px".format(width));

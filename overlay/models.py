@@ -70,13 +70,18 @@ class AbstractItem(NonConsecutiveModel):
       "minimized": self.minimized,
     }
     
+def image_directory_path(instance : "AbstractItem", filename : str):
+  return f"overlays/{instance.overlay.id}/{filename}"
+    
 class ImageItem(AbstractItem):
   item_type = models.CharField(max_length = 32, default = "ImageItem", editable = False)
   
-  url = models.TextField(default = "")
+  image = models.ImageField(upload_to = image_directory_path, blank = True, null = True)
+  url = models.URLField(verbose_name = "URL", default = "", blank = True, null = True)
   
   def to_data_dict(self):
     d = super().to_data_dict()
+    d['image_url'] = self.image.url
     d['url'] = self.url
     return d
   
