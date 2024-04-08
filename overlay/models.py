@@ -88,6 +88,7 @@ class ImageItem(AbstractItem):
 class AbstractTextItem(AbstractItem):
   font = models.CharField(max_length=128, default="Roboto Mono")
   font_size = models.IntegerField(default = 32)
+  font_weight = models.CharField(max_length=128, default = "normal")
   color = models.CharField(max_length = 64, default = "#FFFFFF")
   background = models.CharField(max_length = 64, default = "#000000")
   background_enabled = models.BooleanField(default = False)
@@ -100,6 +101,7 @@ class AbstractTextItem(AbstractItem):
     d = super().to_data_dict()
     d["font"] = self.font
     d["font_size"] = self.font_size
+    d["font_weight"] = self.font_weight
     d["color"] = self.color
     d["background"] = self.background
     d["background_enabled"] = self.background_enabled

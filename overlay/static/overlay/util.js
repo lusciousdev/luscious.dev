@@ -42,10 +42,11 @@ function setTextItemContent(overlayElement, itemId, itemText, itemData)
   $(textElemId).text(itemText);
   $(textElemId).css({
     "font-size": "{0}pt".format(fontSize),
+    "font-family": "{0}, sans-serif".format(itemData["font"]),
+    "font-weight": itemData["font_weight"],
     "color": itemData['color'],
     "background-color": (itemData['background_enabled']) ? itemData['background'] : "#00000000",
     "visibility": (itemData['visible']) ? "inherit" : "hidden",
-    "font-family": "{0}, sans-serif".format(itemData["font"]),
     "text-align": itemData["text_alignment"],
   });
 }
