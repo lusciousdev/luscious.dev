@@ -46,6 +46,7 @@ function setTextItemContent(overlayElement, itemId, itemText, itemData)
     "background-color": (itemData['background_enabled']) ? itemData['background'] : "#00000000",
     "visibility": (itemData['visible']) ? "inherit" : "hidden",
     "font-family": "{0}, sans-serif".format(itemData["font"]),
+    "text-align": itemData["text_alignment"],
   });
 }
 

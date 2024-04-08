@@ -82,12 +82,20 @@ FONT_CHOICES = (
   ("Runescape", "Runescape")
 )
 
+TEXT_ALIGNMENTS = {
+  ("left", "left"),
+  ("right", "right"),
+  ("center", "center"),
+  ("justify", "justify"),
+}
+
 BASE_TEXT_WIDGETS = {
-  'font': forms.Select(attrs={ "field-type": "text" }),
-  'font_size': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
-  'color': forms.TextInput(attrs={ "field-type": "text", 'size': 40 }),
-  'background': forms.TextInput(attrs={ "field-type": "text", 'size': 40 }),
-  'background_enabled': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
+  'font': forms.Select(attrs = { "field-type": "text" }),
+  'font_size': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40 }),
+  'color': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+  'background': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+  'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+  'text_alignment': forms.Select(attrs = { "field-type": "text" })
 }
     
 class EditItemForm(forms.ModelForm):
@@ -119,6 +127,7 @@ class EditImageItem(EditItemForm):
     
 class AbstractEditText(EditItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
+  text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
   
   class Meta:
     abstract = True
@@ -194,6 +203,7 @@ class AddImageItem(AddItemForm):
     
 class AbstractAddText(AddItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
+  text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
   
   class Meta:
     abstract = True

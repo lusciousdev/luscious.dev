@@ -91,6 +91,7 @@ class AbstractTextItem(AbstractItem):
   color = models.CharField(max_length = 64, default = "#FFFFFF")
   background = models.CharField(max_length = 64, default = "#000000")
   background_enabled = models.BooleanField(default = False)
+  text_alignment = models.CharField(max_length = 128, default = "left")
   
   class Meta:
     abstract = True
@@ -102,6 +103,7 @@ class AbstractTextItem(AbstractItem):
     d["color"] = self.color
     d["background"] = self.background
     d["background_enabled"] = self.background_enabled
+    d["text_alignment"] = self.text_alignment
     return d
   
 class TextItem(AbstractTextItem):
