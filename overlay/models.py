@@ -85,6 +85,16 @@ class ImageItem(AbstractItem):
     d['url'] = self.url
     return d
   
+class EmbedItem(AbstractItem):
+  item_type = models.CharField(max_length = 32, default = "EmbedItem", editable = False)
+  
+  embed_url = models.URLField(verbose_name = "Embed URL", default = "", blank = True)
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d['embed_url'] = self.embed_url
+    return d
+  
 class AbstractTextItem(AbstractItem):
   font = models.CharField(max_length=128, default="Roboto Mono")
   font_size = models.IntegerField(default = 32)
@@ -149,6 +159,7 @@ class CounterItem(AbstractTextItem):
 
 ITEM_TYPES = [
   ImageItem,
+  EmbedItem,
   TextItem,
   StopwatchItem,
   CounterItem,

@@ -79,6 +79,15 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
+      case "EmbedItem":
+        var iframeId = "#{0}-iframe".format(itemId)
+
+        $(itemElemId).html(`<iframe id="{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
+
+        $(iframeId).css({
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
+        });
+        break;
       case "TextItem":
         $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
         setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
@@ -127,6 +136,18 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         $("#{0}-img".format(itemId)).attr('height', "{0}px".format(height));
 
         $("#{0}-img".format(itemId)).css({
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
+        });
+        break;
+      case "EmbedItem":
+        var iframeId = "#{0}-iframe".format(itemId)
+
+        if ($(iframeId).attr('src') != itemData['embed_url'])
+        {
+          $(iframeId).attr('src', itemData['embed_url']);
+        }
+
+        $(iframeId).css({
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;

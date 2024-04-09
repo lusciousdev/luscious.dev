@@ -141,6 +141,20 @@ class EditImageItem(EditItemForm):
     
     widgets.update(BASE_WIDGETS)
     
+class EditEmbedItem(EditItemForm):
+  def get_pretty_name(self):
+    return "Embed"
+  
+  class Meta:
+    model = EmbedItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {
+      'embed_url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
 class AbstractEditText(EditItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
@@ -218,6 +232,20 @@ class AddImageItem(AddItemForm):
     
     widgets.update(BASE_WIDGETS)
     
+class AddEmbedItem(AddItemForm):
+  def get_pretty_name(self):
+    return "Embed"
+  
+  class Meta:
+    model = EmbedItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {
+      'embed_url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40 }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
 class AbstractAddText(AddItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
@@ -280,12 +308,14 @@ class AddCounterItem(AbstractAddText):
 FORMS_MAP = {
   "edit": {
     "ImageItem": EditImageItem,
+    "EmbedItem": EditEmbedItem,
     "TextItem": EditTextItem,
     "StopwatchItem": EditStopwatchItem,
     "CounterItem": EditCounterItem,
   },
   "add": {
     "ImageItem": AddImageItem,
+    "EmbedItem": AddEmbedItem,
     "TextItem": AddTextItem,
     "StopwatchItem": AddStopwatchItem,
     "CounterItem": AddCounterItem,
