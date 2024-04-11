@@ -323,23 +323,15 @@ function updateItemCallback(itemId, itemType)
 
 function handleEditItemsSuccess(data)
 {
-  getOverlayItems();
 }
 
 function handleAjaxError(data)
 {
   console.log("~~~~~~~~~~~ERROR~~~~~~~~~~~~~~~~~~~")
   console.log(data);
-
-  getOverlayItems();
 }
 
-function getOverlayItems()
-{
-  AjaxGet(getOverlayItemsUrl, { "overlay_id": overlayId }, handleGetItemsResponse, handleAjaxError);
-}
-
-function updateOverlayItems()
+function sendOverlayItemUpdates()
 {
   items = []
   for (const itemId in itemDict)
@@ -366,13 +358,20 @@ function updateOverlayItems()
   {
     for (const i in items)
     {
-      AjaxFormPost(editOverlayItemUrl, items[i], handleEditItemsSuccess, handleAjaxError);
+      QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, editOverlayItemUrl, items[i], handleEditItemsSuccess, handleAjaxError));
     }
   }
-  else
-  {
-    getOverlayItems();
-  }
+}
+
+function getOverlayItems()
+{
+  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.GET, getOverlayItemsUrl, { "overlay_id": overlayId }, handleGetItemsResponse, handleAjaxError));
+}
+
+function updateOverlayItems()
+{
+  sendOverlayItemUpdates();
+  getOverlayItems();
 }
 
 function onResize(event)
