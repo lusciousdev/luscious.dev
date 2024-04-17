@@ -1,12 +1,15 @@
+import asyncio
 from typing import Any
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.conf import settings
-from django.utils.decorators import method_decorator
+from django.utils.decorators import method_decorator, classonlymethod
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from allauth.socialaccount.models import SocialAccount
+from channels.db import database_sync_to_async
 from .forms import *
 import typing
 
@@ -70,12 +73,21 @@ class EditOverlayView(generic.DetailView):
     context = super(EditOverlayView, self).get_context_data(**kwargs)
     
     context['forms'] = FORMS_MAP
+    context['twitchuserid'] = self.request.user.socialaccount_set.all().get(provider="twitch").uid
     
     return context
   
 class ViewOverlayView(generic.DetailView):
   model = CollaborativeOverlay
   template_name = "overlay/view.html"
+
+def view_overlay(request, pk):
+  try:
+    overlay = CollaborativeOverlay.objects.get(id = pk)
+  except CollaborativeOverlay.DoesNotExist:
+    return Http404("Overlay does not exist.")
+  
+  return render(request, "overlay/view.html", { "collaborativeoverlay": overlay })
   
 @login_required
 def add_editor(request):

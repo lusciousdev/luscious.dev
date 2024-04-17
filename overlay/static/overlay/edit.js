@@ -10,6 +10,7 @@ const editOverlayItemUrl = data.edititemurl;
 const editOverlayItemsUrl = data.edititemsurl;
 const deleteOverlayItemUrl = data.deleteitemurl;
 const overlayOwner = data.overlayowner;
+const twitchUser = data.twitchuser;
 
 var scaledOverlayWidth = -1;
 var scaledOverlayHeight = -1;
@@ -41,11 +42,6 @@ function editToViewScale(distance)
 function viewToEditScale(distance)
 {
   return (scaledOverlayWidth * distance) / overlayWidth;
-}
-
-function getItemDiv(itemId)
-{
-  return $("#{0}".format(itemId));
 }
 
 class Point 
@@ -173,7 +169,7 @@ function addGrabbers(itemId)
   $('#{0} .bottomright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.BottomRight; });
 }
 
-function handleGetItemsResponse(data)
+function updateItems(data, fullItemList = true, selfEdit = false)
 {
   var itemSeen = {};
   for (itemId in itemDict)
@@ -191,30 +187,31 @@ function handleGetItemsResponse(data)
     if (itemId in itemDict)
     {
       itemSeen[itemId] = true;
-      if (!itemDict[itemData['id']]['local_changes'])
-      {
-        itemDict[itemData['id']]['item_data'] = itemData;
-      }
+      itemDict[itemData['id']]['item_data'] = itemData;
     }
     else
     {
       itemDict[itemData['id']] = {
         "item_type": itemType,
-        "local_changes": false,
-        "locked": false,
         "item_data": itemData,
+        "moving": false,
       };
     }
 
-    if (itemDict[itemId]['local_changes'])
-    {
-      continue;
-    }
+    var itemDiv = getItemDiv(itemId);
 
-    var left   = viewToEditScale(itemData['x']);
-    var top    = viewToEditScale(itemData['y']);
-    var width  = viewToEditScale(itemData['width']);
-    var height = viewToEditScale(itemData['height']);
+    var left   = parseFloat(itemDiv.css('left'));
+    var top    = parseFloat(itemDiv.css('top'));
+    var width  = itemDiv.width();
+    var height = itemDiv.height();
+
+    if (!itemDict[itemId]['moving'] && !selfEdit)
+    {
+      left   = viewToEditScale(itemData['x']);
+      top    = viewToEditScale(itemData['y']);
+      width  = viewToEditScale(itemData['width']);
+      height = viewToEditScale(itemData['height']);
+    }
 
     var z = itemData['z'];
     var rotation = itemData['rotation'];
@@ -224,16 +221,13 @@ function handleGetItemsResponse(data)
       () => { updateItemCallback(itemId, itemType); });
   }
 
-  for (itemId in itemSeen)
+  if (fullItemList)
   {
-    if (!itemSeen[itemId])
+    for (itemId in itemSeen)
     {
-      getItemDiv(itemId).remove();
-      $("#{0}-list-entry".format(itemId)).remove();
-
-      if (itemId == selectedItem)
+      if (!itemSeen[itemId])
       {
-        clearSelectedItem();
+        deleteItem(itemId);
       }
     }
   }
@@ -300,14 +294,17 @@ function updateItemCallback(itemId, itemType)
   switch (itemType)
   {
     case "ImageItem":
-      itemIcon = 'image'
+      itemIcon = 'image';
       break
     case "StopwatchItem":
-      itemIcon = 'timer'
+      itemIcon = 'timer';
       break
     case "CounterItem":
-      itemIcon = '123'
+      itemIcon = '123';
       break
+    case "EmbedItem":
+      itemIcon = "picture_in_picture";
+      break;
     case "TextItem":
     default:
       break;
@@ -315,15 +312,13 @@ function updateItemCallback(itemId, itemType)
 
   $("#{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(itemIcon, item["item_data"]["name"]));
 
-  if (itemId == selectedItem && !itemDict[itemId]['locked'] && !itemDict[itemId]['local_changes'])
+  if (selectedItem != undefined) 
   {
     setEditFormInputs(selectedItem);
   }
 }
 
-function handleEditItemsSuccess(data)
-{
-}
+function handleEditItemsSuccess(data) {}
 
 function handleAjaxError(data)
 {
@@ -361,17 +356,6 @@ function sendOverlayItemUpdates()
       QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, editOverlayItemUrl, items[i], handleEditItemsSuccess, handleAjaxError));
     }
   }
-}
-
-function getOverlayItems()
-{
-  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.GET, getOverlayItemsUrl, { "overlay_id": overlayId }, handleGetItemsResponse, handleAjaxError));
-}
-
-function updateOverlayItems()
-{
-  sendOverlayItemUpdates();
-  getOverlayItems();
 }
 
 function onResize(event)
@@ -417,6 +401,26 @@ function onResize(event)
 function onMouseDownItemList(e, itemId)
 {
   selectItem(itemId);
+}
+
+function sendMovingItemEdits()
+{
+  items = []
+  for (const itemId in itemDict)
+  {
+    if (itemDict[itemId]['moving'])
+    {
+      var itemData = {};
+      itemData['x']      = itemDict[itemId].item_data.x;
+      itemData['y']      = itemDict[itemId].item_data.y;
+      itemData['width']  = itemDict[itemId].item_data.width;
+      itemData['height'] = itemDict[itemId].item_data.height;
+
+      var itemType = itemDict[itemId]["item_type"];
+
+      sendWebsocketMessage("edit_overlay_item", { "item_type": itemType, "item_id": itemId, "item_data": itemData });
+    }
+  }
 }
 
 function onMousedownItem(e) 
@@ -499,14 +503,16 @@ function onMousedownItem(e)
   dragData.selectedElem = {
     point0: getItemPos(selectedItem)
   }
-  itemDict[selectedItem]['locked'] = true;
+  itemDict[selectedItem]['moving'] = true;
 
   dragData.otherElems = {}
   otherSelectedItems.forEach((itemId) => {
     dragData.otherElems[itemId] = {};
-    dragData.otherElems[itemId]["point0"] = getItemPos(itemId)
-    itemDict[itemId]['locked'] = true;
+    dragData.otherElems[itemId]["point0"] = getItemPos(itemId);
+    itemDict[itemId]['moving'] = true;
   });
+
+  var SEND_MOVE_INTERVAL = setInterval(sendMovingItemEdits, 250);
 
   function handleDragging(e)
   {
@@ -543,7 +549,6 @@ function onMousedownItem(e)
       var itemLeft = editToViewScale(newPos.x);
       itemDict[selectedItem]['item_data']['x'] = Math.round(itemLeft);
       itemDict[selectedItem]['item_data']['y'] = Math.round(itemTop);
-      itemDict[selectedItem]['local_changes'] = true;
 
       otherSelectedItems.forEach((itemId) => {
         newPos = Point.add2(dragData.otherElems[itemId].point0, offsetPosition);
@@ -556,7 +561,6 @@ function onMousedownItem(e)
         var itemLeft = editToViewScale(newPos.x);
         itemDict[itemId]['item_data']['x'] = Math.round(itemLeft);
         itemDict[itemId]['item_data']['y'] = Math.round(itemTop);
-        itemDict[itemId]['local_changes'] = true;
       });
     }
     else
@@ -631,8 +635,6 @@ function onMousedownItem(e)
       itemDict[dragData.elem.id]['item_data']['y']      = Math.round(itemTop);
       itemDict[dragData.elem.id]['item_data']['width']  = Math.round(itemWidth);
       itemDict[dragData.elem.id]['item_data']['height'] = Math.round(itemHeight);
-
-      itemDict[dragData.elem.id]['local_changes'] = true;
     }
   
     setEditFormInputs(selectedItem);
@@ -641,8 +643,15 @@ function onMousedownItem(e)
   }
 
   function handleMouseUp(e){
-    itemDict[selectedItem]['locked'] = false;
-    otherSelectedItems.forEach((itemId) => itemDict[itemId]['locked'] = false);
+    clearInterval(SEND_MOVE_INTERVAL);
+    sendMovingItemEdits();
+
+    itemDict[selectedItem]['moving'] = false;
+  
+    otherSelectedItems.forEach((itemId) => {
+      itemDict[itemId]['moving'] = false;
+    });
+
     grabType = GrabTypes.Move;
     $('#main-container').off('mousemove', handleDragging).off('mouseup', handleMouseUp);
   }
@@ -793,6 +802,11 @@ function setEditFormInputs(itemId)
     if (key == "id") continue;
     var input = $(formId).find("#id_{0}".format(key))
 
+    if (input.is(":focus"))
+    {
+      continue;
+    }
+
     switch(input.prop("type"))
     {
       case "checkbox":
@@ -805,6 +819,27 @@ function setEditFormInputs(itemId)
         break;
     }
   }
+}
+
+function sendFileEdit(itemId, itemType, inputObj)
+{
+  let file = inputObj.prop('files')[0];
+  var inputField = inputObj.attr('name');
+
+  if (!file)
+  {
+    console.log("Bad file.");
+    return;
+  }
+  
+  var itemFormData = new FormData();
+  itemFormData.set("overlay_id", overlayId);
+  itemFormData.set("item_id", itemId);
+  itemFormData.set("item_type", itemType);
+
+  itemFormData.set(inputField, file);
+
+  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, editOverlayItemUrl, itemFormData, handleEditItemsSuccess, handleAjaxError));
 }
 
 function inputToValue(inputObj)
@@ -857,30 +892,31 @@ function inputToValue(inputObj)
   }
 }
 
-function updateItemDataFromInput(itemId, inputObj) 
+function onInputChange(inputEvent)
 {
-  var name = inputObj.attr('name');
+  var targetedInput = $(inputEvent.currentTarget);
+  var targetedForm = targetedInput.closest("form");
+  var inputType = targetedInput.attr('type');
 
-  var inputVal = inputToValue(inputObj);
+  var itemId = targetedForm.find("#id_item_id").val();
+  var itemType = itemDict[itemId]["item_type"];
 
-  if (inputVal !== undefined)
+  var inputField = targetedInput.attr('name');
+
+  switch (inputType)
   {
-    itemDict[itemId]['item_data'][name] = inputVal;
+    case "file":
+      sendFileEdit(itemId, itemType, targetedInput);
+      break;
+    default:
+      var inputVal = inputToValue(targetedInput);
+
+      var itemData = {};
+      itemData[inputField] = inputVal;
+
+      sendWebsocketMessage("edit_overlay_item", { "item_type": itemType, "item_id": itemId, "item_data": itemData });
+      break;
   }
-}
-
-function submitEditForm(form)
-{
-  var itemId = $(form).find("#id_item_id").val();
-
-  for(var i = 0; i < $(form).find("input,textarea,select,file").length; i++)
-  {
-    var inp = $(form).find("input,textarea,select,file").eq(i);
-
-    updateItemDataFromInput(itemId, inp);
-  }
-
-  itemDict[itemId]['local_changes'] = true;
 }
 
 function addFormToDict(form)
@@ -934,7 +970,7 @@ function deleteSelectedItem(e)
   {
     var itemType = itemDict[selectedItem]['item_type'];
   
-    AjaxPost(deleteOverlayItemUrl, { "overlay_id": overlayId, "item_type": itemType, "item_id": selectedItem }, (e) => {}, (e) => {});
+    sendWebsocketMessage("delete_overlay_item", { "item_type": itemType, "item_id": selectedItem });
   }
 }
 
@@ -950,8 +986,13 @@ function resetSelectedItem(e)
   switch (itemType)
   {
     case "StopwatchItem":
-      itemDict[selectedItem]["item_data"]["timer_start"] = Math.round(Date.now() / 1000);
-      itemDict[selectedItem]["item_data"]["pause_time"] = itemDict[selectedItem]["item_data"]["timer_start"];
+      var timeNow = Math.round(Date.now() / 1000);
+      var editData = {};
+
+      editData["timer_start"] = timeNow;
+      editData["pause_time"]  = timeNow;
+
+      sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
       break;
     default:
       break;
@@ -975,25 +1016,30 @@ function pauseSelectedItem(e)
       var wasPaused = itemDict[selectedItem]["item_data"]["paused"];
       var timeNow = Math.round(Date.now() / 1000);
 
+      var prevTimerStart = itemDict[selectedItem]["item_data"]["timer_start"];
+
+      var editData = {};
+
       if (wasPaused)
       {
         var timeSincePause = timeNow - itemDict[selectedItem]["item_data"]["pause_time"];
-        itemDict[selectedItem]["item_data"]["timer_start"] += timeSincePause;
+        editData["timer_start"] = prevTimerStart + timeSincePause;
+
         $(e.currentTarget).text("Pause");
       }
       else 
       {
+        editData["pause_time"] = timeNow;
         $(e.currentTarget).text("Unpause");
       }
 
-      itemDict[selectedItem]["item_data"]["pause_time"] = timeNow;
-      itemDict[selectedItem]["item_data"]["paused"] = !wasPaused;
+      editData["paused"] = !wasPaused;
+
+      sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
       break;
     default:
       break;
   }
-
-  itemDict[selectedItem]["local_changes"] = true;
 }
 
 function openAddItemTab(event, tabId)
@@ -1049,10 +1095,11 @@ function selectedMinimizedChange(e)
 }
 
 $(window).on('load', function() {
-  onResize();
-  getOverlayItems();
+  connectWebsocket(overlayId);
 
-  var getInterval  = setInterval(function() { updateOverlayItems(); }, 500);
+  onResize();
+
+  var getInterval = setInterval(function() { getOverlayItems(); }, 1000);
 
   $(window).on("resize", onResize);
   
@@ -1064,8 +1111,12 @@ $(window).on('load', function() {
     e.preventDefault();
   });
 
-  $(".edit-form").on('input', (e) => {
-    submitEditForm(e.currentTarget);
+  $(".edit-form input, .edit-form textarea, .edit-form select, .edit-form file").on("input", (e) => {
+    onInputChange(e);
+  });
+
+  $("input[checkbox").change((e) => {
+    onInputChange(e);
   });
 
   $(".add-form").submit((e) => {

@@ -5,9 +5,11 @@ const getOverlayItemsUrl = data.getitemsurl;
 const overlayWidth = parseInt(data.overlaywidth, 10)
 const overlayHeight = parseInt(data.overlayheight, 10)
 
+const twitchUser = undefined;
+
 var itemDict = {};
 
-function handleGetItemsResponse(data)
+function updateItems(data, fullItemList = true, selfEdit = false)
 {
   var itemSeen = {};
   for (itemId in itemDict)
@@ -47,11 +49,14 @@ function handleGetItemsResponse(data)
       () => {});
   }
 
-  for (itemId in itemSeen)
+  if (fullItemList)
   {
-    if (!itemSeen[itemId])
+    for (itemId in itemSeen)
     {
-      $("#{0}".format(itemId)).remove();
+      if (!itemSeen[itemId])
+      {
+        $("#{0}".format(itemId)).remove();
+      }
     }
   }
 }
@@ -62,13 +67,8 @@ function handleGetItemsError(data)
   console.log(data);
 }
 
-function getOverlayItems()
-{
-  AjaxGet(getOverlayItemsUrl, { "overlay_id": overlayId }, handleGetItemsResponse, handleGetItemsError);
-}
-
 $(window).on('load', function() {
-  getOverlayItems();
+  connectWebsocket(overlayId);
 
-  var intervalId = setInterval(function() { getOverlayItems(); }, 250);
+  var intervalId = setInterval(function() { getOverlayItems(); }, 1000);
 });

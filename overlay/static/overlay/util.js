@@ -1,3 +1,102 @@
+var WEBSOCKET = undefined;
+var RECONNECT_INTERVAL = undefined;
+
+function sendWebsocketMessage(cmd, objData)
+{
+  if (WEBSOCKET != undefined && WEBSOCKET.readyState == WebSocket.OPEN)
+  {
+    WEBSOCKET.send(JSON.stringify({
+      "command": cmd,
+      "data": objData,
+    }));
+  }
+}
+
+function handleWebsocketMessage(e)
+{
+  var eventData = JSON.parse(e.data);
+
+  var command = eventData.command;
+  var data = eventData.data;
+  var editor = data.editor;
+
+  switch (command)
+  {
+    case "list_overlay_items":
+      updateItems(data);
+      break;
+    case "overlay_item_added":
+      break;
+    case "overlay_item_edited":
+      updateItems({ "items": [ { "item_type": data.item_type, "item_data": data.item_data, } ]}, false, (editor == twitchUser));
+      break;
+    case "overlay_item_deleted":
+      deleteItem(data.item_id);
+      break;
+    case "error":
+      console.warn(data);
+      break;
+    default:
+      console.log("Unknown command: {0}".format(command));
+      break;
+  }
+}
+
+function connectWebsocket(overlayId)
+{
+  WEBSOCKET = new WebSocket("ws://{0}/ws/overlay/{1}/".format(window.location.host, overlayId));
+
+  WEBSOCKET.onopen = (e) => { getOverlayItems(); };
+  WEBSOCKET.onmessage = (e) => { handleWebsocketMessage(e); };
+  WEBSOCKET.onclose = (e) => { attemptReconnect(e, overlayId); };
+}
+
+function attemptReconnect(e, overlayId)
+{
+  if (RECONNECT_INTERVAL == undefined)
+  {
+    RECONNECT_INTERVAL = setInterval(() => { 
+      if (WEBSOCKET.readyState == WebSocket.OPEN)
+      {
+        console.log("Reconnected websocket.");
+        clearInterval(RECONNECT_INTERVAL);
+        RECONNECT_INTERVAL = undefined;
+        return;
+      }
+  
+      console.log("Attempting to reconnect websocket.");
+      connectWebsocket(overlayId);
+    }, 5000);
+  }
+}
+
+function getOverlayItems()
+{
+  sendWebsocketMessage("get_overlay_items", {});
+}
+
+function getItemDiv(itemId)
+{
+  return $("#{0}".format(itemId));
+}
+
+function deleteItem(itemId)
+{
+  delete itemDict[itemId];
+
+  getItemDiv(itemId).remove();
+  $("#{0}-list-entry".format(itemId)).remove();
+
+  if (itemId == selectedItem)
+  {
+    clearSelectedItem();
+  }
+}
+
+const escapeHtml = (unsafe) => {
+  return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+}
+
 function setItemPosition(itemId, top, left, width, height, z, rotation)
 {
   $("#{0}".format(itemId)).css({
@@ -8,10 +107,6 @@ function setItemPosition(itemId, top, left, width, height, z, rotation)
     "z-index": "{0}".format(z), 
     "transform": "rotate({0}deg)".format(rotation),
   });
-}
-
-const escapeHtml = (unsafe) => {
-  return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 }
 
 Number.prototype.pad = function(size) {

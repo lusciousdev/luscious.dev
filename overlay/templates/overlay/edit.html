@@ -27,7 +27,8 @@
         data-deleteitemurl="{% url 'overlay:api_delete_overlay_item' %}"
         data-overlaywidth="{{ collaborativeoverlay.width }}"
         data-overlayheight="{{ collaborativeoverlay.height }}"
-        data-overlayowner="{{ collaborativeoverlay.owner.username }}">
+        data-overlayowner="{{ collaborativeoverlay.owner.username }}"
+        data-twitchuser="{{ twitchuserid }}">
 </script>
 {% endblock %}
 

@@ -36,6 +36,9 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -100,6 +103,17 @@ ACCOUNT_EMAIL_VERIFICATION = "none"
 LOGIN_REDIRECT_URL = "/"
 
 WSGI_APPLICATION = 'lusciousdev.wsgi.application'
+ASGI_APPLICATION = "lusciousdev.asgi.application"
+
+CHANNEL_LAYERS = {
+  "default": {
+    "BACKEND": "channels_redis.core.RedisChannelLayer",
+    "CONFIG": {
+      "hosts": [ f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CHANNELS_DATABASE}" ],
+      "symmetric_encryption_keys": [ SECRET_KEY ],
+    }
+  }
+}
 
 SOCIALACCOUNT_PROVIDERS = {
   "twitch": {
@@ -199,8 +213,8 @@ LOGGING = {
 CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev", "https://www.luscious.dev", "http://luscious.dev", "http://www.luscious.dev" ]
 
 # Celery
-CELERY_BROKER_URL     = f"redis://:{CELERY_PASSWORD}@{CELERY_HOST}:{CELERY_PASSWORD}"
-CELERY_RESULT_BACKEND = f"redis://:{CELERY_PASSWORD}@{CELERY_HOST}:{CELERY_PASSWORD}"
+CELERY_BROKER_URL     = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PASSWORD}/{CELERY_DATABASE}"
+CELERY_RESULT_BACKEND = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PASSWORD}/{CELERY_DATABASE}"
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"

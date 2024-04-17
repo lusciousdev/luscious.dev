@@ -3,6 +3,8 @@ from django.urls import path
 from . import views
 from . import api
 
+from asgiref.sync import sync_to_async, async_to_sync, markcoroutinefunction, iscoroutinefunction
+
 app_name = 'overlay'
 urlpatterns = [
   path("", views.IndexView.as_view(), name="index"),
@@ -12,7 +14,7 @@ urlpatterns = [
   path("profile/create_overlay", views.create_overlay, name="create_overlay"),
   path("profile/delete_overlay", views.delete_overlay, name="delete_overlay"),
   path("edit/<str:pk>/", views.EditOverlayView.as_view(), name="edit_overlay"),
-  path("view/<str:pk>/", views.ViewOverlayView.as_view(), name="view_overlay"),
+  path("view/<str:pk>/", sync_to_async(views.view_overlay), name="view_overlay"),
   path("api/getitems", api.get_overlay_items, name = "api_get_overlay_items"),
   path("api/additem", api.add_overlay_item, name = "api_add_overlay_item"),
   path("api/edititem", api.edit_overlay_item, name = "api_edit_overlay_item"),
