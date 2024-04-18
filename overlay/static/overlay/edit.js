@@ -1099,7 +1099,7 @@ $(window).on('load', function() {
 
   onResize();
 
-  var getInterval = setInterval(function() { getOverlayItems(); }, 30000);
+  var getInterval = setInterval(function() { getOverlayItems(); }, 5000);
 
   $(window).on("resize", onResize);
   
