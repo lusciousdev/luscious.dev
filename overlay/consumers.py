@@ -5,6 +5,7 @@ from channels.generic.websocket import WebsocketConsumer
 from channels.auth import UserLazyObject
 from allauth.socialaccount.models import SocialAccount
 from django.core.exceptions import FieldDoesNotExist
+import time
 
 from .models import *
 from .forms import *
@@ -56,9 +57,6 @@ class OverlayConsumer(WebsocketConsumer):
     )
   
   def receive(self, text_data = None, bytes_data = None):
-    if (bytes_data is not None):
-      print(bytes_data)
-      
     text_data_json = json.loads(text_data)
     
     command : str = text_data_json.get("command", "")

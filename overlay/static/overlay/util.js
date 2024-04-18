@@ -44,7 +44,10 @@ function handleWebsocketMessage(e)
 
 function connectWebsocket(overlayId)
 {
-  WEBSOCKET = new WebSocket("ws://{0}/ws/overlay/{1}/".format(window.location.host, overlayId));
+  var protocol = "ws:"
+  if (window.location.protocol == "https:")
+    protocol = "wss:"
+  WEBSOCKET = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, overlayId));
 
   WEBSOCKET.onopen = (e) => { getOverlayItems(); };
   WEBSOCKET.onmessage = (e) => { handleWebsocketMessage(e); };
