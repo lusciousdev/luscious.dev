@@ -183,11 +183,15 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var itemType = item["item_type"];
     var itemData = item["item_data"];
     var itemId = itemData['id'];
-    
+
     if (itemId in itemDict)
     {
       itemSeen[itemId] = true;
-      itemDict[itemData['id']]['item_data'] = itemData;
+  
+      if (!itemDict[itemId]['moving'])
+      {
+        itemDict[itemData['id']]['item_data'] = itemData;
+      }
     }
     else
     {
@@ -198,20 +202,10 @@ function updateItems(data, fullItemList = true, selfEdit = false)
       };
     }
 
-    var itemDiv = getItemDiv(itemId);
-
-    var left   = parseFloat(itemDiv.css('left'));
-    var top    = parseFloat(itemDiv.css('top'));
-    var width  = itemDiv.width();
-    var height = itemDiv.height();
-
-    if (!itemDict[itemId]['moving'] && !selfEdit)
-    {
-      left   = viewToEditScale(itemData['x']);
-      top    = viewToEditScale(itemData['y']);
-      width  = viewToEditScale(itemData['width']);
-      height = viewToEditScale(itemData['height']);
-    }
+    left   = viewToEditScale(itemData['x']);
+    top    = viewToEditScale(itemData['y']);
+    width  = viewToEditScale(itemData['width']);
+    height = viewToEditScale(itemData['height']);
 
     var z = itemData['z'];
     var rotation = itemData['rotation'];
@@ -1099,7 +1093,7 @@ $(window).on('load', function() {
 
   onResize();
 
-  var getInterval = setInterval(function() { getOverlayItems(); }, 5000);
+  var getInterval = setInterval(function() { getOverlayItems(); }, 1000);
 
   $(window).on("resize", onResize);
   
