@@ -1089,9 +1089,9 @@ function selectedMinimizedChange(e)
 }
 
 $(window).on('load', function() {
-  connectWebsocket(overlayId);
-
   onResize();
+
+  connectWebsocket(overlayId);
 
   var getInterval = setInterval(function() { getOverlayItems(); }, 1000);
 

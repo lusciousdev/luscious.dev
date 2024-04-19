@@ -30,7 +30,10 @@ DEBUG = True
 ALLOWED_HOSTS = [
     ".luscious.dev",
     "127.0.0.1",
-    ".localhost"
+    ".localhost",
+    "192.168.1.70",
+    "test.luscious.dev",
+    "139.144.46.80",
 ]
 
 # Application definition
@@ -99,6 +102,7 @@ AUTHENTICATION_BACKENDS = [
 SITE_ID = 1
 
 ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http" if DEBUG else "https"
 
 LOGIN_REDIRECT_URL = "/"
 
@@ -210,7 +214,11 @@ LOGGING = {
     },
 }
 
-CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev", "https://www.luscious.dev", "http://luscious.dev", "http://www.luscious.dev" ]
+CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev", 
+                         "https://www.luscious.dev", 
+                         "http://luscious.dev", 
+                         "http://www.luscious.dev",
+                         "https://test.luscious.dev" ]
 
 # Celery
 CELERY_BROKER_URL     = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PASSWORD}/{CELERY_DATABASE}"
