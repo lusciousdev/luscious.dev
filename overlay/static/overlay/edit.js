@@ -202,10 +202,10 @@ function updateItems(data, fullItemList = true, selfEdit = false)
       };
     }
 
-    left   = viewToEditScale(itemDict[itemId]['x']);
-    top    = viewToEditScale(itemDict[itemId]['y']);
-    width  = viewToEditScale(itemDict[itemId]['width']);
-    height = viewToEditScale(itemDict[itemId]['height']);
+    left   = viewToEditScale(itemDict[itemId]['item_data']['x']);
+    top    = viewToEditScale(itemDict[itemId]['item_data']['y']);
+    width  = viewToEditScale(itemDict[itemId]['item_data']['width']);
+    height = viewToEditScale(itemDict[itemId]['item_data']['height']);
 
     var z = itemData['z'];
     var rotation = itemData['rotation'];
