@@ -20,8 +20,6 @@ const overlayHeight = parseInt(data.overlayheight, 10);
 const maxWidthPercent = 0.667;
 const maxHeightPercent = 0.667;
 
-var itemDict = {};
-
 var selectedItem = undefined;
 var otherSelectedItems = [];
 
@@ -268,6 +266,19 @@ function addItemCallback(itemId, itemType)
     case "CounterItem":
       itemIcon = '123'
       break
+    case "EmbedItem":
+      itemIcon = "picture_in_picture";
+      break;
+    case "YouTubeEmbedItem":
+      itemIcon = "smart_display";
+      if (YOUTUBE_PLAYER_API_LOADED)
+      {
+        createYouTubePlayer(itemId);
+      }
+      break;
+    case "TwitchStreamEmbedItem":
+      itemIcon = "live_tv";
+      break;
     case "TextItem":
     default:
       break;
@@ -298,6 +309,45 @@ function updateItemCallback(itemId, itemType)
       break
     case "EmbedItem":
       itemIcon = "picture_in_picture";
+      break;
+    case "YouTubeEmbedItem":
+      itemIcon = "smart_display";
+
+      if (itemDict[itemId]['player'] == undefined)
+      {
+        createYouTubePlayer(itemId);
+      }
+
+      if (YOUTUBE_PLAYER_API_LOADED)
+      {
+        var videoData = itemDict[itemId]['player'].getVideoData();
+
+        if (videoData.video_id != itemDict[itemId].item_data.video_id)
+        {
+          itemDict[itemId]['player'].loadVideoById(itemDict[itemId].item_data.video_id);
+        }
+
+        if (itemDict[itemId]['item_data']['muted'])
+        {
+          itemDict[itemId]['player'].mute();
+        }
+        else
+        {
+          itemDict[itemId]['player'].unMute();
+        }
+
+        if (itemDict[itemId]['item_data']['paused'])
+        {
+          itemDict[itemId]['player'].pauseVideo();
+        }
+        else
+        {
+          itemDict[itemId]['player'].playVideo();
+        }
+      }
+    break;
+    case "TwitchStreamEmbedItem":
+      itemIcon = "live_tv";
       break;
     case "TextItem":
     default:
@@ -1086,6 +1136,39 @@ function selectedMinimizedChange(e)
     itemDict[itemId]["item_data"]["minimized"] = $(e.target).is(":checked");
     itemDict[itemId]["local_changes"] = true;
   });
+}
+
+function createYouTubePlayer(itemId)
+{
+  itemDict[itemId]['player'] = new YT.Player('{0}-player'.format(itemId), {
+    height: '100%',
+    width: '100%',
+    videoId: itemDict[itemId]['item_data']['video_id'],
+    playerVars: {
+      'controls': 1,
+      'disablekb': 0,
+      'autoplay': 1,
+      'playsinline': 1,
+    }
+  });
+
+  if (itemDict[itemId]['item_data']['muted'])
+  {
+    itemDict[itemId]['player'].mute();
+  }
+  else
+  {
+    itemDict[itemId]['player'].unMute();
+  }
+
+  if (itemDict[itemId]['item_data']['paused'])
+  {
+    itemDict[itemId]['player'].pauseVideo();
+  }
+  else
+  {
+    itemDict[itemId]['player'].playVideo();
+  }
 }
 
 $(window).on('load', function() {

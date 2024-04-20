@@ -155,6 +155,38 @@ class EditEmbedItem(EditItemForm):
     
     widgets.update(BASE_WIDGETS)
     
+class EditYouTubeEmbedItem(EditItemForm):
+  def get_pretty_name(self):
+    return "YouTube Video"
+  
+  class Meta:
+    model = YouTubeEmbedItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {
+      'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
+class EditTwitchStreamEmbedItem(EditItemForm):
+  def get_pretty_name(self):
+    return "Twitch Stream"
+  
+  class Meta:
+    model = TwitchStreamEmbedItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {
+      'username': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
 class AbstractEditText(EditItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
@@ -246,6 +278,38 @@ class AddEmbedItem(AddItemForm):
     
     widgets.update(BASE_WIDGETS)
     
+class AddYouTubeEmbedItem(AddItemForm):
+  def get_pretty_name(self):
+    return "YouTube Video"
+  
+  class Meta:
+    model = YouTubeEmbedItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {
+      'youtube_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
+class AddTwitchStreamEmbedItem(AddItemForm):
+  def get_pretty_name(self):
+    return "Twitch Stream"
+  
+  class Meta:
+    model = TwitchStreamEmbedItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {
+      'username': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
 class AbstractAddText(AddItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
@@ -309,6 +373,8 @@ FORMS_MAP = {
   "edit": {
     "ImageItem": EditImageItem,
     "EmbedItem": EditEmbedItem,
+    "YouTubeEmbedItem": EditYouTubeEmbedItem,
+    "TwitchStreamEmbedItem": EditTwitchStreamEmbedItem,
     "TextItem": EditTextItem,
     "StopwatchItem": EditStopwatchItem,
     "CounterItem": EditCounterItem,
@@ -316,6 +382,8 @@ FORMS_MAP = {
   "add": {
     "ImageItem": AddImageItem,
     "EmbedItem": AddEmbedItem,
+    "YouTubeEmbedItem": AddYouTubeEmbedItem,
+    "TwitchStreamEmbedItem": AddTwitchStreamEmbedItem,
     "TextItem": AddTextItem,
     "StopwatchItem": AddStopwatchItem,
     "CounterItem": AddCounterItem,

@@ -28,6 +28,7 @@ class CollaborativeOverlay(NonConsecutiveModel):
   
   width = models.IntegerField(default = 1920)
   height = models.IntegerField(default = 1080)
+  allow_audio = models.BooleanField(default = True)
   
   def __str__(self):
     return f"{self.name} ({self.description})"
@@ -95,6 +96,36 @@ class EmbedItem(AbstractItem):
     d['embed_url'] = self.embed_url
     return d
   
+class YouTubeEmbedItem(AbstractItem):
+  item_type = models.CharField(max_length = 32, default = "YoutubeEmbedItem", editable = False)
+  
+  video_id = models.CharField(max_length = 256, verbose_name = "YouTube Video ID", default = "", blank = True)
+  
+  paused = models.BooleanField()
+  muted = models.BooleanField()
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d['video_id'] = self.video_id
+    d['paused']   = self.paused
+    d['muted']    = self.muted
+    return d
+  
+class TwitchStreamEmbedItem(AbstractItem):
+  item_type = models.CharField(max_length = 32, default = "TwitchStreamEmbedItem", editable = False)
+  
+  username = models.CharField(max_length = 256, verbose_name = "Twitch Channel Name", default = "", blank = True)
+  
+  paused = models.BooleanField()
+  muted = models.BooleanField()
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d['username'] = self.username
+    d['paused']   = self.paused
+    d['muted']    = self.muted
+    return d
+  
 class AbstractTextItem(AbstractItem):
   font = models.CharField(max_length=128, default="Roboto Mono")
   font_size = models.IntegerField(default = 32)
@@ -160,6 +191,8 @@ class CounterItem(AbstractTextItem):
 ITEM_TYPES = [
   ImageItem,
   EmbedItem,
+  YouTubeEmbedItem,
+  TwitchStreamEmbedItem,
   TextItem,
   StopwatchItem,
   CounterItem,

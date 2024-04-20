@@ -1,5 +1,8 @@
 var WEBSOCKET = undefined;
 var RECONNECT_INTERVAL = undefined;
+var YOUTUBE_PLAYER_API_LOADED = false;
+
+var itemDict = {};
 
 function sendWebsocketMessage(cmd, objData)
 {
@@ -186,6 +189,34 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
+      case "YouTubeEmbedItem":
+        var playerId = "#{0}-player".format(itemId)
+
+        $(itemElemId).html(`<div id="{0}-player" class="noselect" />`.format(itemId));
+
+        itemDict[itemId]['player'] = undefined;
+
+        $(playerId).css({
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
+        });
+        break;
+      case "TwitchStreamEmbedItem":
+        var playerId = "#{0}-player".format(itemId)
+
+        $(itemElemId).html(`<div id="{0}-player" class="text-item noselect" />`.format(itemId));
+
+        itemDict[itemId]['player'] = new Twitch.Player("{0}-player".format(itemId), {
+          width: '100%',
+          height: '100%',
+          channel: itemDict[itemId].item_data.username,
+        });
+
+        updateTwitchStreamPlayer(itemId);
+
+        $(playerId).css({
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
+        });
+        break;
       case "TextItem":
         $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
         setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
@@ -249,6 +280,22 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
+      case "YouTubeEmbedItem":
+        var playerId = "#{0}-player".format(itemId);
+
+        $(playerId).css({
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
+        });
+        break;
+      case "TwitchStreamEmbedItem":
+        var playerId = "#{0}-player".format(itemId);
+
+        updateTwitchStreamPlayer(itemId);
+
+        $(playerId).css({
+          "visibility": (itemData['visible']) ? "inherit" : "hidden",
+        });
+        break;
       case "TextItem":
         setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
         break;
@@ -279,3 +326,43 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
 
   setItemPosition(itemId, top, left, width, height, z, rotation);
 }
+
+function onYouTubeIframeAPIReady()
+{
+  YOUTUBE_PLAYER_API_LOADED = true;
+
+  for (const itemId in itemDict)
+  {
+    if (itemDict[itemId]['item_type'] == "YouTubeEmbedItem")
+    {
+      createYouTubePlayer(itemId);
+    }
+  }
+}
+
+function updateTwitchStreamPlayer(itemId)
+{
+  if (itemDict[itemId].player.getChannel() != itemDict[itemId].item_data.username)
+  {
+    itemDict[itemId].player.setChannel(itemDict[itemId].item_data.username);
+  }
+
+  if (itemDict[itemId].item_data.paused)
+  {
+    itemDict[itemId].player.pause();
+  }
+  else
+  {
+    itemDict[itemId].player.play();
+  }
+
+  itemDict[itemId].player.setMuted(itemDict[itemId].item_data.muted);
+}
+
+window.addEventListener('load', function(e) {
+  var tag = document.createElement('script');
+
+  tag.src = "https://www.youtube.com/iframe_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}, false);
