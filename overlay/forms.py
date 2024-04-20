@@ -65,6 +65,7 @@ BASE_WIDGETS = {
   'width': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
   'height': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
   'rotation': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "1.0" }),
   'visible': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
   'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
 }

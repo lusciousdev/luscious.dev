@@ -147,6 +147,7 @@ function setTextItemContent(overlayElement, itemId, itemText, itemData)
     "font-weight": itemData["font_weight"],
     "color": itemData['color'],
     "background-color": (itemData['background_enabled']) ? itemData['background'] : "#00000000",
+    "opacity": itemData['opacity'],
     "visibility": (itemData['visible']) ? "inherit" : "hidden",
     "text-align": itemData["text_alignment"],
   });
@@ -177,6 +178,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         $(imgElemId).on('dragstart', (event) => { event.preventDefault(); });
 
         $(imgElemId).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
@@ -186,6 +188,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         $(itemElemId).html(`<iframe id="{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
 
         $(iframeId).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
@@ -197,6 +200,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         itemDict[itemId]['player'] = undefined;
 
         $(playerId).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
@@ -214,6 +218,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         updateTwitchStreamPlayer(itemId);
 
         $(playerId).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
@@ -265,6 +270,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         $("#{0}-img".format(itemId)).attr('height', "{0}px".format(height));
 
         $("#{0}-img".format(itemId)).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
@@ -277,6 +283,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         }
 
         $(iframeId).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
@@ -284,6 +291,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         var playerId = "#{0}-player".format(itemId);
 
         $(playerId).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;
@@ -293,6 +301,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         updateTwitchStreamPlayer(itemId);
 
         $(playerId).css({
+          "opacity": itemData['opacity'],
           "visibility": (itemData['visible']) ? "inherit" : "hidden",
         });
         break;

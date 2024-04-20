@@ -23,6 +23,11 @@ const maxHeightPercent = 0.667;
 var selectedItem = undefined;
 var otherSelectedItems = [];
 
+var sendEditTimeout = undefined;
+var sendEditChanges = {};
+
+const WEBSOCKET_SEND_COOLDOWN = 250; // ms
+
 const GrabTypes = {
   Move: 0,
   TopLeft: 1,
@@ -313,7 +318,7 @@ function updateItemCallback(itemId, itemType)
       break;
     case "YouTubeEmbedItem":
       itemIcon = "smart_display";
-      
+
       if (YOUTUBE_PLAYER_API_LOADED)
       {
         if (itemDict[itemId]['player'] == undefined)
@@ -534,7 +539,7 @@ function onMousedownItem(e)
     itemDict[itemId]['moving'] = true;
   });
 
-  var SEND_MOVE_INTERVAL = setInterval(sendMovingItemEdits, 250);
+  var SEND_MOVE_INTERVAL = setInterval(sendMovingItemEdits, WEBSOCKET_SEND_COOLDOWN);
 
   function handleDragging(e)
   {
@@ -914,6 +919,19 @@ function inputToValue(inputObj)
   }
 }
 
+function sendEdits()
+{
+  for (const itemId in sendEditChanges)
+  {
+    var itemType = itemDict[itemId]["item_type"];
+    sendWebsocketMessage("edit_overlay_item", { "item_type": itemType, "item_id": itemId, "item_data": sendEditChanges[itemId] });
+
+    delete sendEditChanges[itemId];
+  }
+  
+  sendEditTimeout = undefined;
+}
+
 function onInputChange(inputEvent)
 {
   var targetedInput = $(inputEvent.currentTarget);
@@ -933,10 +951,12 @@ function onInputChange(inputEvent)
     default:
       var inputVal = inputToValue(targetedInput);
 
-      var itemData = {};
-      itemData[inputField] = inputVal;
+      if (!(itemId in sendEditChanges))
+        sendEditChanges[itemId] = {};
+      sendEditChanges[itemId][inputField] = inputVal;
 
-      sendWebsocketMessage("edit_overlay_item", { "item_type": itemType, "item_id": itemId, "item_data": itemData });
+      if (sendEditTimeout == undefined)
+        sendEditTimeout = setTimeout(sendEdits, WEBSOCKET_SEND_COOLDOWN);
       break;
   }
 }
