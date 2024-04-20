@@ -103,12 +103,14 @@ class YouTubeEmbedItem(AbstractItem):
   
   paused = models.BooleanField()
   muted = models.BooleanField()
+  volume = models.IntegerField(default = 50)
   
   def to_data_dict(self):
     d = super().to_data_dict()
     d['video_id'] = self.video_id
     d['paused']   = self.paused
     d['muted']    = self.muted
+    d['volume']   = self.volume
     return d
   
 class TwitchStreamEmbedItem(AbstractItem):
@@ -118,12 +120,14 @@ class TwitchStreamEmbedItem(AbstractItem):
   
   paused = models.BooleanField()
   muted = models.BooleanField()
+  volume = models.IntegerField(default = 50)
   
   def to_data_dict(self):
     d = super().to_data_dict()
     d['username'] = self.username
     d['paused']   = self.paused
     d['muted']    = self.muted
+    d['volume']   = self.volume
     return d
   
 class AbstractTextItem(AbstractItem):

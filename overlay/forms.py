@@ -2,6 +2,9 @@ from django import forms
 from .models import *
 from .twitch import *
 
+class RangeInput(forms.NumberInput):
+  input_type = 'range'
+
 class CollaborativeOverlayForm(forms.ModelForm):
   class Meta:
     model = CollaborativeOverlay
@@ -167,6 +170,7 @@ class EditYouTubeEmbedItem(EditItemForm):
       'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -183,6 +187,7 @@ class EditTwitchStreamEmbedItem(EditItemForm):
       'username': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -287,9 +292,10 @@ class AddYouTubeEmbedItem(AddItemForm):
     exclude = AddItemForm.Meta.exclude
     
     widgets = {
-      'youtube_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -306,6 +312,7 @@ class AddTwitchStreamEmbedItem(AddItemForm):
       'username': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)

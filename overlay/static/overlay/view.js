@@ -67,6 +67,7 @@ function addItemCallback(itemId, itemType)
       if (YOUTUBE_PLAYER_API_LOADED)
       {
         createYouTubePlayer(itemId);
+        updateYouTubePlayer(itemId);
       }
       break;
     case "ImageItem":
@@ -91,31 +92,8 @@ function updateItemCallback(itemId, itemType)
         {
           createYouTubePlayer(itemId);
         }
-
-        var videoData = itemDict[itemId]['player'].getVideoData();
-
-        if (videoData.video_id != itemDict[itemId].item_data.video_id)
-        {
-          itemDict[itemId]['player'].loadVideoById(itemDict[itemId].item_data.video_id);
-        }
-
-        if (itemDict[itemId]['item_data']['muted'])
-        {
-          itemDict[itemId]['player'].mute();
-        }
-        else
-        {
-          itemDict[itemId]['player'].unMute();
-        }
-
-        if (itemDict[itemId]['item_data']['paused'])
-        {
-          itemDict[itemId]['player'].pauseVideo();
-        }
-        else
-        {
-          itemDict[itemId]['player'].playVideo();
-        }
+        
+        updateYouTubePlayer(itemId);
       }
       break;
     case "ImageItem":

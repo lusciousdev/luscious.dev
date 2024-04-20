@@ -274,6 +274,7 @@ function addItemCallback(itemId, itemType)
       if (YOUTUBE_PLAYER_API_LOADED)
       {
         createYouTubePlayer(itemId);
+        updateYouTubePlayer(itemId);
       }
       break;
     case "TwitchStreamEmbedItem":
@@ -312,38 +313,15 @@ function updateItemCallback(itemId, itemType)
       break;
     case "YouTubeEmbedItem":
       itemIcon = "smart_display";
-
-      if (itemDict[itemId]['player'] == undefined)
-      {
-        createYouTubePlayer(itemId);
-      }
-
+      
       if (YOUTUBE_PLAYER_API_LOADED)
       {
-        var videoData = itemDict[itemId]['player'].getVideoData();
-
-        if (videoData.video_id != itemDict[itemId].item_data.video_id)
+        if (itemDict[itemId]['player'] == undefined)
         {
-          itemDict[itemId]['player'].loadVideoById(itemDict[itemId].item_data.video_id);
+          createYouTubePlayer(itemId);
         }
-
-        if (itemDict[itemId]['item_data']['muted'])
-        {
-          itemDict[itemId]['player'].mute();
-        }
-        else
-        {
-          itemDict[itemId]['player'].unMute();
-        }
-
-        if (itemDict[itemId]['item_data']['paused'])
-        {
-          itemDict[itemId]['player'].pauseVideo();
-        }
-        else
-        {
-          itemDict[itemId]['player'].playVideo();
-        }
+        
+        updateYouTubePlayer(itemId);
       }
     break;
     case "TwitchStreamEmbedItem":
