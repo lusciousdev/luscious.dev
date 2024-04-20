@@ -190,22 +190,22 @@ function updateItems(data, fullItemList = true, selfEdit = false)
   
       if (!itemDict[itemId]['moving'])
       {
-        itemDict[itemData['id']]['item_data'] = itemData;
+        itemDict[itemId]['item_data'] = itemData;
       }
     }
     else
     {
-      itemDict[itemData['id']] = {
+      itemDict[itemId] = {
         "item_type": itemType,
         "item_data": itemData,
         "moving": false,
       };
     }
 
-    left   = viewToEditScale(itemData['x']);
-    top    = viewToEditScale(itemData['y']);
-    width  = viewToEditScale(itemData['width']);
-    height = viewToEditScale(itemData['height']);
+    left   = viewToEditScale(itemDict[itemId]['x']);
+    top    = viewToEditScale(itemDict[itemId]['y']);
+    width  = viewToEditScale(itemDict[itemId]['width']);
+    height = viewToEditScale(itemDict[itemId]['height']);
 
     var z = itemData['z'];
     var rotation = itemData['rotation'];
