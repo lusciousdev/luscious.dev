@@ -64,12 +64,6 @@ function addItemCallback(itemId, itemType)
   switch (itemType)
   {
     case "YouTubeEmbedItem":
-      if (YOUTUBE_PLAYER_API_LOADED)
-      {
-        createYouTubePlayer(itemId);
-        updateYouTubePlayer(itemId);
-      }
-      break;
     case "ImageItem":
     case "StopwatchItem":
     case "CounterItem":
@@ -86,16 +80,6 @@ function updateItemCallback(itemId, itemType)
   switch (itemType)
   {
     case "YouTubeEmbedItem":
-      if (YOUTUBE_PLAYER_API_LOADED)
-      {
-        if (itemDict[itemId]['player'] == undefined)
-        {
-          createYouTubePlayer(itemId);
-        }
-        
-        updateYouTubePlayer(itemId);
-      }
-      break;
     case "ImageItem":
     case "StopwatchItem":
     case "CounterItem":
@@ -115,6 +99,7 @@ function handleGetItemsError(data)
 
 function createYouTubePlayer(itemId)
 {
+  itemDict[itemId]['player_init'] = true;
   itemDict[itemId]['player'] = new YT.Player('{0}-player'.format(itemId), {
     height: '100%',
     width: '100%',
@@ -122,28 +107,13 @@ function createYouTubePlayer(itemId)
     playerVars: {
       'controls': 0,
       'disablekb': 1,
-      'autoplay': 1,
+      'autoplay': 0,
       'playsinline': 1,
+    },
+    events: {
+      'onReady': onPlayerReady,
     }
   });
-
-  if (itemDict[itemId]['item_data']['muted'])
-  {
-    itemDict[itemId]['player'].mute();
-  }
-  else
-  {
-    itemDict[itemId]['player'].unMute();
-  }
-
-  if (itemDict[itemId]['item_data']['paused'])
-  {
-    itemDict[itemId]['player'].pauseVideo();
-  }
-  else
-  {
-    itemDict[itemId]['player'].playVideo();
-  }
 }
 
 $(window).on('load', function() {

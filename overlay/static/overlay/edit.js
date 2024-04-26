@@ -276,11 +276,6 @@ function addItemCallback(itemId, itemType)
       break;
     case "YouTubeEmbedItem":
       itemIcon = "smart_display";
-      if (YOUTUBE_PLAYER_API_LOADED)
-      {
-        createYouTubePlayer(itemId);
-        updateYouTubePlayer(itemId);
-      }
       break;
     case "TwitchStreamEmbedItem":
       itemIcon = "live_tv";
@@ -318,17 +313,7 @@ function updateItemCallback(itemId, itemType)
       break;
     case "YouTubeEmbedItem":
       itemIcon = "smart_display";
-
-      if (YOUTUBE_PLAYER_API_LOADED)
-      {
-        if (itemDict[itemId]['player'] == undefined)
-        {
-          createYouTubePlayer(itemId);
-        }
-        
-        updateYouTubePlayer(itemId);
-      }
-    break;
+      break;
     case "TwitchStreamEmbedItem":
       itemIcon = "live_tv";
       break;
@@ -1138,35 +1123,21 @@ function selectedMinimizedChange(e)
 
 function createYouTubePlayer(itemId)
 {
-  itemDict[itemId]['player'] = new YT.Player('{0}-player'.format(itemId), {
+  itemDict[itemId]['player_init'] = true;
+  itemDict[itemId]["player"] = new YT.Player('{0}-player'.format(itemId), {
     height: '100%',
     width: '100%',
     videoId: itemDict[itemId]['item_data']['video_id'],
     playerVars: {
       'controls': 1,
       'disablekb': 0,
-      'autoplay': 1,
+      'autoplay': 0,
       'playsinline': 1,
+    },
+    events: {
+      'onReady': onPlayerReady,
     }
   });
-
-  if (itemDict[itemId]['item_data']['muted'])
-  {
-    itemDict[itemId]['player'].mute();
-  }
-  else
-  {
-    itemDict[itemId]['player'].unMute();
-  }
-
-  if (itemDict[itemId]['item_data']['paused'])
-  {
-    itemDict[itemId]['player'].pauseVideo();
-  }
-  else
-  {
-    itemDict[itemId]['player'].playVideo();
-  }
 }
 
 $(window).on('load', function() {

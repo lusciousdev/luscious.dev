@@ -160,6 +160,12 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
   {
     $(overlayElement).append("<div id='{0}' class='overlay-item unselected'></div>".format(itemId))
 
+    setItemPosition(itemId, top, left, width, height, z, rotation);
+
+    $(itemElemId).css({
+      "visibility": (!itemData['minimized']) ? "visible" : "hidden",
+    });
+
     switch (itemType)
     {
       case "ImageItem":
@@ -193,11 +199,17 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         });
         break;
       case "YouTubeEmbedItem":
-        var playerId = "#{0}-player".format(itemId)
+        var playerId = "#{0}-player".format(itemId);
 
-        $(itemElemId).html(`<div id="{0}-player" class="noselect" />`.format(itemId));
+        $(itemElemId).html(`<div id="{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
+        itemDict[itemId]['player_ready'] = false;
         itemDict[itemId]['player'] = undefined;
+
+        if (YOUTUBE_PLAYER_API_LOADED)
+        {
+          createYouTubePlayer(itemId);
+        }
 
         $(playerId).css({
           "opacity": itemData['opacity'],
@@ -207,7 +219,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
       case "TwitchStreamEmbedItem":
         var playerId = "#{0}-player".format(itemId)
 
-        $(itemElemId).html(`<div id="{0}-player" class="text-item noselect" />`.format(itemId));
+        $(itemElemId).html(`<div id="{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
         itemDict[itemId]['player'] = new Twitch.Player("{0}-player".format(itemId), {
           width: '100%',
@@ -223,11 +235,11 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         });
         break;
       case "TextItem":
-        $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
+        $(itemElemId).append("<pre id='{0}-text' class='overlay-item-child noselect' />".format(itemId));
         setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
         break;
       case "StopwatchItem":
-        $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
+        $(itemElemId).append("<pre id='{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
         if (itemData['paused'])
@@ -239,7 +251,7 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
       case "CounterItem":
-        $(itemElemId).append("<pre id='{0}-text' class='text-item noselect' />".format(itemId));
+        $(itemElemId).append("<pre id='{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(overlayElement, itemId, textContent, itemData);
@@ -252,6 +264,8 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
   }
   else
   {
+    setItemPosition(itemId, top, left, width, height, z, rotation);
+    
     switch (itemType)
     {
       case "ImageItem":
@@ -289,6 +303,19 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         break;
       case "YouTubeEmbedItem":
         var playerId = "#{0}-player".format(itemId);
+
+        if (YOUTUBE_PLAYER_API_LOADED)
+        {
+          if (itemDict[itemId]['player'] == undefined)
+          {
+            createYouTubePlayer(itemId);
+          }
+          
+          if (itemDict[itemId]['player_ready'])
+          {
+            updateYouTubePlayer(itemId);
+          }
+        }
 
         $(playerId).css({
           "opacity": itemData['opacity'],
@@ -328,26 +355,18 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
 
     afterEditCallback();
   }
-
-  $(itemElemId).css({
-    "visibility": (!itemData['minimized']) ? "visible" : "hidden",
-  });
-
-  setItemPosition(itemId, top, left, width, height, z, rotation);
 }
 
 function onYouTubeIframeAPIReady()
 {
   YOUTUBE_PLAYER_API_LOADED = true;
-
-  for (const itemId in itemDict)
-  {
-    if (itemDict[itemId]['item_type'] == "YouTubeEmbedItem")
-    {
-      createYouTubePlayer(itemId);
-    }
-  }
 }
+
+function onPlayerReady(event) {
+  var itemElem = $(event.target.g).closest(".overlay-item");
+  itemDict[itemElem.attr("id")]["player_ready"] = true;
+}
+
 
 function updateTwitchStreamPlayer(itemId)
 {
@@ -371,7 +390,10 @@ function updateTwitchStreamPlayer(itemId)
 
 function updateYouTubePlayer(itemId)
 {
-  var videoData = itemDict[itemId].player.getVideoData();
+  if (itemDict[itemId]["player"] == undefined)
+    return;
+
+  var videoData = itemDict[itemId]["player"].getVideoData();
 
   itemDict[itemId].player.setVolume(itemDict[itemId].item_data.volume);
 
