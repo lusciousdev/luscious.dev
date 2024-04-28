@@ -1021,6 +1021,15 @@ function resetSelectedItem(e)
 
       sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
       break;
+    case "YouTubeEmbedItem":
+      if (YOUTUBE_PLAYER_API_LOADED) itemDict[selectedItem].player.loadVideoById(itemDict[selectedItem].item_data.video_id, itemDict[selectedItem].item_data.start_time);
+      break;
+    case "TwitchStreamEmbedItem":
+      itemDict[selectedItem].player.setChannel(itemDict[selectedItem].item_data.channel);
+      break;
+    case "TwitchVideoEmbedItem":
+      itemDict[selectedItem].player.seek(itemDict[selectedItem].item_data.start_time);
+      break;
     default:
       break;
   }
@@ -1133,6 +1142,7 @@ function createYouTubePlayer(itemId)
       'disablekb': 0,
       'autoplay': 0,
       'playsinline': 1,
+      'start': itemDict[itemId].item_data.start_time,
     },
     events: {
       'onReady': onPlayerReady,

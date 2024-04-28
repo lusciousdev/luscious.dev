@@ -102,6 +102,7 @@ class YouTubeEmbedItem(AbstractItem):
   item_type = models.CharField(max_length = 32, default = "YoutubeEmbedItem", editable = False)
   
   video_id = models.CharField(max_length = 256, verbose_name = "YouTube Video ID", default = "", blank = True)
+  start_time = models.IntegerField(default = 0)
   
   paused = models.BooleanField()
   muted = models.BooleanField()
@@ -109,16 +110,17 @@ class YouTubeEmbedItem(AbstractItem):
   
   def to_data_dict(self):
     d = super().to_data_dict()
-    d['video_id'] = self.video_id
-    d['paused']   = self.paused
-    d['muted']    = self.muted
-    d['volume']   = self.volume
+    d['video_id']   = self.video_id
+    d['start_time'] = self.start_time
+    d['paused']     = self.paused
+    d['muted']      = self.muted
+    d['volume']     = self.volume
     return d
   
 class TwitchStreamEmbedItem(AbstractItem):
   item_type = models.CharField(max_length = 32, default = "TwitchStreamEmbedItem", editable = False)
   
-  username = models.CharField(max_length = 256, verbose_name = "Twitch Channel Name", default = "", blank = True)
+  channel = models.CharField(max_length = 256, verbose_name = "Twitch Channel Name", default = "", blank = True)
   
   paused = models.BooleanField()
   muted = models.BooleanField()
@@ -126,10 +128,29 @@ class TwitchStreamEmbedItem(AbstractItem):
   
   def to_data_dict(self):
     d = super().to_data_dict()
-    d['username'] = self.username
+    d['channel'] = self.channel
     d['paused']   = self.paused
     d['muted']    = self.muted
     d['volume']   = self.volume
+    return d
+  
+class TwitchVideoEmbedItem(AbstractItem):
+  item_type = models.CharField(max_length = 32, default = "TwitchVideoEmbedItem", editable = False)
+  
+  video_id = models.CharField(max_length = 256, verbose_name = "Twitch Video ID", default = "", blank = True)
+  start_time = models.IntegerField(default = 0)
+  
+  paused = models.BooleanField()
+  muted = models.BooleanField()
+  volume = models.IntegerField(default = 50)
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d['video_id']   = self.video_id
+    d['start_time'] = self.start_time
+    d['paused']     = self.paused
+    d['muted']      = self.muted
+    d['volume']     = self.volume
     return d
   
 class AbstractTextItem(AbstractItem):
@@ -199,6 +220,7 @@ ITEM_TYPES = [
   EmbedItem,
   YouTubeEmbedItem,
   TwitchStreamEmbedItem,
+  TwitchVideoEmbedItem,
   TextItem,
   StopwatchItem,
   CounterItem,

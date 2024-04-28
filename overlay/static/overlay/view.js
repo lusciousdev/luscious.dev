@@ -109,6 +109,7 @@ function createYouTubePlayer(itemId)
       'disablekb': 1,
       'autoplay': 0,
       'playsinline': 1,
+      'start': itemDict[itemId].item_data.start_time,
     },
     events: {
       'onReady': onPlayerReady,

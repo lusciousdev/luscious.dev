@@ -91,6 +91,8 @@
                   {% if k == "StopwatchItem" %}
                   <div class="medium-button pause-item" id="pause-{{ k }}">Pause</div>
                   <div class="medium-button reset-item" id="reset-{{ k }}">Reset</div>
+                  {% elif k == "YouTubeEmbedItem" or k == "TwitchStreamEmbedItem" or k == "TwitchVideoEmbedItem" %}
+                  <div class="medium-button reset-item" id="reset-{{ k }}">Reset</div>
                   {% endif %}
                   <div class="medium-button delete-item" id="delete-{{ k }}">Delete</div>
                 </td>

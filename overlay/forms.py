@@ -169,9 +169,10 @@ class EditYouTubeEmbedItem(EditItemForm):
     
     widgets = {
       'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'start_time': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
-      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
+      'volume': RangeInput(attrs = { "field-type": "integer", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -185,10 +186,28 @@ class EditTwitchStreamEmbedItem(EditItemForm):
     exclude = EditItemForm.Meta.exclude
     
     widgets = {
-      'username': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'channel': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
-      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
+      'volume': RangeInput(attrs = { "field-type": "integer", "min": 0, "max": 100 }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
+class EditTwitchVideoEmbedItem(EditItemForm):
+  def get_pretty_name(self):
+    return "Twitch Video"
+  
+  class Meta:
+    model = TwitchVideoEmbedItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {
+      'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'start_time': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40 }),
+      'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'volume': RangeInput(attrs = { "field-type": "integer", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -294,9 +313,10 @@ class AddYouTubeEmbedItem(AddItemForm):
     
     widgets = {
       'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'start_time': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
-      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
+      'volume': RangeInput(attrs = { "field-type": "integer", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -310,10 +330,28 @@ class AddTwitchStreamEmbedItem(AddItemForm):
     exclude = AddItemForm.Meta.exclude
     
     widgets = {
-      'username': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'channel': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
       'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
       'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
-      'volume': RangeInput(attrs = { "field-type": "int", "min": 0, "max": 100 }),
+      'volume': RangeInput(attrs = { "field-type": "integer", "min": 0, "max": 100 }),
+    }
+    
+    widgets.update(BASE_WIDGETS)
+    
+class AddTwitchVideoEmbedItem(AddItemForm):
+  def get_pretty_name(self):
+    return "Twitch Video"
+  
+  class Meta:
+    model = TwitchVideoEmbedItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {
+      'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+      'start_time': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40 }),
+      'paused': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'muted': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+      'volume': RangeInput(attrs = { "field-type": "integer", "min": 0, "max": 100 }),
     }
     
     widgets.update(BASE_WIDGETS)
@@ -383,6 +421,7 @@ FORMS_MAP = {
     "EmbedItem": EditEmbedItem,
     "YouTubeEmbedItem": EditYouTubeEmbedItem,
     "TwitchStreamEmbedItem": EditTwitchStreamEmbedItem,
+    "TwitchVideoEmbedItem": EditTwitchVideoEmbedItem,
     "TextItem": EditTextItem,
     "StopwatchItem": EditStopwatchItem,
     "CounterItem": EditCounterItem,
@@ -392,6 +431,7 @@ FORMS_MAP = {
     "EmbedItem": AddEmbedItem,
     "YouTubeEmbedItem": AddYouTubeEmbedItem,
     "TwitchStreamEmbedItem": AddTwitchStreamEmbedItem,
+    "TwitchVideoEmbedItem": AddTwitchVideoEmbedItem,
     "TextItem": AddTextItem,
     "StopwatchItem": AddStopwatchItem,
     "CounterItem": AddCounterItem,
