@@ -15,6 +15,22 @@ function sendWebsocketMessage(cmd, objData)
   }
 }
 
+function getDefaultCSS(editView, idata)
+{
+  visible = "hidden";
+
+  if ((idata['visibility'] == 1 && editView) || (idata["visibility"] == 2))
+  {
+    visible = "inherit";
+  }
+
+  return {
+    "opacity": (idata['opacity'] / 100.0),
+    "visibility": visible,
+    "clip-path": "inset({0}% {1}% {2}% {3}%)".format(idata["crop_top"], idata["crop_right"], idata["crop_bottom"], idata["crop_left"]),
+  }
+}
+
 function handleWebsocketMessage(e)
 {
   var eventData = JSON.parse(e.data);
@@ -35,6 +51,9 @@ function handleWebsocketMessage(e)
       break;
     case "overlay_item_deleted":
       deleteItem(data.item_id);
+      break;
+    case "overlay_item_reset":
+      resetItem(data.item_id);
       break;
     case "error":
       console.warn(data);
@@ -81,9 +100,14 @@ function getOverlayItems()
   sendWebsocketMessage("get_overlay_items", {});
 }
 
+function getDivById(id)
+{
+  return $("#{0}".format(id));
+}
+
 function getItemDiv(itemId)
 {
-  return $("#{0}".format(itemId));
+  return $("#item-{0}".format(itemId));
 }
 
 function deleteItem(itemId)
@@ -91,11 +115,31 @@ function deleteItem(itemId)
   delete itemDict[itemId];
 
   getItemDiv(itemId).remove();
-  $("#{0}-list-entry".format(itemId)).remove();
+  $("#item-{0}-list-entry".format(itemId)).remove();
 
   if (itemId == selectedItem)
   {
     clearSelectedItem();
+  }
+}
+
+function resetItem(itemId)
+{
+  var itemType = itemDict[itemId]['item_type'];
+  
+  switch (itemType)
+  {
+    case "YouTubeEmbedItem":
+      resetYouTubePlayer(itemId);
+      break;
+    case "TwitchStreamEmbedItem":
+      resetTwitchStreamEmbed(itemId);
+      break;
+    case "TwitchVideoEmbedItem":
+      resetTwitchVideoEmbed(itemId);
+      break;
+    default:
+      break;
   }
 }
 
@@ -105,7 +149,7 @@ const escapeHtml = (unsafe) => {
 
 function setItemPosition(itemId, top, left, width, height, z, rotation)
 {
-  $("#{0}".format(itemId)).css({
+  $("#item-{0}".format(itemId)).css({
     "top": "{0}px".format(top),
     "left": "{0}px".format(left),
     "width": "{0}px".format(width),
@@ -147,31 +191,32 @@ function secondsToTimeFormat(totalSeconds)
   return "{0}:{1}:{2}".format(hours.pad(), minutes.pad(), seconds.pad());
 }
 
-function setTextItemContent(overlayElement, itemId, itemText, itemData)
+function setTextItemContent(editView, overlayElement, itemId, itemText, itemData)
 {
   var overlayElemWidth = $(overlayElement).width();
-  var textElemId = "#{0}-text".format(itemId);
+  var textElemId = "#item-{0}-text".format(itemId);
+  console.log(overlayElemWidth, overlayWidth);
   var fontSize = (overlayElemWidth * itemData['font_size']) / overlayWidth;
 
   $(textElemId).text(itemText);
-  $(textElemId).css({
-    "font-size": "{0}pt".format(fontSize),
-    "font-family": "{0}, sans-serif".format(itemData["font"]),
-    "font-weight": itemData["font_weight"],
-    "color": itemData['color'],
-    "background-color": (itemData['background_enabled']) ? itemData['background'] : "#00000000",
-    "opacity": itemData['opacity'],
-    "visibility": (itemData['visible']) ? "inherit" : "hidden",
-    "text-align": itemData["text_alignment"],
-  });
+
+  var itemCSS = getDefaultCSS(editView, itemData);
+  itemCSS["font-size"] = "{0}pt".format(fontSize);
+  itemCSS["font-family"] = "{0}, sans-serif".format(itemData["font"]);
+  itemCSS["font-weight"] = itemData["font_weight"];
+  itemCSS["color"] = itemData['color'];
+  itemCSS["background-color"] = (itemData['background_enabled']) ? itemData['background'] : "#00000000";
+  itemCSS["text-align"] = itemData["text_alignment"];
+
+  $(textElemId).css(itemCSS);
 }
 
-function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
+function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
 {
-  var itemElemId = '#{0}'.format(itemId);
+  var itemElemId = '#item-{0}'.format(itemId);
   if ($(itemElemId).length == 0)
   {
-    $(overlayElement).append("<div id='{0}' class='overlay-item unselected'></div>".format(itemId))
+    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item unselected'></div>".format(itemId))
 
     setItemPosition(itemId, top, left, width, height, z, rotation);
 
@@ -188,33 +233,31 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
           imageUrl = itemData['image_url'];
         }
 
-        $(itemElemId).append("<img id='{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
+        $(itemElemId).append("<img id='item-{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
         $(itemElemId).data('id', itemData['id']);
         $(itemElemId).data('item_type', itemType);
 
-        var imgElemId = "#{0}-img".format(itemId);
+        var imgElemId = "#item-{0}-img".format(itemId);
         
         $(imgElemId).on('dragstart', (event) => { event.preventDefault(); });
 
-        $(imgElemId).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $(imgElemId).css(getDefaultCSS(editView, itemData));
         break;
       case "EmbedItem":
-        var iframeId = "#{0}-iframe".format(itemId)
+        var iframeId = "#item-{0}-iframe".format(itemId)
 
-        $(itemElemId).html(`<iframe id="{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
+        $(itemElemId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
 
         $(iframeId).css({
           "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
+          "visibility": (itemData['visibility']) ? "inherit" : "hidden",
+          "clip-path": "inset({0}% {1}% {2}% {3}%)".format(itemData["crop_top"], itemData["crop_left"], itemData["crop_bottom"], itemData["crop_right"]),
         });
         break;
       case "YouTubeEmbedItem":
-        var playerId = "#{0}-player".format(itemId);
+        var playerId = "#item-{0}-player".format(itemId);
 
-        $(itemElemId).html(`<div id="{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
         itemDict[itemId]['player_ready'] = false;
         itemDict[itemId]['player'] = undefined;
@@ -224,17 +267,14 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
           createYouTubePlayer(itemId);
         }
 
-        $(playerId).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $(playerId).css(getDefaultCSS(editView, itemData));
         break;
       case "TwitchStreamEmbedItem":
-        var playerId = "#{0}-player".format(itemId)
+        var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemElemId).html(`<div id="{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
-        itemDict[itemId]['player'] = new Twitch.Player("{0}-player".format(itemId), {
+        itemDict[itemId]['player'] = new Twitch.Player("item-{0}-player".format(itemId), {
           width: '100%',
           height: '100%',
           channel: itemDict[itemId].item_data.channel,
@@ -242,17 +282,14 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
 
         updateTwitchStreamPlayer(itemId);
 
-        $(playerId).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $(playerId).css(getDefaultCSS(editView, itemData));
         break;
       case "TwitchVideoEmbedItem":
-        var playerId = "#{0}-player".format(itemId)
+        var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemElemId).html(`<div id="{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
-        itemDict[itemId]['player'] = new Twitch.Player("{0}-player".format(itemId), {
+        itemDict[itemId]['player'] = new Twitch.Player("item-{0}-player".format(itemId), {
           width: '100%',
           height: '100%',
           video: itemDict[itemId].item_data.video_id,
@@ -261,17 +298,14 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
 
         updateTwitchVideoPlayer(itemId);
 
-        $(playerId).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $(playerId).css(getDefaultCSS(editView, itemData));
         break;
       case "TextItem":
-        $(itemElemId).append("<pre id='{0}-text' class='overlay-item-child noselect' />".format(itemId));
-        setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
+        $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
         break;
       case "StopwatchItem":
-        $(itemElemId).append("<pre id='{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
         if (itemData['paused'])
@@ -280,13 +314,13 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         }
         var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
         
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break;
       case "CounterItem":
-        $(itemElemId).append("<pre id='{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break;
       default:
         break;
@@ -311,34 +345,28 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
           imageUrl = itemData['image_url'];
         }
 
-        if ($("#{0}-img".format(itemId)).attr('src') != imageUrl)
+        if ($("#item-{0}-img".format(itemId)).attr('src') != imageUrl)
         {
-          $("#{0}-img".format(itemId)).attr('src', imageUrl);
+          $("#item-{0}-img".format(itemId)).attr('src', imageUrl);
         }
 
-        $("#{0}-img".format(itemId)).attr('width', "{0}px".format(width));
-        $("#{0}-img".format(itemId)).attr('height', "{0}px".format(height));
+        $("#item-{0}-img".format(itemId)).attr('width', "{0}px".format(width));
+        $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
 
-        $("#{0}-img".format(itemId)).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $("#item-{0}-img".format(itemId)).css(getDefaultCSS(editView, itemData));
         break;
       case "EmbedItem":
-        var iframeId = "#{0}-iframe".format(itemId)
+        var iframeId = "#item-{0}-iframe".format(itemId)
 
         if ($(iframeId).attr('src') != itemData['embed_url'])
         {
           $(iframeId).attr('src', itemData['embed_url']);
         }
 
-        $(iframeId).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $(iframeId).css(getDefaultCSS(editView, itemData));
         break;
       case "YouTubeEmbedItem":
-        var playerId = "#{0}-player".format(itemId);
+        var playerId = "#item-{0}-player".format(itemId);
 
         if (YOUTUBE_PLAYER_API_LOADED)
         {
@@ -353,33 +381,24 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
           }
         }
 
-        $(playerId).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $(playerId).css(getDefaultCSS(editView, itemData));
         break;
       case "TwitchStreamEmbedItem":
-        var playerId = "#{0}-player".format(itemId);
+        var playerId = "#item-{0}-player".format(itemId);
 
         updateTwitchStreamPlayer(itemId);
 
-        $(playerId).css({
-          "opacity": itemData['opacity'],
-          "visibility": (itemData['visible']) ? "inherit" : "hidden",
-        });
+        $(playerId).css(getDefaultCSS(editView, itemData));
         break;
         case "TwitchVideoEmbedItem":
-          var playerId = "#{0}-player".format(itemId)
+          var playerId = "#item-{0}-player".format(itemId)
   
           updateTwitchVideoPlayer(itemId);
   
-          $(playerId).css({
-            "opacity": itemData['opacity'],
-            "visibility": (itemData['visible']) ? "inherit" : "hidden",
-          });
+          $(playerId).css();
           break;
       case "TextItem":
-        setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
+        setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
         break;
       case "StopwatchItem":
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
@@ -389,11 +408,11 @@ function addOrUpdateItem(overlayElement, itemId, itemType, top, left, width, hei
         }
         var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
         
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break
       case "CounterItem":
         var textContent = itemData['counter_format'].format(itemData['count'])
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break;
       default:
         break;
@@ -413,7 +432,6 @@ function onPlayerReady(event) {
   itemDict[itemElem.attr("id")]["player_ready"] = true;
 }
 
-
 function updateTwitchStreamPlayer(itemId)
 {
   if (itemDict[itemId].player.getChannel() != itemDict[itemId].item_data.channel)
@@ -424,6 +442,11 @@ function updateTwitchStreamPlayer(itemId)
   updateTwitchEmbed(itemId);
 }
 
+function resetTwitchStreamEmbed(itemId)
+{
+  itemDict[itemId].player.setChannel(itemDict[itemId].item_data.channel);
+}
+
 function updateTwitchVideoPlayer(itemId)
 {
   if (itemDict[itemId].player.getVideo() != itemDict[itemId].item_data.video_id)
@@ -432,6 +455,11 @@ function updateTwitchVideoPlayer(itemId)
   }
 
   updateTwitchEmbed(itemId);
+}
+
+function resetTwitchVideoEmbed(itemId)
+{
+  itemDict[itemId].player.seek(itemDict[itemId].item_data.start_time);
 }
 
 function updateTwitchEmbed(itemId)
@@ -480,6 +508,12 @@ function updateYouTubePlayer(itemId)
   {
     itemDict[itemId].player.playVideo();
   }
+}
+
+function resetYouTubePlayer(itemId)
+{
+  if (YOUTUBE_PLAYER_API_LOADED) 
+    itemDict[itemId].player.loadVideoById(itemDict[itemId].item_data.video_id, itemDict[itemId].item_data.start_time);
 }
 
 window.addEventListener('load', function(e) {

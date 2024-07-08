@@ -71,6 +71,8 @@ class OverlayConsumer(WebsocketConsumer):
       self.edit_overlay_item(data)
     elif command == "delete_overlay_item":
       self.delete_overlay_item(data)
+    elif command == "reset_overlay_item":
+      self.reset_overlay_item(data)
     
   def get_overlay_items(self):
     overlay_items = []
@@ -182,6 +184,50 @@ class OverlayConsumer(WebsocketConsumer):
          "data": {
            "editor": self.twitchaccount.uid,
            "item_id": item_id, 
+          } 
+        } 
+      }
+    )
+    
+  def reset_overlay_item(self, data : dict):
+    if not self.owner_or_editor():
+      self.send_command("error", "Invalid user.")
+      return
+    
+    item_type = data.get("item_type", "")
+    item_id = data.get("item_id", "")
+    
+    if item_type == "" or item_id == "":
+      self.send_command("error", "Improperly formatted request.")
+      return
+    
+    item_model = None
+    for t in ITEM_TYPES:
+      type_field = t._meta.get_field("item_type")
+      
+      if item_type.lower() == type_field.default.lower():
+        item_model = t
+        break
+    
+    if item_model is None:
+      self.send_command("error", "Unrecognized item type.")
+      return
+    
+    try:
+      item_instance = item_model.objects.get(id = item_id)
+    except item_model.DoesNotExist:
+      self.send_command("error", "That item does not exist.")
+      return
+    
+    async_to_sync(self.channel_layer.group_send)(
+      self.overlay_group_name, 
+      { 
+       "type": "broadcast_event", 
+       "event_data": { 
+         "command": "overlay_item_reset", 
+         "data": {
+           "editor": self.twitchaccount.uid,
+           "item_id": item_id,
           } 
         } 
       }

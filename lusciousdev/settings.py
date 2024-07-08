@@ -221,8 +221,8 @@ CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev",
                          "https://test.luscious.dev" ]
 
 # Celery
-CELERY_BROKER_URL     = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PASSWORD}/{CELERY_DATABASE}"
-CELERY_RESULT_BACKEND = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PASSWORD}/{CELERY_DATABASE}"
+CELERY_BROKER_URL     = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_DATABASE}"
+CELERY_RESULT_BACKEND = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_DATABASE}"
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"

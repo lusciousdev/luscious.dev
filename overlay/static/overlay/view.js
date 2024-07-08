@@ -42,7 +42,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var z = itemData['z'];
     var rotation = itemData['rotation'];
     
-    addOrUpdateItem("body", itemId, itemType, top, left, width, height, z, rotation, itemData,
+    addOrUpdateItem(false, "body", itemId, itemType, top, left, width, height, z, rotation, itemData,
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }
@@ -53,7 +53,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     {
       if (!itemSeen[itemId])
       {
-        $("#{0}".format(itemId)).remove();
+        $("#item-{0}".format(itemId)).remove();
       }
     }
   }

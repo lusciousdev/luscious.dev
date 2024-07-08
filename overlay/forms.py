@@ -65,10 +65,20 @@ BASE_WIDGETS = {
   'width': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
   'height': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
   'rotation': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
-  'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "1.0" }),
-  'visible': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
+  'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0" }),
+  'visibility': forms.Select(attrs={ "field-type": "integer" }),
   'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
+  'crop_top': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'crop_bottom': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'crop_left': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'crop_right': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
 }
+
+VISIBILITY_CHOICES = (
+  (0, "Hidden"),
+  (1, "Visible to editors"),
+  (2, "Visible"),
+)
 
 FONT_CHOICES = (
   ("Roboto Mono", "Roboto Mono"),
@@ -121,6 +131,8 @@ BASE_TEXT_WIDGETS = {
 class EditItemForm(forms.ModelForm):
   item_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   overlay_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
+  
+  visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
   
   class Meta:
     abstract = True

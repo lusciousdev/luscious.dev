@@ -166,10 +166,10 @@ function addGrabbers(itemId)
   getItemDiv(itemId).append("<div class='grabber bottomleft'></div>");
   getItemDiv(itemId).append("<div class='grabber bottomright'></div>");
 
-  $('#{0} .topleft'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopLeft; });
-  $('#{0} .topright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopRight; });
-  $('#{0} .bottomleft'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.BottomLeft; });
-  $('#{0} .bottomright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.BottomRight; });
+  $('#item-{0} .topleft'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopLeft; });
+  $('#item-{0} .topright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopRight; });
+  $('#item-{0} .bottomleft'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.BottomLeft; });
+  $('#item-{0} .bottomright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.BottomRight; });
 }
 
 function updateItems(data, fullItemList = true, selfEdit = false)
@@ -213,7 +213,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var z = itemData['z'];
     var rotation = itemData['rotation'];
 
-    addOrUpdateItem("#overlay", itemId, itemType, top, left, width, height, z, rotation, itemData, 
+    addOrUpdateItem(true, "#overlay", itemId, itemType, top, left, width, height, z, rotation, itemData, 
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }
@@ -230,9 +230,9 @@ function updateItems(data, fullItemList = true, selfEdit = false)
   }
 
   $(".item-list-entry").sort(function(a, b) {
-    if ($(a).attr("item_name") == $(b).attr("item_name"))
+    if ($(a).attr("itemName") == $(b).attr("itemName"))
     {
-      if ($(a).attr("item_id") < $(b).attr("item_id"))
+      if ($(a).attr("itemId") < $(b).attr("itemId"))
       {
         return -1;
       }
@@ -241,7 +241,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
         return 1;
       }
     }
-    else if ($(a).attr("item_name") < $(b).attr("item_name"))
+    else if ($(a).attr("itemName") < $(b).attr("itemName"))
     {
       return -1;
     }
@@ -285,11 +285,11 @@ function addItemCallback(itemId, itemType)
       break;
   }
 
-  $("#item-select-list").append(`<div class="item-list-entry" id="{0}-list-entry" item_id="{0}" item_name="{2}">
+  $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}">
     <span class="material-symbols-outlined">{1}</span> - {2}
   </div>`.format(itemId, itemIcon, item["item_data"]["name"]));
 
-  $("#{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
+  $("#item-{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
 }
 
 function updateItemCallback(itemId, itemType)
@@ -322,7 +322,7 @@ function updateItemCallback(itemId, itemType)
       break;
   }
 
-  $("#{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(itemIcon, item["item_data"]["name"]));
+  $("#item-{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(itemIcon, item["item_data"]["name"]));
 
   if (selectedItem != undefined) 
   {
@@ -402,8 +402,8 @@ function onResize(event)
     
     if (itemDict[prop]['item_type'] == "ImageItem")
     {
-      $("#{0}-img".format(itemId)).attr('width', "{0}px".format(width));
-      $("#{0}-img".format(itemId)).attr('height', "{0}px".format(height));
+      $("#item-{0}-img".format(itemId)).attr('width', "{0}px".format(width));
+      $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
     }
 
     setItemPosition(itemId, top, left, width, height, itemData['rotation']);
@@ -502,7 +502,7 @@ function onMousedownItem(e)
     }
   }
 
-  selectItem(dragData.elem.id);
+  selectItem($(dragData.elem).attr("itemId"));
 
   if (selectedItem == undefined)
   {
@@ -535,8 +535,8 @@ function onMousedownItem(e)
       var offsetPosition = Point.sub2(dragData.pagePn, dragData.pageP0);
 
       var movedItemNewPos = Point.add2(dragData.elemP0, offsetPosition);
-      var movedItemDim = getItemDim(dragData.elem.id);
-      if (itemDict[dragData.elem.id].item_data.rotation == 0)
+      var movedItemDim = getItemDim($(dragData.elem).attr("itemId"));
+      if (itemDict[$(dragData.elem).attr("itemId")].item_data.rotation == 0)
       {
         if (Math.abs(scaledOverlayHeight - (movedItemNewPos.y + movedItemDim.y)) < (0.01 * scaledOverlayHeight))
           offsetPosition.addY(scaledOverlayHeight - (movedItemNewPos.y + movedItemDim.y));
@@ -579,7 +579,7 @@ function onMousedownItem(e)
     {
       var relativePos = Point.sub2(dragData.furthestCorner.point, dragData.pagePn);
 
-      var itemRotRad = itemDict[dragData.elem.id].item_data.rotation * Math.PI / 180.0;
+      var itemRotRad = itemDict[$(dragData.elem).attr("itemId")].item_data.rotation * Math.PI / 180.0;
       
       relativePos.rotate(-1 * itemRotRad);
 
@@ -589,12 +589,12 @@ function onMousedownItem(e)
       newWidth = Math.max(25, newWidth);
       newHeight = Math.max(25, newHeight);
 
-      if (itemDict[dragData.elem.id].item_type == "ImageItem")
+      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "ImageItem")
       {
         if (!window.shiftheld)
         {
-          var imgNaturalWidth = $("#{0}-img".format(selectedItem)).get(0).naturalWidth;
-          var imgNaturalHeight = $("#{0}-img".format(selectedItem)).get(0).naturalHeight;
+          var imgNaturalWidth = $("#item-{0}-img".format(selectedItem)).get(0).naturalWidth;
+          var imgNaturalHeight = $("#item-{0}-img".format(selectedItem)).get(0).naturalHeight;
 
           var widthScale = newWidth / imgNaturalWidth;
           var heightScale = newHeight / imgNaturalHeight;
@@ -626,16 +626,16 @@ function onMousedownItem(e)
       var newFurthestCornerPoint = getGrabberPos(dragData.furthestCorner.elem);
       var offsetPosition = Point.sub2(dragData.furthestCorner.point, newFurthestCornerPoint);
 
-      var newPos = Point.add2(getItemPos(dragData.elem.id), offsetPosition);
+      var newPos = Point.add2(getItemPos($(dragData.elem).attr("itemId")), offsetPosition);
       $(dragData.elem).css({
         top: "{0}px".format(newPos.y), 
         left: "{0}px".format(newPos.x),
       });
 
-      if (itemDict[dragData.elem.id].item_type == "ImageItem")
+      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "ImageItem")
       {
-        $("#{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
-        $("#{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
+        $("#item-{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
+        $("#item-{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
       }
   
       var itemTop    = editToViewScale(newPos.y);
@@ -643,10 +643,10 @@ function onMousedownItem(e)
       var itemWidth  = editToViewScale(newWidth);
       var itemHeight = editToViewScale(newHeight);
   
-      itemDict[dragData.elem.id]['item_data']['x']      = Math.round(itemLeft);
-      itemDict[dragData.elem.id]['item_data']['y']      = Math.round(itemTop);
-      itemDict[dragData.elem.id]['item_data']['width']  = Math.round(itemWidth);
-      itemDict[dragData.elem.id]['item_data']['height'] = Math.round(itemHeight);
+      itemDict[$(dragData.elem).attr("itemId")]['item_data']['x']      = Math.round(itemLeft);
+      itemDict[$(dragData.elem).attr("itemId")]['item_data']['y']      = Math.round(itemTop);
+      itemDict[$(dragData.elem).attr("itemId")]['item_data']['width']  = Math.round(itemWidth);
+      itemDict[$(dragData.elem).attr("itemId")]['item_data']['height'] = Math.round(itemHeight);
     }
   
     setEditFormInputs(selectedItem);
@@ -684,14 +684,14 @@ function clearSelectedItem()
   if (selectedItem !== undefined)
   {
     getItemDiv(selectedItem).removeClass("selected").addClass("unselected");
-    $("#{0}-list-entry".format(selectedItem)).removeClass("selected-list-entry");
+    $("#item-{0}-list-entry".format(selectedItem)).removeClass("selected-list-entry");
 
     selectedItem = undefined;
   }
 
   otherSelectedItems.forEach((itemId) => {
     getItemDiv(itemId).removeClass("selected").addClass("unselected");
-    $("#{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
+    $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
   });
 
   otherSelectedItems = [];
@@ -737,7 +737,7 @@ function unselectItem(itemId)
   }
 
   getItemDiv(itemId).removeClass("selected").addClass("unselected");
-  $("#{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
+  $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
 }
 
 function selectItem(itemId)
@@ -769,7 +769,7 @@ function selectItem(itemId)
   }
 
   getItemDiv(itemId).removeClass("unselected").addClass("selected");
-  $("#{0}-list-entry".format(itemId)).addClass("selected-list-entry");
+  $("#item-{0}-list-entry".format(itemId)).addClass("selected-list-entry");
 
   if (!addingItem)
   {
@@ -1022,13 +1022,9 @@ function resetSelectedItem(e)
       sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
       break;
     case "YouTubeEmbedItem":
-      if (YOUTUBE_PLAYER_API_LOADED) itemDict[selectedItem].player.loadVideoById(itemDict[selectedItem].item_data.video_id, itemDict[selectedItem].item_data.start_time);
-      break;
     case "TwitchStreamEmbedItem":
-      itemDict[selectedItem].player.setChannel(itemDict[selectedItem].item_data.channel);
-      break;
     case "TwitchVideoEmbedItem":
-      itemDict[selectedItem].player.seek(itemDict[selectedItem].item_data.start_time);
+      sendWebsocketMessage("reset_overlay_item", { "item_id": selectedItem, "item_type": itemType })
       break;
     default:
       break;
@@ -1090,7 +1086,7 @@ function openAddItemTab(event, tabId)
     $(".tablink").eq(i).removeClass("active");
   }
 
-  getItemDiv(tabId).css({ "visibility": "visible" });
+  getDivById(tabId).css({ "visibility": "visible" });
   $(event.currentTarget).addClass("active");
 }
 
@@ -1117,7 +1113,7 @@ function toggleEmbeddedTwitchStream(e)
 function selectedVisibilityChange(e)
 {
   otherSelectedItems.forEach((itemId) => {
-    itemDict[itemId]["item_data"]["visible"] = $(e.target).is(":checked");
+    itemDict[itemId]["item_data"]["visibility"] = $(e.target).is(":checked");
     itemDict[itemId]["local_changes"] = true;
   });
 }
@@ -1207,7 +1203,7 @@ $(window).on('load', function() {
     pauseSelectedItem(e);
   });
 
-  $(".edit-container input[id=id_visible]").each((i, visibleCheckbox) => {
+  $(".edit-container input[id=id_visibility]").each((i, visibleCheckbox) => {
     $(visibleCheckbox).change((e) => selectedVisibilityChange(e));
   });
 
