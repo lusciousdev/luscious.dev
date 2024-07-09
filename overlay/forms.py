@@ -282,6 +282,8 @@ class EditCounterItem(AbstractEditText):
     widgets.update(BASE_TEXT_WIDGETS)
     
 class AddItemForm(forms.ModelForm):
+  visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
+  
   class Meta:
     abstract = True
     exclude = [ "overlay", "id", "item_type" ]
