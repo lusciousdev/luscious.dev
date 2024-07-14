@@ -195,7 +195,6 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
 {
   var overlayElemWidth = $(overlayElement).width();
   var textElemId = "#item-{0}-text".format(itemId);
-  console.log(overlayElemWidth, overlayWidth);
   var fontSize = (overlayElemWidth * itemData['font_size']) / overlayWidth;
 
   $(textElemId).text(itemText);
@@ -390,13 +389,13 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
-        case "TwitchVideoEmbedItem":
-          var playerId = "#item-{0}-player".format(itemId)
-  
-          updateTwitchVideoPlayer(itemId);
-  
-          $(playerId).css();
-          break;
+      case "TwitchVideoEmbedItem":
+        var playerId = "#item-{0}-player".format(itemId)
+
+        updateTwitchVideoPlayer(itemId);
+
+        $(playerId).css(getDefaultCSS(editView, itemData));
+        break;
       case "TextItem":
         setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
         break;
