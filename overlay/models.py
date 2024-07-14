@@ -51,8 +51,8 @@ class AbstractItem(NonConsecutiveModel):
   width = models.IntegerField(default = 300)
   height = models.IntegerField(default = 100)
   rotation = models.FloatField(default = 0)
-  opacity = models.FloatField(default = 1.0)
-  visibility = models.IntegerField(default = 0)
+  opacity = models.FloatField(default = 100.0)
+  visibility = models.IntegerField(default = 1)
   minimized = models.BooleanField(default = False)
   
   crop_top = models.FloatField(verbose_name = "Crop % (top)", default = 0)
