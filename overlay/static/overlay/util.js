@@ -428,7 +428,7 @@ function onYouTubeIframeAPIReady()
 
 function onPlayerReady(event) {
   var itemElem = $(event.target.g).closest(".overlay-item");
-  itemDict[itemElem.attr("id")]["player_ready"] = true;
+  itemDict[itemElem.attr("itemid")]["player_ready"] = true;
 }
 
 function updateTwitchStreamPlayer(itemId)
