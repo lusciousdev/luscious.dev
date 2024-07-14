@@ -1129,7 +1129,7 @@ function selectedMinimizedChange(e)
 function createYouTubePlayer(itemId)
 {
   itemDict[itemId]['player_init'] = true;
-  itemDict[itemId]["player"] = new YT.Player('{0}-player'.format(itemId), {
+  itemDict[itemId]["player"] = new YT.Player('item-{0}-player'.format(itemId), {
     height: '100%',
     width: '100%',
     videoId: itemDict[itemId]['item_data']['video_id'],
