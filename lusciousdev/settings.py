@@ -195,23 +195,45 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Logging
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "file": {
-            "level": "DEBUG",
-            "class": "logging.FileHandler",
-            "filename": "./logs/debug.log",
-            "encoding": "utf-8",
-        },
+  "version": 1,
+  "disable_existing_loggers": False,
+  "handlers": {
+    "django_file": {
+      "level": "DEBUG",
+      "class": "logging.FileHandler",
+      "filename": "./logs/django.log",
+      "encoding": "utf-8",
     },
-    "loggers": {
-        "django": {
-            "handlers": ["file"],
-            "level": "DEBUG",
-            "propagate": True,
-        },
+    "overlay_file": {
+      "level": "DEBUG",
+      "class": "logging.FileHandler",
+      "filename": "./logs/overlay.log",
+      "encoding": "utf-8",
     },
+    "lastfm_file": {
+      "level": "DEBUG",
+      "class": "logging.FileHandler",
+      "filename": "./logs/lastfm.log",
+      "encoding": "utf-8",
+    },
+  },
+  "loggers": {
+    "overlay": {
+      "handlers": ["django_file"],
+      "level": "DEBUG",
+      "propagate": True,
+    },
+    "overlay": {
+      "handlers": ["overlay_file"],
+      "level": "DEBUG",
+      "propagate": True,
+    },
+    "lastfm": {
+      "handlers": ["lastfm_file"],
+      "level": "DEBUG",
+      "propagate": True,
+    },
+  },
 }
 
 CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev", 

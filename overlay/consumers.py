@@ -11,6 +11,8 @@ import logging
 from .models import *
 from .forms import *
 
+logger = logging.getLogger("overlay")
+
 class OverlayConsumer(WebsocketConsumer):
   def owner_or_editor(self):
     self.user : UserLazyObject = self.scope["user"]
@@ -36,27 +38,31 @@ class OverlayConsumer(WebsocketConsumer):
     self.send(text_data = json.dumps({ "command": command, "data": data }))
   
   def connect(self):
+    logger.debug("Connection attempt started...")
+    
     overlay_id = self.scope["url_route"]["kwargs"]["overlay_id"]
     self.overlay_group_name = f"overlay_{overlay_id}"
+    
+    logger.debug(f"Attempting to join group {self.overlay_group_name}")
     
     try:
       self.overlay = CollaborativeOverlay.objects.get(id = overlay_id)
     except CollaborativeOverlay.DoesNotExist:
-      logging.error(f"Overlay \"{overlay_id}\" does not exist.")
+      logger.error(f"Overlay \"{overlay_id}\" does not exist.")
       self.close(reason = f"Overlay \"{overlay_id}\" does not exist.")
       return
     except Exception as e:
-      logging.error(f"Error: {e}")
+      logger.error(f"Error: {e}")
       self.close(reason = f"Error: {e}")
       return
     
-    logging.debug("Adding user to overlay group...")
+    logger.debug("Adding user to overlay group...")
     
     async_to_sync(self.channel_layer.group_add)(
       self.overlay_group_name, self.channel_name
     )
     
-    logging.debug("Accepting connection...")
+    logger.debug("Accepting connection...")
     
     self.accept()
     

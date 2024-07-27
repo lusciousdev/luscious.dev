@@ -4,6 +4,8 @@ import json
 import typing
 import logging
 
+logger = logging.getLogger("lastfm")
+
 class Album:
   name : str = ""
   artist : str = ""
@@ -40,7 +42,7 @@ class Album:
 
 def check_error(response_json : dict) -> bool:
   if 'error' in response_json:
-    logging.warning(f"last.fm API Error: {response_json['message']} ({response_json['error']})")
+    logger.warning(f"last.fm API Error: {response_json['message']} ({response_json['error']})")
     return True
   return False
 

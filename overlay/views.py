@@ -13,6 +13,8 @@ from channels.db import database_sync_to_async
 from .forms import *
 import typing
 
+logger = logging.getLogger("overlay")
+
 User : models.Model = settings.AUTH_USER_MODEL
 
 # Create your views here.
@@ -116,7 +118,7 @@ def remove_editor(request):
       try:
         instance = request.user.editor_set.get(twitch_id = editor.twitch_id)
       except Editor.DoesNotExist:
-        logging.error("Somehow editor does not exist even though we validated.")
+        logger.error("Somehow editor does not exist even though we validated.")
         return render(request, "overlay/editor.html", { "form": form, "action": "remove" })
       
       instance.delete()
