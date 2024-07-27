@@ -6,6 +6,7 @@ from channels.auth import UserLazyObject
 from allauth.socialaccount.models import SocialAccount
 from django.core.exceptions import FieldDoesNotExist
 import time
+import logging
 
 from .models import *
 from .forms import *
@@ -41,13 +42,21 @@ class OverlayConsumer(WebsocketConsumer):
     try:
       self.overlay = CollaborativeOverlay.objects.get(id = overlay_id)
     except CollaborativeOverlay.DoesNotExist:
-      print(f"Overlay \"{overlay_id}\" does not exist.")
+      logging.error(f"Overlay \"{overlay_id}\" does not exist.")
       self.close(reason = f"Overlay \"{overlay_id}\" does not exist.")
       return
+    except Exception as e:
+      logging.error(f"Error: {e}")
+      self.close(reason = f"Error: {e}")
+      return
+    
+    logging.debug("Adding user to overlay group...")
     
     async_to_sync(self.channel_layer.group_add)(
       self.overlay_group_name, self.channel_name
     )
+    
+    logging.debug("Accepting connection...")
     
     self.accept()
     

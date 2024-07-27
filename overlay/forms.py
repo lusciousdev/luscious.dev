@@ -74,6 +74,23 @@ BASE_WIDGETS = {
   'crop_right': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
 }
 
+BASE_WIDGET_ORDER = [
+  'name',
+  'x',
+  'y',
+  'z',
+  'width',
+  'height',
+  'rotation',
+  'crop_top',
+  'crop_left',
+  'crop_bottom',
+  'crop_right',
+  'visibility',
+  'minimized',
+  'opacity',
+]
+
 VISIBILITY_CHOICES = (
   (0, "Hidden"),
   (1, "Visible to editors"),
@@ -127,12 +144,24 @@ BASE_TEXT_WIDGETS = {
   'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
   'text_alignment': forms.Select(attrs = { "field-type": "text" })
 }
+
+BASE_TEXT_WIDGET_ORDER = [
+  'font',
+  'font_size',
+  'font_weight',
+  'text_alignment',
+  'color',
+  'background',
+  'background_enabled',
+]
     
 class EditItemForm(forms.ModelForm):
   item_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   overlay_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
+  
+  field_order = BASE_WIDGET_ORDER
   
   class Meta:
     abstract = True
@@ -144,7 +173,8 @@ class EditImageItem(EditItemForm):
   def get_pretty_name(self):
     return "Image"
   
-  field_order = ["name", "x", "y", "z", "width", "height", "rotation", "visible", "minimized", "image", "image_url", "url"]
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(["image", "image_url", "url"])
   
   class Meta:
     model = ImageItem
@@ -161,6 +191,8 @@ class EditEmbedItem(EditItemForm):
   def get_pretty_name(self):
     return "Embed"
   
+  field_order = BASE_WIDGET_ORDER
+  
   class Meta:
     model = EmbedItem
     exclude = EditItemForm.Meta.exclude
@@ -174,6 +206,8 @@ class EditEmbedItem(EditItemForm):
 class EditYouTubeEmbedItem(EditItemForm):
   def get_pretty_name(self):
     return "YouTube Video"
+  
+  field_order = BASE_WIDGET_ORDER
   
   class Meta:
     model = YouTubeEmbedItem
@@ -193,6 +227,8 @@ class EditTwitchStreamEmbedItem(EditItemForm):
   def get_pretty_name(self):
     return "Twitch Stream"
   
+  field_order = BASE_WIDGET_ORDER
+  
   class Meta:
     model = TwitchStreamEmbedItem
     exclude = EditItemForm.Meta.exclude
@@ -209,6 +245,8 @@ class EditTwitchStreamEmbedItem(EditItemForm):
 class EditTwitchVideoEmbedItem(EditItemForm):
   def get_pretty_name(self):
     return "Twitch Video"
+  
+  field_order = BASE_WIDGET_ORDER
   
   class Meta:
     model = TwitchVideoEmbedItem
@@ -229,12 +267,18 @@ class AbstractEditText(EditItemForm):
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
   
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
   class Meta:
     abstract = True
     
 class EditTextItem(AbstractEditText):
   def get_pretty_name(self):
     return "Text"
+  
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
     model = TextItem
@@ -250,6 +294,9 @@ class EditTextItem(AbstractEditText):
 class EditStopwatchItem(AbstractEditText):
   def get_pretty_name(self):
     return "Stopwatch"
+  
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
     model = StopwatchItem
@@ -269,6 +316,9 @@ class EditCounterItem(AbstractEditText):
   def get_pretty_name(self):
     return "Counter"
   
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
   class Meta:
     model = CounterItem
     exclude = EditItemForm.Meta.exclude
@@ -283,6 +333,8 @@ class EditCounterItem(AbstractEditText):
     
 class AddItemForm(forms.ModelForm):
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
+  
+  field_order = BASE_WIDGET_ORDER
   
   class Meta:
     abstract = True
@@ -374,6 +426,9 @@ class AbstractAddText(AddItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
+  
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
     abstract = True
