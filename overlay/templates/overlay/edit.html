@@ -57,16 +57,27 @@
         </div>
       </div>
 
-      <div class="sidebar-section" id="item-select-list">
-
+      <div class="sidebar-section" id="item-select-container">
+        <div class="sidebar-subsection" id="item-filter-container">
+          <label class="sidebar-label" for="item-filter">Filter:</label>
+          <input class="sidebar-text-input" type="text" id="item-filter" name="item-filter"></input>
+          <select class="sidebar-dropdown-input" id="item-type-filter" name="item-type-filter">
+            <option value="">All</option>
+            
+            {% for item_type in item_types %}
+            <option value="{{ item_type.get_simple_type }}">{{ item_type.get_pretty_type }}</button>
+            {% endfor %}
+          </select>
+        </div>
+        <div id="item-select-list"></div>
       </div>
 
       <div class="sidebar-section" id="item-edit-forms">
         {% for k, form in forms.edit.items %}
-        <div class="form-container edit-container hidden" id="edit-{{ k }}-container">
-          <form class="item-form edit-form" id="edit-{{ k }}-form">
+        <div class="form-container edit-container hidden" id="edit-{{ form.Meta.model.get_simple_type }}-container">
+          <form class="item-form edit-form" id="edit-{{ form.Meta.model.get_simple_type }}-form">
             <div class="item-title">
-              Edit {{ form.get_pretty_name }}
+              Edit {{ form.Meta.model.get_pretty_type }}
             </div>
             {{ form.non_field_errors }}
             {% for field in form.hidden_fields %}
@@ -89,12 +100,12 @@
                 <td></td>
                 <td>
                   {% if k == "StopwatchItem" %}
-                  <div class="medium-button pause-item" id="pause-{{ k }}">Pause</div>
-                  <div class="medium-button reset-item" id="reset-{{ k }}">Reset</div>
+                  <div class="medium-button pause-item" id="pause-{{ form.Meta.model.get_simple_type }}">Pause</div>
+                  <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
                   {% elif k == "YouTubeEmbedItem" or k == "TwitchStreamEmbedItem" or k == "TwitchVideoEmbedItem" %}
-                  <div class="medium-button reset-item" id="reset-{{ k }}">Reset</div>
+                  <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
                   {% endif %}
-                  <div class="medium-button delete-item" id="delete-{{ k }}">Delete</div>
+                  <div class="medium-button delete-item" id="delete-{{ form.Meta.model.get_simple_type }}">Delete</div>
                 </td>
               </tr>
             </table>
@@ -115,15 +126,15 @@
         <div class="tab-nav">
           <div class="tab" id="add-item-tabs">
             {% for k, form in forms.add.items %}
-            <button class="tablink" onclick="openAddItemTab(event, 'add-{{ k }}')">{{ form.get_pretty_name }}</button>
+            <button class="tablink" onclick="openAddItemTab(event, 'add-{{ form.Meta.model.get_simple_type }}')">{{ form.Meta.model.get_pretty_type }}</button>
             {% endfor %}
           </div>
 
           <div class="tab-container">
             {% for k, form in forms.add.items %}
-            <div class="form-container tabcontent" id="add-{{ k }}">
-              <form class="item-form add-form" id="add-{{ k }}-form">
-                <input type='hidden' id="id_item_type" name="item_type" value="{{ k }}">
+            <div class="form-container tabcontent" id="add-{{ form.Meta.model.get_simple_type }}">
+              <form class="item-form add-form" id="add-{{ form.Meta.model.get_simple_type }}-form">
+                <input type='hidden' id="id_item_type" name="item_type" value="{{ form.Meta.model.get_simple_type }}">
                 {{ form.non_field_errors }}
                 <table>
                 {% for field in form.visible_fields %}

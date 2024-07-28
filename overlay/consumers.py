@@ -22,14 +22,14 @@ class OverlayConsumer(WebsocketConsumer):
     try:
       self.twitchaccount = self.user.socialaccount_set.get(provider = "twitch")
     except SocialAccount.DoesNotExist:
-      print("User does not have a linked Twitch account.")
+      logging.debug("User does not have a linked Twitch account.")
       return False
     
     if not (self.overlay.owner.id == self.user.id):
       try:
         editormatch = self.overlay.owner.editor_set.get(twitch_id = self.twitchaccount.uid)
       except Editor.DoesNotExist:
-        print("User is not an editor.")
+        logging.debug("User is not an editor.")
         return False
       
     return True
@@ -97,7 +97,7 @@ class OverlayConsumer(WebsocketConsumer):
     response = { "items": [] }
     for item in overlay_items:
       item_dict = {
-        "item_type": item.item_type,
+        "item_type": item.get_simple_type(),
         "item_data": item.to_data_dict(),
       }
       
@@ -118,9 +118,9 @@ class OverlayConsumer(WebsocketConsumer):
     
     item_model = None
     for t in ITEM_TYPES:
-      type_field = t._meta.get_field("item_type")
+      type_name = t.get_simple_type()
       
-      if item_type.lower() == type_field.default.lower():
+      if item_type.lower() == type_name.lower():
         item_model = t
         break
     
@@ -172,9 +172,9 @@ class OverlayConsumer(WebsocketConsumer):
     
     item_model = None
     for t in ITEM_TYPES:
-      type_field = t._meta.get_field("item_type")
+      type_name = t.get_simple_type()
       
-      if item_type.lower() == type_field.default.lower():
+      if item_type.lower() == type_name.lower():
         item_model = t
         break
     
@@ -218,9 +218,9 @@ class OverlayConsumer(WebsocketConsumer):
     
     item_model = None
     for t in ITEM_TYPES:
-      type_field = t._meta.get_field("item_type")
+      type_name = t.get_simple_type()
       
-      if item_type.lower() == type_field.default.lower():
+      if item_type.lower() == type_name.lower():
         item_model = t
         break
     
@@ -262,9 +262,9 @@ class OverlayConsumer(WebsocketConsumer):
     
     item_model = None
     for t in ITEM_TYPES:
-      type_field = t._meta.get_field("item_type")
+      type_name = t.get_simple_type()
       
-      if item_type.lower() == type_field.default.lower():
+      if item_type.lower() == type_name.lower():
         item_model = t
         break
     
@@ -296,7 +296,7 @@ class OverlayConsumer(WebsocketConsumer):
          "command": "overlay_item_edited", 
          "data": {
            "editor": self.twitchaccount.uid,
-           "item_type": item_instance.item_type, 
+           "item_type": item_instance.get_simple_type(), 
            "item_data": item_instance.to_data_dict(), 
           } 
         } 

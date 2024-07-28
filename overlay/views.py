@@ -74,6 +74,7 @@ class EditOverlayView(generic.DetailView):
   def get_context_data(self, **kwargs):
     context = super(EditOverlayView, self).get_context_data(**kwargs)
     
+    context['item_types'] = ITEM_TYPES
     context['forms'] = FORMS_MAP
     context['twitchuserid'] = self.request.user.socialaccount_set.all().get(provider="twitch").uid
     

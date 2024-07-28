@@ -12,6 +12,8 @@ from .forms import *
 import json
 import typing
 
+logger = logging.getLogger("overlay")
+
 User : models.Model = settings.AUTH_USER_MODEL
 
 def get_overlay_items(request):
@@ -32,7 +34,7 @@ def get_overlay_items(request):
   response = { "items": [] }
   for item in overlay_items:
     item_dict = {
-      "item_type": item.item_type,
+      "item_type": item.get_simple_type(),
       "item_data": item.to_data_dict()
     }
     
@@ -70,9 +72,9 @@ def add_overlay_item(request : HttpRequest):
   
   item_model = None
   for t in ITEM_TYPES:
-    type_field = t._meta.get_field("item_type")
+    type_name = t.get_simple_type()
     
-    if item_type.lower() == type_field.default.lower():
+    if item_type.lower() == type_name.lower():
       item_model = t
       break
   
@@ -135,9 +137,9 @@ def delete_overlay_item(request):
   
   item_model = None
   for t in ITEM_TYPES:
-    type_field = t._meta.get_field("item_type")
+    type_name = t.get_simple_type()
     
-    if item_type.lower() == type_field.default.lower():
+    if item_type.lower() == type_name.lower():
       item_model = t
       break
   
@@ -180,9 +182,9 @@ def edit_overlay_item(request : HttpRequest):
     
   item_model = None
   for t in ITEM_TYPES:
-    type_field = t._meta.get_field("item_type")
+    type_name = t.get_simple_type()
     
-    if item_type.lower() == type_field.default.lower():
+    if item_type.lower() == type_name.lower():
       item_model = t
       break
   
@@ -218,8 +220,6 @@ def edit_overlay_items(request):
   if request.method != "POST":
     return JsonResponse({ "error": "Invalid request type." }, status = 501)
   
-  print(request.body)
-  
   json_data = json.loads(request.body)
   
   overlay_id = json_data.get("overlay_id", "")
@@ -247,9 +247,9 @@ def edit_overlay_items(request):
     
     item_model = None
     for t in ITEM_TYPES:
-      type_field = t._meta.get_field("item_type")
+      type_name = t.get_simple_type()
       
-      if item_type.lower() == type_field.default.lower():
+      if item_type.lower() == type_name.lower():
         item_model = t
         break
     

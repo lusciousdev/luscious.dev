@@ -5,6 +5,8 @@ import json
 import typing
 import logging
 
+logger = logging.getLogger("overlay")
+
 twitch_api = luscioustwitch.TwitchAPI({ "CLIENT_ID": settings.TWITCH_API_CLIENT_ID, "CLIENT_SECRET": settings.TWITCH_API_CLIENT_SECRET })
 
 def get_user_id(username) -> typing.Union[str, None]:

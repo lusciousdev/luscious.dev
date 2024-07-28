@@ -218,7 +218,7 @@ LOGGING = {
     },
   },
   "loggers": {
-    "overlay": {
+    "django": {
       "handlers": ["django_file"],
       "level": "DEBUG",
       "propagate": True,

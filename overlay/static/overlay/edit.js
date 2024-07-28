@@ -229,8 +229,8 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     }
   }
 
-  $(".item-list-entry").sort(function(a, b) {
-    if ($(a).attr("itemName") == $(b).attr("itemName"))
+  var result = $(".item-list-entry").sort(function(a, b) {
+    if ($(a).attr("itemName").toLowerCase() == $(b).attr("itemName").toLowerCase())
     {
       if ($(a).attr("itemId") < $(b).attr("itemId"))
       {
@@ -241,7 +241,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
         return 1;
       }
     }
-    else if ($(a).attr("itemName") < $(b).attr("itemName"))
+    else if ($(a).attr("itemName").toLowerCase() < $(b).attr("itemName").toLowerCase())
     {
       return -1;
     }
@@ -249,7 +249,13 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     {
       return 1;
     }
-  }).appendTo("#item-select-list");
+  });
+
+  $("#item-select-list").html(result);
+
+  $(".item-list-entry").each(function(i, entry) {
+    $(this).mousedown((e) => onMouseDownItemList(e, $(this).attr("itemid")));
+  });
 }
 
 function addItemCallback(itemId, itemType)
@@ -262,32 +268,33 @@ function addItemCallback(itemId, itemType)
   var itemIcon = 'text_snippet'
   switch (itemType)
   {
-    case "ImageItem":
+    case "image":
       itemIcon = 'image'
       break
-    case "StopwatchItem":
+    case "stopwatch":
       itemIcon = 'timer'
       break
-    case "CounterItem":
+    case "counter":
       itemIcon = '123'
       break
-    case "EmbedItem":
+    case "embed":
       itemIcon = "picture_in_picture";
       break;
-    case "YouTubeEmbedItem":
+    case "youtube_video":
       itemIcon = "smart_display";
       break;
-    case "TwitchStreamEmbedItem":
+    case "twitch_stream":
+    case "twitch_video":
       itemIcon = "live_tv";
       break;
-    case "TextItem":
+    case "text":
     default:
       break;
   }
 
-  $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}">
+  $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}" itemType="{3}">
     <span class="material-symbols-outlined">{1}</span> - {2}
-  </div>`.format(itemId, itemIcon, item["item_data"]["name"]));
+  </div>`.format(itemId, itemIcon, item["item_data"]["name"], item["item_type"]));
 
   $("#item-{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
 }
@@ -299,28 +306,31 @@ function updateItemCallback(itemId, itemType)
   var itemIcon = 'text_snippet'
   switch (itemType)
   {
-    case "ImageItem":
+    case "image":
       itemIcon = 'image';
       break
-    case "StopwatchItem":
+    case "stopwatch":
       itemIcon = 'timer';
       break
-    case "CounterItem":
+    case "counter":
       itemIcon = '123';
       break
-    case "EmbedItem":
+    case "embed":
       itemIcon = "picture_in_picture";
       break;
-    case "YouTubeEmbedItem":
+    case "youtube_video":
       itemIcon = "smart_display";
       break;
-    case "TwitchStreamEmbedItem":
+    case "twitch_stream":
+    case "twitch_video":
       itemIcon = "live_tv";
       break;
-    case "TextItem":
+    case "text":
     default:
       break;
   }
+
+  $("#item-{0}-list-entry".format(itemId)).attr("itemName", item["item_data"]["name"]);
 
   $("#item-{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(itemIcon, item["item_data"]["name"]));
 
@@ -946,6 +956,36 @@ function onInputChange(inputEvent)
   }
 }
 
+function onFilterChange(inputEvent = null)
+{
+  var typeFilterInput = $("#item-type-filter");
+  var nameFilterInput = $("#item-filter");
+
+  var typeFilterText = typeFilterInput.val().toLowerCase();
+  var filterText = nameFilterInput.val().toLowerCase();
+
+  $(".item-list-entry").each(function(i, obj) {
+    var itemHidden = true;
+
+    var typeMatch = (typeFilterText == "") || ($(this).attr("itemType").toLowerCase() == typeFilterText);
+    var nameMatch = $(this).attr("itemName").toLowerCase().includes(filterText)
+
+    if (typeMatch && nameMatch)
+    {
+      itemHidden = false;
+    }
+
+    if (itemHidden)
+    {
+      $(this).css("display", "none");
+    }
+    else
+    {
+      $(this).css("display", "flex");
+    }
+  });
+}
+
 function addFormToDict(form)
 {
   var itemDict = {}
@@ -1012,7 +1052,7 @@ function resetSelectedItem(e)
   
   switch (itemType)
   {
-    case "StopwatchItem":
+    case "stopwatch":
       var timeNow = Math.round(Date.now() / 1000);
       var editData = {};
 
@@ -1021,9 +1061,9 @@ function resetSelectedItem(e)
 
       sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
       break;
-    case "YouTubeEmbedItem":
-    case "TwitchStreamEmbedItem":
-    case "TwitchVideoEmbedItem":
+    case "youtube_video":
+    case "twitch_stream":
+    case "twitch_video":
       sendWebsocketMessage("reset_overlay_item", { "item_id": selectedItem, "item_type": itemType })
       break;
     default:
@@ -1044,7 +1084,7 @@ function pauseSelectedItem(e)
   
   switch (itemType)
   {
-    case "StopwatchItem":
+    case "stopwatch":
       var wasPaused = itemDict[selectedItem]["item_data"]["paused"];
       var timeNow = Math.round(Date.now() / 1000);
 
@@ -1170,6 +1210,16 @@ $(window).on('load', function() {
   $("input[checkbox").change((e) => {
     onInputChange(e);
   });
+
+  $("#item-filter").on("keyup keydown", (e) => {
+    onFilterChange(e);
+  });
+
+  $("#item-type-filter").change((e) => {
+    onFilterChange(e);
+  });
+
+  onFilterChange();
 
   $(".add-form").submit((e) => {
     e.preventDefault();

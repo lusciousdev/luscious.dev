@@ -129,13 +129,13 @@ function resetItem(itemId)
   
   switch (itemType)
   {
-    case "YouTubeEmbedItem":
+    case "youtube_video":
       resetYouTubePlayer(itemId);
       break;
-    case "TwitchStreamEmbedItem":
+    case "twitch_stream":
       resetTwitchStreamEmbed(itemId);
       break;
-    case "TwitchVideoEmbedItem":
+    case "twitch_video":
       resetTwitchVideoEmbed(itemId);
       break;
     default:
@@ -225,7 +225,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
     switch (itemType)
     {
-      case "ImageItem":
+      case "image":
         imageUrl = itemData['url'];
         if (imageUrl == "")
         {
@@ -242,7 +242,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $(imgElemId).css(getDefaultCSS(editView, itemData));
         break;
-      case "EmbedItem":
+      case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
 
         $(itemElemId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
@@ -253,7 +253,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
           "clip-path": "inset({0}% {1}% {2}% {3}%)".format(itemData["crop_top"], itemData["crop_left"], itemData["crop_bottom"], itemData["crop_right"]),
         });
         break;
-      case "YouTubeEmbedItem":
+      case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
 
         $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
@@ -268,7 +268,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
-      case "TwitchStreamEmbedItem":
+      case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId)
 
         $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
@@ -283,7 +283,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
-      case "TwitchVideoEmbedItem":
+      case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
         $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
@@ -299,11 +299,11 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
-      case "TextItem":
+      case "text":
         $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
         setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
         break;
-      case "StopwatchItem":
+      case "stopwatch":
         $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
@@ -315,7 +315,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
         
         setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break;
-      case "CounterItem":
+      case "counter":
         $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
@@ -337,7 +337,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
     
     switch (itemType)
     {
-      case "ImageItem":
+      case "image":
         imageUrl = itemData['url'];
         if (imageUrl == "")
         {
@@ -354,7 +354,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $("#item-{0}-img".format(itemId)).css(getDefaultCSS(editView, itemData));
         break;
-      case "EmbedItem":
+      case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
 
         if ($(iframeId).attr('src') != itemData['embed_url'])
@@ -364,7 +364,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $(iframeId).css(getDefaultCSS(editView, itemData));
         break;
-      case "YouTubeEmbedItem":
+      case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
 
         if (YOUTUBE_PLAYER_API_LOADED)
@@ -382,24 +382,24 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
-      case "TwitchStreamEmbedItem":
+      case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId);
 
         updateTwitchStreamPlayer(itemId);
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
-      case "TwitchVideoEmbedItem":
+      case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
         updateTwitchVideoPlayer(itemId);
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
-      case "TextItem":
+      case "text":
         setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
         break;
-      case "StopwatchItem":
+      case "stopwatch":
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
         if (itemData['paused'])
         {
@@ -409,7 +409,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
         
         setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break
-      case "CounterItem":
+      case "counter":
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break;

@@ -2,6 +2,8 @@ from django import forms
 from .models import *
 from .twitch import *
 
+logger = logging.getLogger("overlay")
+
 class RangeInput(forms.NumberInput):
   input_type = 'range'
 
@@ -170,9 +172,6 @@ class EditItemForm(forms.ModelForm):
 class EditImageItem(EditItemForm):
   image_url = forms.CharField(max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", 'readonly': 'readonly', 'size': 40 }), label = "Uploaded Image URL")
   
-  def get_pretty_name(self):
-    return "Image"
-  
   field_order = BASE_WIDGET_ORDER
   field_order.extend(["image", "image_url", "url"])
   
@@ -188,9 +187,6 @@ class EditImageItem(EditItemForm):
     widgets.update(BASE_WIDGETS)
     
 class EditEmbedItem(EditItemForm):
-  def get_pretty_name(self):
-    return "Embed"
-  
   field_order = BASE_WIDGET_ORDER
   
   class Meta:
@@ -204,9 +200,6 @@ class EditEmbedItem(EditItemForm):
     widgets.update(BASE_WIDGETS)
     
 class EditYouTubeEmbedItem(EditItemForm):
-  def get_pretty_name(self):
-    return "YouTube Video"
-  
   field_order = BASE_WIDGET_ORDER
   
   class Meta:
@@ -224,9 +217,6 @@ class EditYouTubeEmbedItem(EditItemForm):
     widgets.update(BASE_WIDGETS)
     
 class EditTwitchStreamEmbedItem(EditItemForm):
-  def get_pretty_name(self):
-    return "Twitch Stream"
-  
   field_order = BASE_WIDGET_ORDER
   
   class Meta:
@@ -243,9 +233,6 @@ class EditTwitchStreamEmbedItem(EditItemForm):
     widgets.update(BASE_WIDGETS)
     
 class EditTwitchVideoEmbedItem(EditItemForm):
-  def get_pretty_name(self):
-    return "Twitch Video"
-  
   field_order = BASE_WIDGET_ORDER
   
   class Meta:
@@ -274,9 +261,6 @@ class AbstractEditText(EditItemForm):
     abstract = True
     
 class EditTextItem(AbstractEditText):
-  def get_pretty_name(self):
-    return "Text"
-  
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
@@ -292,9 +276,6 @@ class EditTextItem(AbstractEditText):
     widgets.update(BASE_TEXT_WIDGETS)
     
 class EditStopwatchItem(AbstractEditText):
-  def get_pretty_name(self):
-    return "Stopwatch"
-  
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
@@ -313,9 +294,6 @@ class EditStopwatchItem(AbstractEditText):
     widgets.update(BASE_TEXT_WIDGETS)
     
 class EditCounterItem(AbstractEditText):
-  def get_pretty_name(self):
-    return "Counter"
-  
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
@@ -341,9 +319,6 @@ class AddItemForm(forms.ModelForm):
     exclude = [ "overlay", "id", "item_type" ]
     
 class AddImageItem(AddItemForm):
-  def get_pretty_name(self):
-    return "Image"
-  
   class Meta:
     model = ImageItem
     exclude = AddItemForm.Meta.exclude
@@ -356,9 +331,6 @@ class AddImageItem(AddItemForm):
     widgets.update(BASE_WIDGETS)
     
 class AddEmbedItem(AddItemForm):
-  def get_pretty_name(self):
-    return "Embed"
-  
   class Meta:
     model = EmbedItem
     exclude = AddItemForm.Meta.exclude
@@ -370,9 +342,6 @@ class AddEmbedItem(AddItemForm):
     widgets.update(BASE_WIDGETS)
     
 class AddYouTubeEmbedItem(AddItemForm):
-  def get_pretty_name(self):
-    return "YouTube Video"
-  
   class Meta:
     model = YouTubeEmbedItem
     exclude = AddItemForm.Meta.exclude
@@ -388,9 +357,6 @@ class AddYouTubeEmbedItem(AddItemForm):
     widgets.update(BASE_WIDGETS)
     
 class AddTwitchStreamEmbedItem(AddItemForm):
-  def get_pretty_name(self):
-    return "Twitch Stream"
-  
   class Meta:
     model = TwitchStreamEmbedItem
     exclude = AddItemForm.Meta.exclude
@@ -405,9 +371,6 @@ class AddTwitchStreamEmbedItem(AddItemForm):
     widgets.update(BASE_WIDGETS)
     
 class AddTwitchVideoEmbedItem(AddItemForm):
-  def get_pretty_name(self):
-    return "Twitch Video"
-  
   class Meta:
     model = TwitchVideoEmbedItem
     exclude = AddItemForm.Meta.exclude
@@ -435,9 +398,6 @@ class AbstractAddText(AddItemForm):
   
     
 class AddTextItem(AbstractAddText):
-  def get_pretty_name(self):
-    return "Text"
-  
   class Meta:
     model = TextItem
     exclude = AddItemForm.Meta.exclude
@@ -450,9 +410,6 @@ class AddTextItem(AbstractAddText):
     widgets.update(BASE_TEXT_WIDGETS)
     
 class AddStopwatchItem(AbstractAddText):
-  def get_pretty_name(self):
-    return "Stopwatch"
-  
   class Meta:
     model = StopwatchItem
     exclude = AddItemForm.Meta.exclude
@@ -468,9 +425,6 @@ class AddStopwatchItem(AbstractAddText):
     widgets.update(BASE_TEXT_WIDGETS)
     
 class AddCounterItem(AbstractAddText):
-  def get_pretty_name(self):
-    return "Counter"
-  
   class Meta:
     model = CounterItem
     exclude = AddItemForm.Meta.exclude

@@ -4,6 +4,9 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.http import int_to_base36
+import logging
+
+logger = logging.getLogger("overlay")
 
 # Create your models here.
 
@@ -42,7 +45,6 @@ class Editor(NonConsecutiveModel):
 class AbstractItem(NonConsecutiveModel):
   overlay = models.ForeignKey(CollaborativeOverlay, on_delete = models.CASCADE)
   
-  item_type = models.CharField(max_length = 32, default = "AbstractItem", editable = False)
   name = models.CharField(max_length = 256, default = "My Item")
   
   x = models.IntegerField(default = -300)
@@ -86,8 +88,6 @@ def image_directory_path(instance : "AbstractItem", filename : str):
   return f"overlays/{instance.overlay.id}/{filename}"
     
 class ImageItem(AbstractItem):
-  item_type = models.CharField(max_length = 32, default = "ImageItem", editable = False)
-  
   image = models.ImageField(upload_to = image_directory_path, blank = True, null = True)
   url = models.URLField(verbose_name = "URL", default = "", blank = True, null = True)
   
@@ -97,9 +97,15 @@ class ImageItem(AbstractItem):
     d['url'] = self.url
     return d
   
-class EmbedItem(AbstractItem):
-  item_type = models.CharField(max_length = 32, default = "EmbedItem", editable = False)
+  @staticmethod
+  def get_pretty_type():
+    return "Image"
   
+  @staticmethod
+  def get_simple_type():
+    return "image"
+  
+class EmbedItem(AbstractItem):
   embed_url = models.URLField(verbose_name = "Embed URL", default = "", blank = True)
   
   def to_data_dict(self):
@@ -107,9 +113,15 @@ class EmbedItem(AbstractItem):
     d['embed_url'] = self.embed_url
     return d
   
-class YouTubeEmbedItem(AbstractItem):
-  item_type = models.CharField(max_length = 32, default = "YoutubeEmbedItem", editable = False)
+  @staticmethod
+  def get_pretty_type():
+    return "Embed"
   
+  @staticmethod
+  def get_simple_type():
+    return "embed"
+  
+class YouTubeEmbedItem(AbstractItem):
   video_id = models.CharField(max_length = 256, verbose_name = "YouTube Video ID", default = "", blank = True)
   start_time = models.IntegerField(default = 0)
   
@@ -126,9 +138,15 @@ class YouTubeEmbedItem(AbstractItem):
     d['volume']     = self.volume
     return d
   
-class TwitchStreamEmbedItem(AbstractItem):
-  item_type = models.CharField(max_length = 32, default = "TwitchStreamEmbedItem", editable = False)
+  @staticmethod
+  def get_pretty_type():
+    return "YouTube video"
   
+  @staticmethod
+  def get_simple_type():
+    return "youtube_video"
+  
+class TwitchStreamEmbedItem(AbstractItem):
   channel = models.CharField(max_length = 256, verbose_name = "Twitch Channel Name", default = "", blank = True)
   
   paused = models.BooleanField()
@@ -143,9 +161,15 @@ class TwitchStreamEmbedItem(AbstractItem):
     d['volume']   = self.volume
     return d
   
-class TwitchVideoEmbedItem(AbstractItem):
-  item_type = models.CharField(max_length = 32, default = "TwitchVideoEmbedItem", editable = False)
+  @staticmethod
+  def get_pretty_type():
+    return "Twitch stream"
   
+  @staticmethod
+  def get_simple_type():
+    return "twitch_stream"
+  
+class TwitchVideoEmbedItem(AbstractItem):
   video_id = models.CharField(max_length = 256, verbose_name = "Twitch Video ID", default = "", blank = True)
   start_time = models.IntegerField(default = 0)
   
@@ -161,6 +185,14 @@ class TwitchVideoEmbedItem(AbstractItem):
     d['muted']      = self.muted
     d['volume']     = self.volume
     return d
+  
+  @staticmethod
+  def get_pretty_type():
+    return "Twitch video"
+  
+  @staticmethod
+  def get_simple_type():
+    return "twitch_video"
   
 class AbstractTextItem(AbstractItem):
   font = models.CharField(max_length=128, default="Roboto Mono")
@@ -186,8 +218,6 @@ class AbstractTextItem(AbstractItem):
     return d
   
 class TextItem(AbstractTextItem):
-  item_type = models.CharField(max_length = 32, default = "TextItem", editable = False)
-  
   text = models.TextField(default = "Example text.")
   
   def to_data_dict(self):
@@ -195,9 +225,15 @@ class TextItem(AbstractTextItem):
     d["text"] = self.text
     return d
   
-class StopwatchItem(AbstractTextItem):
-  item_type = models.CharField(max_length = 32, default = "StopwatchItem", editable = False)
+  @staticmethod
+  def get_pretty_type():
+    return "Text"
   
+  @staticmethod
+  def get_simple_type():
+    return "text"
+  
+class StopwatchItem(AbstractTextItem):
   timer_format = models.TextField(default = "{0}")
   timer_start = models.BigIntegerField(default = current_time_seconds)
   
@@ -212,9 +248,15 @@ class StopwatchItem(AbstractTextItem):
     d["pause_time"] = self.pause_time
     return d
   
-class CounterItem(AbstractTextItem):
-  item_type = models.CharField(max_length = 32, default = "CounterItem", editable = False)
+  @staticmethod
+  def get_pretty_type():
+    return "Stopwatch"
   
+  @staticmethod
+  def get_simple_type():
+    return "stopwatch"
+  
+class CounterItem(AbstractTextItem):
   counter_format = models.TextField(default = "Count: {0}")
   count = models.IntegerField(default = 0)
   
@@ -223,6 +265,14 @@ class CounterItem(AbstractTextItem):
     d["counter_format"] = self.counter_format
     d["count"] = self.count
     return d
+  
+  @staticmethod
+  def get_pretty_type():
+    return "Counter"
+  
+  @staticmethod
+  def get_simple_type():
+    return "counter"
 
 ITEM_TYPES = [
   ImageItem,
