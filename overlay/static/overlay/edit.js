@@ -256,6 +256,8 @@ function updateItems(data, fullItemList = true, selfEdit = false)
   $(".item-list-entry").each(function(i, entry) {
     $(this).mousedown((e) => onMouseDownItemList(e, $(this).attr("itemid")));
   });
+
+  onFilterChange();
 }
 
 function addItemCallback(itemId, itemType)
@@ -956,7 +958,7 @@ function onInputChange(inputEvent)
   }
 }
 
-function onFilterChange(inputEvent = null)
+function onFilterChange()
 {
   var typeFilterInput = $("#item-type-filter");
   var nameFilterInput = $("#item-filter");
@@ -1212,14 +1214,12 @@ $(window).on('load', function() {
   });
 
   $("#item-filter").on("keyup keydown", (e) => {
-    onFilterChange(e);
+    onFilterChange();
   });
 
   $("#item-type-filter").change((e) => {
-    onFilterChange(e);
+    onFilterChange();
   });
-
-  onFilterChange();
 
   $(".add-form").submit((e) => {
     e.preventDefault();
