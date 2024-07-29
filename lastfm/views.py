@@ -70,16 +70,20 @@ class UserView(generic.FormView):
     context = super().get_context_data(**kwargs)
     context['username'] = self.kwargs['username']
     context['period'] = self.get_period()
-    context['size'] = self.get_size()
-    context['topalbums'] = get_top_albums(context['username'], context['period'], int(context['size']))
     
     size = int(self.get_size())
+    if size > 9:
+      size = 9
+    
+    context['size'] = size
+    context['topalbums'] = get_top_albums(context['username'], context['period'], size)
+    
     img_urls = ["" for i in range(size * size)]
     for i, album in enumerate(context['topalbums']):
       if 'art' in album:
         img_urls[i] = album['art']
         
-    gridimg = create_grid(int(self.get_size()), img_urls)
+    gridimg = create_grid(size, img_urls)
     buffered = BytesIO()
     gridimg.save(buffered, format = "JPEG")
     data_url = 'data:image/jpg;base64,' + base64.b64encode(buffered.getvalue()).decode()
@@ -102,7 +106,7 @@ class UserView(generic.FormView):
     size = form.cleaned_data.get('size')
     return HttpResponseRedirect(self.get_success_url(username, period, size))
   
-  def get_success_url(self, username = None, period = '7day', size = 9) -> str:
+  def get_success_url(self, username = None, period = '7day', size = '3') -> str:
     if not username:
       return reverse_lazy("lastfm:index")
     usernameurl = reverse_lazy("lastfm:user", kwargs={"username": username})

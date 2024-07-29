@@ -45,3 +45,14 @@
 .album-list tr:nth-child(even) {
   background: #00000030;
 }
+
+#form-error-container {
+  color: rgb(232, 101, 101);
+}
+
+#form-error-list, #form-error-list li {
+  padding-top: 0;
+  margin-top: 0;  
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
