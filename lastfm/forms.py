@@ -13,7 +13,9 @@ SIZE_CHOICES = (
   (3, "3x3"),
   (4, "4x4"),
   (5, "5x5"),
-  (6, "6x6")
+  (6, "6x6"),
+  (7, "7x7"),
+  (8, "8x8"),
 )
 
 class InfoForm(forms.Form):

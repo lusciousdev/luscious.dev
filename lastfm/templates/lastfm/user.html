@@ -34,9 +34,7 @@
       </div>
       <div>
         <div class="grid size-{{ size }}">
-        {% for album in topalbums %}
-          <div class="grid-album"><img src="{{ album.art }}"></div>
-        {% endfor %}
+          <img id="grid-image" src="{{ grid }}">
         </div>
         <table class="album-list">
           {% for album in topalbums %}
