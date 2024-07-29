@@ -412,7 +412,7 @@ function onResize(event)
     var width  = viewToEditScale(itemData['width']);
     var height = viewToEditScale(itemData['height']);
     
-    if (itemDict[prop]['item_type'] == "ImageItem")
+    if (itemDict[prop]['item_type'] == "image")
     {
       $("#item-{0}-img".format(itemId)).attr('width', "{0}px".format(width));
       $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
@@ -601,7 +601,7 @@ function onMousedownItem(e)
       newWidth = Math.max(25, newWidth);
       newHeight = Math.max(25, newHeight);
 
-      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "ImageItem")
+      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "image")
       {
         if (!window.shiftheld)
         {
@@ -644,7 +644,7 @@ function onMousedownItem(e)
         left: "{0}px".format(newPos.x),
       });
 
-      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "ImageItem")
+      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "image")
       {
         $("#item-{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
         $("#item-{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
