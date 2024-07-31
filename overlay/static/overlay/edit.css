@@ -184,6 +184,28 @@ body {
   z-index: 0;
 }
 
+#cursor-container {
+  background-color: #00000000;
+  
+  position: absolute;
+  z-index: 99999999998;
+  top: 0;
+  left: 0;
+  
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.cursor {
+  position: absolute;
+  display: inline-block;
+}
+
 #overlay {
   background-color: #000;
   position: relative;

@@ -88,6 +88,10 @@ class OverlayConsumer(WebsocketConsumer):
       self.delete_overlay_item(data)
     elif command == "reset_overlay_item":
       self.reset_overlay_item(data)
+    elif command == "ping":
+      self.ping(data)
+    elif command == "mouse_position":
+      self.send_mouse_position(data)
     
   def get_overlay_items(self):
     overlay_items = []
@@ -302,6 +306,48 @@ class OverlayConsumer(WebsocketConsumer):
         } 
       }
     )
+    
+  def ping(self, data):
+    if self.owner_or_editor():
+      async_to_sync(self.channel_layer.group_send)(
+        self.overlay_group_name, 
+        { 
+          "type": "broadcast_event", 
+          "event_data": 
+          { 
+            "command": "user_present", 
+            "data": 
+            {
+              "username": self.twitchaccount.extra_data["login"],
+              "uid": self.twitchaccount.uid,
+            } 
+          } 
+        }
+      )
+      
+  def send_mouse_position(self, data):
+    if "x" not in data or "y" not in data:
+      self.send_command("error", "Mouse reposition missing data.")
+      return
+    
+    if self.owner_or_editor():
+      async_to_sync(self.channel_layer.group_send)(
+        self.overlay_group_name, 
+        { 
+          "type": "broadcast_event", 
+          "event_data": 
+          { 
+            "command": "mouse_position", 
+            "data": 
+            {
+              "username": self.twitchaccount.extra_data["login"],
+              "uid": self.twitchaccount.uid,
+              "x": data["x"],
+              "y": data["y"],
+            } 
+          } 
+        }
+      )
     
   def broadcast_event(self, event):
     event_data = event.get("event_data", "")

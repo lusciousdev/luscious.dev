@@ -55,6 +55,12 @@ function handleWebsocketMessage(e)
     case "overlay_item_reset":
       resetItem(data.item_id);
       break;
+    case "user_present":
+      userPresent(data);
+      break;
+    case "mouse_position":
+      repositionMouse(data);
+      break;
     case "error":
       console.warn(data);
       break;
@@ -71,7 +77,7 @@ function connectWebsocket(overlayId)
     protocol = "wss:"
   WEBSOCKET = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, overlayId));
 
-  WEBSOCKET.onopen = (e) => { getOverlayItems(); };
+  WEBSOCKET.onopen = (e) => { handleWebsocketOpen(e); };
   WEBSOCKET.onmessage = (e) => { handleWebsocketMessage(e); };
   WEBSOCKET.onclose = (e) => { attemptReconnect(e, overlayId); };
 }

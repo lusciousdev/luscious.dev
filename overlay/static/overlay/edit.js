@@ -37,6 +37,12 @@ const GrabTypes = {
 };
 var grabType = GrabTypes.Move;
 
+var mousePosition = { "x": 0, "y": 0 };
+var lastMousePosition = Object.assign({}, mousePosition);
+
+var editorList = {};
+var cursorDict = {};
+
 function editToViewScale(distance)
 {
   return (overlayWidth * distance) / scaledOverlayWidth;
@@ -343,6 +349,98 @@ function updateItemCallback(itemId, itemType)
 }
 
 function handleEditItemsSuccess(data) {}
+
+function sendPing()
+{
+  sendWebsocketMessage("ping", {});
+}
+
+function sendMousePosition()
+{
+  if ((mousePosition["x"] != lastMousePosition["x"]) || (mousePosition["y"] != lastMousePosition["y"]))
+  {
+    sendWebsocketMessage("mouse_position", mousePosition);
+    lastMousePosition = Object.assign({}, mousePosition);
+  }
+}
+
+function userPresent(data) 
+{
+  if (data["uid"] == twitchUser)
+    return;
+
+  if (!editorList.hasOwnProperty(data["uid"]))
+  {
+    editorList[data["uid"]] = {
+      "login": data["username"],
+      "last_seen": Date.now(),
+      "last_mouse": Date.now(),
+    }
+  }
+  else
+  {
+    editorList[data["uid"]]["login"] = data["username"];
+    editorList[data["uid"]]["last_seen"] = Date.now();
+  }
+}
+
+function repositionMouse(data)
+{
+  if (data["uid"] == twitchUser)
+    return;
+
+  if ($("#{0}".format(data["uid"])).length == 0)
+  {
+    $("#cursor-container").append(`<div id='{0}' class='cursor'>
+      <span class="material-symbols-outlined">arrow_selector_tool</span> {1}
+      </div>`.format(data["uid"], data["username"]));
+  }
+
+  var top = viewToEditScale(parseFloat(data["y"])) + $("#overlay").offset().top;
+  var left = viewToEditScale(parseFloat(data["x"])) + $("#overlay").offset().left;
+
+  $("#{0}".format(data["uid"])).css({
+    "top": "{0}px".format(top),
+    "left": "{0}px".format(left),
+  });
+
+  editorList[data["uid"]]["last_mouse"] = Date.now();
+}
+
+function removeInactiveUsers()
+{
+  var timeNow = Date.now();
+
+  Object.keys(editorList).forEach(function(key) {
+    if ((timeNow - editorList[key]["last_seen"]) > 15000.0)
+    {
+      $("#{0}".format(key)).remove();
+      delete editorList[key];
+    }
+  });
+}
+
+function removeInactiveCursors()
+{
+  var timeNow = Date.now();
+
+  Object.keys(editorList).forEach(function(key) {
+    if ((timeNow - editorList[key]["last_mouse"]) > 5000.0)
+    {
+      $("#{0}".format(key)).remove();
+    }
+  });
+}
+
+function handleWebsocketOpen(e)
+{
+  getOverlayItems();
+
+  setInterval(sendPing, 5000);
+  setInterval(sendMousePosition, 50);
+  setInterval(removeInactiveUsers, 500);
+  setInterval(removeInactiveCursors, 500);
+}
 
 function handleAjaxError(data)
 {
@@ -683,7 +781,24 @@ function onMousedownItem(e)
   $('#main-container').on('mouseup', handleMouseUp).on('mousemove', handleDragging);
 }
 
-function onMousedownBody(e)
+function onMouseMove(e)
+{
+  var x = e.pageX;
+  var y = e.pageY;
+  var leftOverlay = $("#overlay").offset().left;
+  var topOverlay = $("#overlay").offset().top;
+
+  var relx = x - leftOverlay;
+  var rely = y - topOverlay;
+
+  var ox = editToViewScale(relx);
+  var oy = editToViewScale(rely);
+
+  mousePosition['x'] = ox;
+  mousePosition['y'] = oy;
+}
+
+function onMouseDownBody(e)
 {
   if (selectedItem !== undefined)
   {
@@ -1197,7 +1312,8 @@ $(window).on('load', function() {
 
   $(window).on("resize", onResize);
   
-  $('#main-container').on("mousedown", onMousedownBody);
+  $("#main-container").on("mousemove", onMouseMove);
+  $('#main-container').on("mousedown", onMouseDownBody);
   
   $(document).on('keyup keydown', function(e){window.shiftheld = e.shiftKey; window.ctrlheld = e.ctrlKey;} );
   

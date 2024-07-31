@@ -117,6 +117,14 @@ function createYouTubePlayer(itemId)
   });
 }
 
+function userPresent(data) { }
+function repositionMouse(data) { }
+
+function handleWebsocketOpen(e)
+{
+  getOverlayItems();
+}
+
 $(window).on('load', function() {
   connectWebsocket(overlayId);
 
