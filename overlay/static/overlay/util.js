@@ -4,6 +4,8 @@ var YOUTUBE_PLAYER_API_LOADED = false;
 
 var itemDict = {};
 
+const TRANSPARENT = "#00000000"
+
 function sendWebsocketMessage(cmd, objData)
 {
   if (WEBSOCKET != undefined && WEBSOCKET.readyState == WebSocket.OPEN)
@@ -210,7 +212,10 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
   itemCSS["font-family"] = "{0}, sans-serif".format(itemData["font"]);
   itemCSS["font-weight"] = itemData["font_weight"];
   itemCSS["color"] = itemData['color'];
-  itemCSS["background-color"] = (itemData['background_enabled']) ? itemData['background'] : "#00000000";
+  itemCSS["text-shadow"] = "{0}pt {1}pt {2}pt {3}".format(itemData["drop_shadow_offset_x"], itemData["drop_shadow_offset_y"], itemData["drop_shadow_blur_radius"], itemData["drop_shadow_enabled"] ? itemData["drop_shadow_color"] : TRANSPARENT);
+  itemCSS["-webkit-text-stroke-width"] = "{0}pt".format(itemData["text_outline_width"])
+  itemCSS["-webkit-text-stroke-color"] = itemData["text_outline_enabled"] ? itemData["text_outline_color"] : TRANSPARENT
+  itemCSS["background-color"] = (itemData['background_enabled']) ? itemData['background_color'] : TRANSPARENT;
   itemCSS["text-align"] = itemData["text_alignment"];
 
   $(textElemId).css(itemCSS);

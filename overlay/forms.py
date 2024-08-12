@@ -142,8 +142,16 @@ BASE_TEXT_WIDGETS = {
   'font_size': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40 }),
   'font_weight': forms.Select(attrs = { "field-type": "text" }),
   'color': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
-  'background': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+  'drop_shadow_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+  'drop_shadow_offset_x': forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "tabindex": 1 }),
+  'drop_shadow_offset_y': forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "tabindex": 1 }),
+  'drop_shadow_blur_radius': forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "tabindex": 1 }),
+  'drop_shadow_color': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
+  'text_outline_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+  'text_outline_width': forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }),
+  'text_outline_color': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
   'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean" }),
+  'background_color': forms.TextInput(attrs = { "field-type": "text", 'size': 40 }),
   'text_alignment': forms.Select(attrs = { "field-type": "text" })
 }
 
@@ -153,8 +161,16 @@ BASE_TEXT_WIDGET_ORDER = [
   'font_weight',
   'text_alignment',
   'color',
-  'background',
+  'drop_shadow_enabled',
+  'drop_shadow_offset_x',
+  'drop_shadow_offset_y',
+  'drop_shadow_blur_radius',
+  'drop_shadow_color',
+  'text_outline_enabled',
+  'text_outline_width',
+  'text_outline_color',
   'background_enabled',
+  'background_color',
 ]
     
 class EditItemForm(forms.ModelForm):
@@ -253,6 +269,12 @@ class AbstractEditText(EditItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
+  
+  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow Blur", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  
+  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
   
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
@@ -389,6 +411,12 @@ class AbstractAddText(AddItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
+  
+  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow Blur", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  
+  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
   
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)

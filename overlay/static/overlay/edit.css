@@ -365,3 +365,7 @@ body {
   border: 1px solid var(--foreground);
   border-top: none;
 }
+
+.indented-label {
+  text-indent: 1em;
+}

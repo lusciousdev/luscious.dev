@@ -195,12 +195,20 @@ class TwitchVideoEmbedItem(AbstractItem):
     return "twitch_video"
   
 class AbstractTextItem(AbstractItem):
-  font = models.CharField(max_length=128, default="Roboto Mono")
+  font = models.CharField(max_length=255, default="Roboto Mono")
   font_size = models.IntegerField(default = 32)
   font_weight = models.CharField(max_length=128, default = "normal")
-  color = models.CharField(max_length = 64, default = "#FFFFFF")
-  background = models.CharField(max_length = 64, default = "#000000")
+  color = models.CharField(max_length = 255, default = "#FFFFFF")
+  drop_shadow_enabled = models.BooleanField(default = False)
+  drop_shadow_offset_x = models.FloatField(default = 0.0)
+  drop_shadow_offset_y = models.FloatField(default = 0.0)
+  drop_shadow_blur_radius = models.FloatField(default = 0.0)
+  drop_shadow_color = models.CharField(max_length = 255, default = "#000000")
+  text_outline_enabled = models.BooleanField(default = False)
+  text_outline_width = models.FloatField(default = 0.0)
+  text_outline_color = models.CharField(max_length = 255, default = "#000000")
   background_enabled = models.BooleanField(default = False)
+  background_color = models.CharField(max_length = 255, default = "#000000")
   text_alignment = models.CharField(max_length = 128, default = "left")
   
   class Meta:
@@ -212,8 +220,16 @@ class AbstractTextItem(AbstractItem):
     d["font_size"] = self.font_size
     d["font_weight"] = self.font_weight
     d["color"] = self.color
-    d["background"] = self.background
+    d["drop_shadow_enabled"] = self.drop_shadow_enabled
+    d["drop_shadow_offset_x"] = self.drop_shadow_offset_x
+    d["drop_shadow_offset_y"] = self.drop_shadow_offset_y
+    d["drop_shadow_blur_radius"] = self.drop_shadow_blur_radius
+    d["drop_shadow_color"] = self.drop_shadow_color
+    d["text_outline_enabled"] = self.text_outline_enabled
+    d["text_outline_width"] = self.text_outline_width
+    d["text_outline_color"] = self.text_outline_color
     d["background_enabled"] = self.background_enabled
+    d["background_color"] = self.background_color
     d["text_alignment"] = self.text_alignment
     return d
   
