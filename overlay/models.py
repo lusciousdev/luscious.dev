@@ -17,6 +17,17 @@ def id_gen() -> str:
 def current_time_seconds() -> int:
   return int(datetime.datetime.now().timestamp())
 
+class ChangeLogEntry(models.Model):
+  date = models.DateTimeField(default = datetime.datetime.now())
+  title = models.CharField(max_length = 255)
+  description = models.TextField()
+  
+  def __repr__(self):
+    return f"{self.pk} - {self.title}"
+  
+  def __str__(self):
+    return f"{self.pk} - {self.title}"
+
 class NonConsecutiveModel(models.Model):
   id = models.CharField(max_length = ID_LENGTH, primary_key = True, default = id_gen, editable = False)
   

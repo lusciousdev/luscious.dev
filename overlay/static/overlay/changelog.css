@@ -1,0 +1,36 @@
+.section {
+  margin-bottom: 1.25em;
+  width: 100%;
+}
+
+.page-title {
+  font-size: 2em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;
+}
+
+.section-title {
+  font-size: 1.25em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;
+}
+
+.log-entry {
+  padding: 1em;
+  min-width: 100%;
+  background: #00000080;
+  margin-bottom: 1.25em;
+  box-sizing: border-box;
+  border-radius: 0.5em;
+}
+
+.entry-title {
+  font-size: 1.6em;
+  font-weight: bold;
+}
+
+.entry-desc {
+  font-size: 0.85em;
+}

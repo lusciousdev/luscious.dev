@@ -1,0 +1,26 @@
+{% extends "overlay/base.html" %}
+
+{% load static %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'overlay/changelog.css' %}">
+{% endblock %}
+
+{% block title %}Change Log - Collaborative Overlay{% endblock %}
+
+{% block content %}
+<div class="section" id="summary">
+  <div class="page-title">Change Log</div>
+</div>
+
+<div class="section">
+  {% for logentry in change_log %}
+  <div class="log-entry">
+    <span class="entry-title">{{ logentry.date }} - {{ logentry.title }}</span>
+    <div class="entry-desc">
+      {{ logentry.description|safe }}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

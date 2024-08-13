@@ -8,6 +8,7 @@ from asgiref.sync import sync_to_async, async_to_sync, markcoroutinefunction, is
 app_name = 'overlay'
 urlpatterns = [
   path("", views.IndexView.as_view(), name="index"),
+  path("changelog/", views.ChangeLogView.as_view(), name="change_log"),
   path("profile/", views.ProfileView.as_view(), name="profile"),
   path("profile/add_editor", views.add_editor, name="add_editor"),
   path("profile/remove_editor", views.remove_editor, name="remove_editor"),

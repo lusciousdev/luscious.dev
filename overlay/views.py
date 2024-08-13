@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any
+from django.db.models.query import QuerySet
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
@@ -12,10 +13,13 @@ from allauth.socialaccount.models import SocialAccount
 from channels.db import database_sync_to_async
 from .forms import *
 import typing
+import markdown
 
 logger = logging.getLogger("overlay")
 
 User : models.Model = settings.AUTH_USER_MODEL
+
+MARKDOWN = markdown.Markdown(extensions = [ "fenced_code" ])
 
 # Create your views here.
 class IndexView(generic.TemplateView):
@@ -50,6 +54,20 @@ class ProfileView(generic.ListView):
       editable_overlays.extend(user.collaborativeoverlay_set.all())
     
     return editable_overlays
+  
+class ChangeLogView(generic.ListView):
+  context_object_name = "change_log"
+  template_name = "overlay/changelog.html"
+  
+  def get_queryset(self) -> QuerySet[Any]:
+    change_log = []
+    
+    for entry in ChangeLogEntry.objects.order_by("-date").all():
+      log = { "title": entry.title, "description":MARKDOWN.convert(entry.description), "date": entry.date.strftime("%Y/%m/%d") }
+      
+      change_log.append(log)
+      
+    return change_log
   
 class EditOverlayView(generic.DetailView):
   model = CollaborativeOverlay

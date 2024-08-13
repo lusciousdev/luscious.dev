@@ -270,11 +270,11 @@ class AbstractEditText(EditItemForm):
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
   
-  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
-  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
-  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow Blur", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow blur", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
   
-  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
   
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
@@ -412,11 +412,11 @@ class AbstractAddText(AddItemForm):
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
   
-  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
-  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
-  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow Blur", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow Blur", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
   
-  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
+  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40 }))
   
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)

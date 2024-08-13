@@ -42,8 +42,9 @@
   </head>
   <body>
     <div id="sidebar">
-      <div class="site-title">
-        Edit {{ collaborativeoverlay.name }}
+      <div class="site-title-container">
+        <div class="site-title">Edit {{ collaborativeoverlay.name }}</div>
+        <a href="{% url 'overlay:change_log' %}">Change log</a>
       </div>
 
       <div class="sidebar-section" id="sidebar-controls">
