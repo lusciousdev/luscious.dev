@@ -17,8 +17,15 @@ var scaledOverlayHeight = -1;
 const overlayWidth = parseInt(data.overlaywidth, 10);
 const overlayHeight = parseInt(data.overlayheight, 10);
 
-const maxWidthPercent = 0.667;
-const maxHeightPercent = 0.667;
+const defaultSizePercent = 0.667;
+
+var currentScale = 1.0;
+var xOffset = 0;
+var yOffset = 0;
+
+const scaleChange = 0.05;
+const minimumScale = 0.05;
+const maximumScale = 5.0;
 
 var selectedItem = undefined;
 var otherSelectedItems = [];
@@ -50,7 +57,7 @@ function editToViewScale(distance)
 
 function viewToEditScale(distance)
 {
-  return (scaledOverlayWidth * distance) / overlayWidth;
+  return currentScale * distance;
 }
 
 class Point 
@@ -480,19 +487,21 @@ function sendOverlayItemUpdates()
   }
 }
 
-function onResize(event)
+function initialResize(event)
 {
   var mcWidth = $("#main-container").width();
   var mcHeight = $("#main-container").height();
 
-  scaledOverlayWidth = maxWidthPercent * mcWidth;
+  scaledOverlayWidth = defaultSizePercent * mcWidth;
   scaledOverlayHeight = 9.0 / 16.0 * scaledOverlayWidth;
 
-  if (scaledOverlayHeight > (maxHeightPercent * mcHeight))
+  if (scaledOverlayHeight > (defaultSizePercent * mcHeight))
   {
     scaledOverlayHeight = 0.667 * mcHeight;
     scaledOverlayWidth = 16.0 / 9.0 * scaledOverlayHeight;
   }
+
+  currentScale = scaledOverlayWidth / overlayWidth;
 
   $("#overlay").width(scaledOverlayWidth);
   $("#overlay").height(scaledOverlayHeight);
@@ -517,6 +526,94 @@ function onResize(event)
     }
 
     setItemPosition(itemId, top, left, width, height, itemData['rotation']);
+  }
+}
+
+function documentScroll(event)
+{
+  if (event.ctrlKey)
+  {
+    console.log("preventing zoom.");
+    event.preventDefault();
+  }
+}
+
+function onScroll(event)
+{
+  if (event.ctrlKey)
+  {
+    event.preventDefault();
+  }
+
+  var delta = (event.type === 'DOMMouseScroll' ?
+               event.originalEvent.detail * -40 :
+               event.originalEvent.wheelDelta);
+
+  if (delta > 0)
+  {
+    if (event.ctrlKey)
+    {
+      changeScale(currentScale + scaleChange);
+    }
+  }
+  else if (delta < 0)
+  {
+    if (event.ctrlKey)
+    {
+      changeScale(currentScale - scaleChange);
+    }
+  }
+}
+
+function changeScale(newScale)
+{
+  var oldScale = currentScale;
+  currentScale = newScale;
+  if (currentScale < minimumScale)
+  {
+    currentScale = minimumScale;
+  }
+  else if (currentScale > maximumScale)
+  {
+    currentScale = maximumScale;
+  }
+
+  if (oldScale == currentScale)
+    return;
+
+  scaledOverlayWidth = currentScale * overlayWidth;
+  scaledOverlayHeight = currentScale * overlayHeight;
+
+  $("#overlay").width(scaledOverlayWidth);
+  $("#overlay").height(scaledOverlayHeight);
+
+  $("#twitch-embed").width(scaledOverlayWidth);
+  $("#twitch-embed").height(scaledOverlayHeight);
+
+  for (const prop in itemDict)
+  {
+    var itemData = itemDict[prop]['item_data'];
+    var itemId = itemData['id'];
+
+    var left   = viewToEditScale(itemData['x']);
+    var top    = viewToEditScale(itemData['y']);
+    var width  = viewToEditScale(itemData['width']);
+    var height = viewToEditScale(itemData['height']);
+    
+    if (itemDict[prop]['item_type'] == "image")
+    {
+      $("#item-{0}-img".format(itemId)).attr('width', "{0}px".format(width));
+      $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
+    }
+
+    if (itemDict[prop]['item_type'] == "text" ||
+        itemDict[prop]['item_type'] == "counter" ||
+        itemDict[prop]['item_type'] == "stopwatch")
+    {
+      setTextItemContent(true, $("#overlay"), prop, itemDict[prop]["item_data"]["text"], itemDict[prop]["item_data"])
+    }
+
+    setItemPosition(itemId, top, left, width, height, itemData["z"], itemData['rotation']);
   }
 }
 
@@ -1304,13 +1401,13 @@ function createYouTubePlayer(itemId)
 }
 
 $(window).on('load', function() {
-  onResize();
+  initialResize();
 
   connectWebsocket(overlayId);
 
   var getInterval = setInterval(function() { getOverlayItems(); }, 1000);
 
-  $(window).on("resize", onResize);
+  $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   
   $("#main-container").on("mousemove", onMouseMove);
   $('#main-container').on("mousedown", onMouseDownBody);
@@ -1325,7 +1422,7 @@ $(window).on('load', function() {
     onInputChange(e);
   });
 
-  $("input[checkbox").change((e) => {
+  $("input[checkbox]").change((e) => {
     onInputChange(e);
   });
 
