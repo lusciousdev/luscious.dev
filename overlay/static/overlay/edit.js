@@ -20,12 +20,12 @@ const overlayHeight = parseInt(data.overlayheight, 10);
 const defaultSizePercent = 0.667;
 
 var currentScale = 1.0;
-var xOffset = 0;
-var yOffset = 0;
+var overlayOffset = new Point(0, 0);
 
 const scaleChange = 0.05;
 const minimumScale = 0.05;
 const maximumScale = 5.0;
+const scrollAmount = 50.0;
 
 var selectedItem = undefined;
 var otherSelectedItems = [];
@@ -50,126 +50,44 @@ var lastMousePosition = Object.assign({}, mousePosition);
 var editorList = {};
 var cursorDict = {};
 
-function editToViewScale(distance)
+function editToViewX(xCoord)
 {
-  return (overlayWidth * distance) / scaledOverlayWidth;
+  return (xCoord - overlayOffset.x) / currentScale;
 }
 
-function viewToEditScale(distance)
+function editToViewY(yCoord)
+{
+  return (yCoord - overlayOffset.y) / currentScale;
+}
+
+function viewToEditX(xCoord)
+{
+  return (xCoord * currentScale) + overlayOffset.x;
+}
+
+function viewToEditY(yCoord)
+{
+  return (yCoord * currentScale) + overlayOffset.y;
+}
+
+function editToViewPoint(p)
+{
+  return new Point(editToViewX(p.x), editToViewY(p.y));
+}
+
+function viewToEditPoint(p)
+{
+  return new Point(viewToEditX(p.x), viewToEditY(p.y));
+}
+
+function editToViewLength(distance)
+{
+  return distance / currentScale;
+}
+
+function viewToEditLength(distance)
 {
   return currentScale * distance;
-}
-
-class Point 
-{
-  constructor(x, y)
-  {
-    this.x = x;
-    this.y = y;
-  }
-
-  add(other)
-  {
-    this.x += other.x;
-    this.y += other.y;
-
-    return this;
-  }
-
-  addX(val)
-  {
-    this.x += val;
-    return this;
-  }
-
-  addY(val)
-  {
-    this.y += val;
-    return this;
-  }
-
-  sub(other)
-  {
-    this.x -= other.x;
-    this.y -= other.y;
-
-    return this;
-  }
-
-  subX(val)
-  {
-    this.x -= val;
-    return this;
-  }
-
-  subY(val)
-  {
-    this.y -= val;
-    return this;
-  }
-
-  div(divisor)
-  {
-    this.x /= divisor;
-    this.y /= divisor;
-
-    return this;
-  }
-
-  mult(multiplier)
-  {
-    this.x *= multiplier;
-    this.y *= multiplier;
-
-    return this;
-  }
-
-  angle()
-  {
-    var angle = 0;
-    if (this.x == 0)
-      angle = (this.y >= 0) ? (Math.PI / 2) : (3 * Math.PI / 2);
-    else
-      angle = Math.atan(this.y / this.x);
-
-    if (this.x < 0)
-      angle += Math.PI;
-
-    return angle;
-  }
-
-  magnitude()
-  {
-    return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
-  }
-
-  rotate(angle)
-  {
-    var r = this.magnitude();
-    var currAngle = this.angle();
-
-    var newAngle = currAngle + angle;
-
-    this.x = r * Math.cos(newAngle);
-    this.y = r * Math.sin(newAngle);
-
-    return this;
-  }
-
-  static add2(p1, p2)
-  {
-    return new Point(p1.x + p2.x, p1.y + p2.y);
-  }
-
-  static sub2(p1, p2)
-  {
-    return new Point(p1.x - p2.x, p1.y - p2.y);
-  }
-}
-
-function distance(x1, y1, x2, y2)
-{
-  return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
 }
 
 function addGrabbers(itemId)
@@ -218,10 +136,10 @@ function updateItems(data, fullItemList = true, selfEdit = false)
       };
     }
 
-    var left   = viewToEditScale(itemDict[itemId]['item_data']['x']);
-    var top    = viewToEditScale(itemDict[itemId]['item_data']['y']);
-    var width  = viewToEditScale(itemDict[itemId]['item_data']['width']);
-    var height = viewToEditScale(itemDict[itemId]['item_data']['height']);
+    var left   = viewToEditLength(itemDict[itemId]['item_data']['x']);
+    var top    = viewToEditLength(itemDict[itemId]['item_data']['y']);
+    var width  = viewToEditLength(itemDict[itemId]['item_data']['width']);
+    var height = viewToEditLength(itemDict[itemId]['item_data']['height']);
 
     var z = itemData['z'];
     var rotation = itemData['rotation'];
@@ -275,7 +193,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
 
 function addItemCallback(itemId, itemType)
 {
-  getItemDiv(itemId).mousedown(onMousedownItem);
+  getItemDiv(itemId).on("mousedown", onMousedownItem);
   addGrabbers(itemId);
 
   var item = itemDict[itemId]
@@ -403,8 +321,8 @@ function repositionMouse(data)
       </div>`.format(data["uid"], data["username"]));
   }
 
-  var top = viewToEditScale(parseFloat(data["y"])) + $("#overlay").offset().top;
-  var left = viewToEditScale(parseFloat(data["x"])) + $("#overlay").offset().left;
+  var top = viewToEditLength(parseFloat(data["y"])) + $("#overlay").offset().top;
+  var left = viewToEditLength(parseFloat(data["x"])) + $("#overlay").offset().left;
 
   $("#{0}".format(data["uid"])).css({
     "top": "{0}px".format(top),
@@ -514,10 +432,10 @@ function initialResize(event)
     var itemData = itemDict[prop]['item_data'];
     var itemId = itemData['id'];
 
-    var left   = viewToEditScale(itemData['x']);
-    var top    = viewToEditScale(itemData['y']);
-    var width  = viewToEditScale(itemData['width']);
-    var height = viewToEditScale(itemData['height']);
+    var left   = viewToEditLength(itemData['x']);
+    var top    = viewToEditLength(itemData['y']);
+    var width  = viewToEditLength(itemData['width']);
+    var height = viewToEditLength(itemData['height']);
     
     if (itemDict[prop]['item_type'] == "image")
     {
@@ -555,12 +473,32 @@ function onScroll(event)
     {
       changeScale(currentScale + scaleChange);
     }
+    else if (event.shiftKey)
+    {
+      overlayOffset.addX(scrollAmount);
+      repositionOverlay();
+    }
+    else
+    {
+      overlayOffset.addY(scrollAmount);
+      repositionOverlay();
+    }
   }
   else if (delta < 0)
   {
     if (event.ctrlKey)
     {
       changeScale(currentScale - scaleChange);
+    }
+    else if (event.shiftKey)
+    {
+      overlayOffset.addX(-scrollAmount);
+      repositionOverlay();
+    }
+    else
+    {
+      overlayOffset.addY(-scrollAmount);
+      repositionOverlay();
     }
   }
 }
@@ -590,15 +528,20 @@ function changeScale(newScale)
   $("#twitch-embed").width(scaledOverlayWidth);
   $("#twitch-embed").height(scaledOverlayHeight);
 
+  setAllItemPositions();
+}
+
+function setAllItemPositions()
+{
   for (const prop in itemDict)
   {
     var itemData = itemDict[prop]['item_data'];
     var itemId = itemData['id'];
 
-    var left   = viewToEditScale(itemData['x']);
-    var top    = viewToEditScale(itemData['y']);
-    var width  = viewToEditScale(itemData['width']);
-    var height = viewToEditScale(itemData['height']);
+    var left   = viewToEditLength(itemData['x']);
+    var top    = viewToEditLength(itemData['y']);
+    var width  = viewToEditLength(itemData['width']);
+    var height = viewToEditLength(itemData['height']);
     
     if (itemDict[prop]['item_type'] == "image")
     {
@@ -615,6 +558,14 @@ function changeScale(newScale)
 
     setItemPosition(itemId, top, left, width, height, itemData["z"], itemData['rotation']);
   }
+}
+
+function repositionOverlay()
+{
+  $("#overlay").css({
+    "left": viewToEditLength(overlayOffset.x),
+    "top": viewToEditLength(overlayOffset.y),
+  });
 }
 
 function onMouseDownItemList(e, itemId)
@@ -646,11 +597,30 @@ function onMousedownItem(e)
 {
   e.stopImmediatePropagation();
 
+  switch (e.which)
+  {
+    case 2:
+      // middle click
+      e.preventDefault();
+      handleBodyMiddleClick(e);
+      break;
+    case 3:
+      // right click
+      break;
+    case 1:
+    default:
+      handleItemLeftClick(e, this)
+      break;
+  }
+}
+
+function handleItemLeftClick(e, elem)
+{
   window.dragData = {};
   dragData.pageP0 = new Point(e.pageX, e.pageY);
   dragData.pagePn = new Point(e.pageX, e.pageY);
   dragData.pagePn_m1 = new Point(e.pageX, e.pageY);
-  dragData.elem = this;
+  dragData.elem = elem;
 
   function getGrabberPos(grabber)
   {
@@ -764,8 +734,8 @@ function onMousedownItem(e)
         left: "{0}px".format(newPos.x),
       });
 
-      var itemTop  = editToViewScale(newPos.y);
-      var itemLeft = editToViewScale(newPos.x);
+      var itemTop  = editToViewLength(newPos.y);
+      var itemLeft = editToViewLength(newPos.x);
       itemDict[selectedItem]['item_data']['x'] = Math.round(itemLeft);
       itemDict[selectedItem]['item_data']['y'] = Math.round(itemTop);
 
@@ -776,8 +746,8 @@ function onMousedownItem(e)
           left: "{0}px".format(newPos.x),
         });
 
-        var itemTop  = editToViewScale(newPos.y);
-        var itemLeft = editToViewScale(newPos.x);
+        var itemTop  = editToViewLength(newPos.y);
+        var itemLeft = editToViewLength(newPos.x);
         itemDict[itemId]['item_data']['x'] = Math.round(itemLeft);
         itemDict[itemId]['item_data']['y'] = Math.round(itemTop);
       });
@@ -845,10 +815,10 @@ function onMousedownItem(e)
         $("#item-{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
       }
   
-      var itemTop    = editToViewScale(newPos.y);
-      var itemLeft   = editToViewScale(newPos.x);
-      var itemWidth  = editToViewScale(newWidth);
-      var itemHeight = editToViewScale(newHeight);
+      var itemTop    = editToViewLength(newPos.y);
+      var itemLeft   = editToViewLength(newPos.x);
+      var itemWidth  = editToViewLength(newWidth);
+      var itemHeight = editToViewLength(newHeight);
   
       itemDict[$(dragData.elem).attr("itemId")]['item_data']['x']      = Math.round(itemLeft);
       itemDict[$(dragData.elem).attr("itemId")]['item_data']['y']      = Math.round(itemTop);
@@ -872,10 +842,10 @@ function onMousedownItem(e)
     });
 
     grabType = GrabTypes.Move;
-    $('#main-container').off('mousemove', handleDragging).off('mouseup', handleMouseUp);
+    $('#main-container').off('mousemove', handleDragging).off('mouseup mouseleave', handleMouseUp);
   }
 
-  $('#main-container').on('mouseup', handleMouseUp).on('mousemove', handleDragging);
+  $('#main-container').on('mouseup mouseleave', handleMouseUp).on('mousemove', handleDragging);
 }
 
 function onMouseMove(e)
@@ -888,18 +858,62 @@ function onMouseMove(e)
   var relx = x - leftOverlay;
   var rely = y - topOverlay;
 
-  var ox = editToViewScale(relx);
-  var oy = editToViewScale(rely);
+  var ox = editToViewLength(relx);
+  var oy = editToViewLength(rely);
 
   mousePosition['x'] = ox;
   mousePosition['y'] = oy;
 }
 
+function handleBodyMiddleClick(e)
+{
+  window.dragData = {};
+  dragData.pageP0 = new Point(e.pageX, e.pageY);
+  dragData.pagePn = new Point(e.pageX, e.pageY);
+  dragData.pagePn_m1 = new Point(e.pageX, e.pageY);
+
+  function handleDragging(e)
+  {
+    dragData.pagePn = new Point(e.pageX, e.pageY);
+
+    var offsetPosition = Point.sub2(dragData.pagePn, dragData.pagePn_m1);
+
+    overlayOffset.addX(editToViewLength(offsetPosition.x));
+    overlayOffset.addY(editToViewLength(offsetPosition.y));
+
+    dragData.pagePn_m1 = dragData.pagePn;
+
+    setAllItemPositions();
+    repositionOverlay();
+  }
+
+  function handleMouseUp(e){
+    $('#main-container').off('mousemove', handleDragging).off('mouseup mouseleave', handleMouseUp);
+  }
+
+  $('#main-container').on('mouseup mouseleave', handleMouseUp).on('mousemove', handleDragging);
+}
+
 function onMouseDownBody(e)
 {
-  if (selectedItem !== undefined)
+  switch (e.which)
   {
-    clearSelectedItem();
+    case 2:
+      // Middle click
+      e.preventDefault();
+      handleBodyMiddleClick(e);
+      break;
+    case 3:
+      // Right click
+      break;
+    case 1:
+      // Left click
+    default:
+      if (selectedItem !== undefined)
+      {
+        clearSelectedItem();
+      }
+      break;
   }
 }
 
