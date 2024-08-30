@@ -4,6 +4,18 @@
 <link rel="stylesheet" href="{% static 'lastfm/style.css' %}">
 <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
 
+<script src="{% static 'util.js' %}"></script>
+<script src="{% static 'ajaxhelpers.js' %}"></script>
+<script src="{% static 'jquery-3.7.1.min.js' %}"></script>
+
+<script src="{% static 'lastfm/user.js' %}"
+        defer
+        data-username="{{ username }}"
+        data-period="{{ period }}"
+        data-size="{{ size }}"
+        data-getgridurl="{% url 'lastfm:api_get_lastfm_grid' %}">
+</script>
+
 <html lang="en">
   <head>
     <meta charset="UTF-8">
@@ -47,17 +59,10 @@
         </div>
       </div>
       <div>
-        <div class="grid size-{{ size }}">
-          <img id="grid-image" src="{{ grid }}">
+        <h1 id="loading-text">Creating grid</h1>
+        <div class="grid size-{{ size }}" id="album-grid">
         </div>
-        <table class="album-list">
-          {% for album in topalbums %}
-            <tr>
-              <td class="album-rank">{{ forloop.counter }}.</td>
-              <td class="album-name">{{ album.name }}</td>
-              <td class="album-artist">{{ album.artist }}<td>
-            </tr>
-          {% endfor %}
+        <table class="album-list" id="album-list">
         </table>
       </div>
   </body>

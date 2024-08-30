@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .api import *
+from .lastfm import *
 
 PERIOD_CHOICES = (
   ("7day", "Week"),
@@ -22,6 +22,7 @@ SIZE_CHOICES = (
   (7, "7x7"),
   (8, "8x8"),
   (9, "9x9"),
+  (10, "10x10"),
 )
 
 class LastFmUsernameField(forms.CharField):

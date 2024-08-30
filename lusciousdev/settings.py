@@ -121,12 +121,25 @@ CHANNEL_LAYERS = {
 
 SOCIALACCOUNT_PROVIDERS = {
   "twitch": {
+    "SCOPE": [
+      "channel:read:polls",
+      "channel:manage:polls",
+      "channel:read:redemptions",
+      "channel:manage:redemptions",
+      "channel:read:predictions",
+      "channel:manage:predictions",
+    ],
     "APP": {
       "client_id": TWITCH_API_CLIENT_ID,
       "secret": TWITCH_API_CLIENT_SECRET,
+    },
+    "AUTH_PARAMS": {
+      "access_type": "offline",
     }
   }
 }
+
+SOCIALACCOUNT_STORE_TOKENS = True
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
