@@ -67,6 +67,8 @@ class AbstractItem(NonConsecutiveModel):
   opacity = models.FloatField(default = 100.0)
   visibility = models.IntegerField(default = 1)
   minimized = models.BooleanField(default = False)
+  scroll_direction = models.IntegerField(default = 0)
+  scroll_duration = models.FloatField(default = 5.0)
   
   crop_top = models.FloatField(verbose_name = "Crop % (top)", default = 0)
   crop_left = models.FloatField(verbose_name = "Crop % (left)", default = 0)
@@ -93,6 +95,8 @@ class AbstractItem(NonConsecutiveModel):
       "crop_bottom": self.crop_bottom,
       "crop_left": self.crop_left,
       "crop_right": self.crop_right,
+      'scroll_direction': self.scroll_direction,
+      'scroll_duration': self.scroll_duration,
     }
     
 def image_directory_path(instance : "AbstractItem", filename : str):

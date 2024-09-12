@@ -35,6 +35,8 @@ var sendEditChanges = {};
 
 const WEBSOCKET_SEND_COOLDOWN = 250; // ms
 
+var streamEmbed;
+
 const GrabTypes = {
   Move: 0,
   TopLeft: 1,
@@ -1361,21 +1363,43 @@ function openAddItemTab(event, tabId)
 function toggleEmbeddedTwitchStream(e)
 {
   var checked = $("#embed-checkbox").is(":checked");
+  var interactable = $("#embed-interact").is(":checked");
 
   if (checked)
   {
-    $("#twitch-embed").html(`<iframe
-    src="https://player.twitch.tv/?channel={0}&parent={1}&muted=true"
-    height="100%"
-    width="100%"
-    class="noselect"
-    frameBorder="0">
-</iframe>`.format(overlayOwner, location.hostname));
+    streamEmbed = new Twitch.Player("twitch-embed", {
+      width: "100%",
+      height: "100%",
+      channel: overlayOwner,
+    });
+    if (!interactable)
+    {
+      $("#twitch-embed iframe").addClass("noselect");
+    }
   }
   else
   {
     $("#twitch-embed").html("");
+    streamEmbed = null;
   }
+}
+
+function toggleEmbeddedStreamInteraction(e)
+{
+  var checked = $("#embed-interact").is(":checked");
+
+  if (checked)
+  {
+    $("#twitch-embed").removeClass("noselect");
+    $("#twitch-embed iframe").removeClass("noselect");
+  }
+  else
+  {
+    $("#twitch-embed").addClass("noselect");
+    $("#twitch-embed iframe").addClass("noselect");
+  }
+
+  console.log("toggled interactivity");
 }
 
 function selectedVisibilityChange(e)
@@ -1466,6 +1490,11 @@ $(window).on('load', function() {
   toggleEmbeddedTwitchStream();
   $("#embed-checkbox").change((e) => {
     toggleEmbeddedTwitchStream(e);
+  });
+
+  toggleEmbeddedStreamInteraction();
+  $("#embed-interact").change((e) => {
+    toggleEmbeddedStreamInteraction(e);
   });
 
   $(".delete-item").click((e) => {

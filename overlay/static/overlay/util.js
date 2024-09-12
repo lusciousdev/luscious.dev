@@ -6,6 +6,12 @@ var itemDict = {};
 
 const TRANSPARENT = "#00000000"
 
+const NOSCROLL  = 0;
+const LEFTRIGHT = 1;
+const RIGHTLEFT = 2;
+const TOPBOTTOM = 3;
+const BOTTOMTOP = 4;
+
 function sendWebsocketMessage(cmd, objData)
 {
   if (WEBSOCKET != undefined && WEBSOCKET.readyState == WebSocket.OPEN)
@@ -26,11 +32,66 @@ function getDefaultCSS(editView, idata)
     visible = "inherit";
   }
 
-  return {
+  var cssObj = {
     "opacity": (idata['opacity'] / 100.0),
     "visibility": visible,
     "clip-path": "inset({0}% {1}% {2}% {3}%)".format(idata["crop_top"], idata["crop_right"], idata["crop_bottom"], idata["crop_left"]),
+  };
+
+  switch (idata["scroll_direction"])
+  {
+    case LEFTRIGHT:
+      cssObj['-moz-transform'] = "translateX(-100%)";
+      cssObj['-webkit-transform'] = "translateX(-100%)";
+      cssObj['transform'] = "translateX(-100%)";
+      cssObj['-moz-animation'] = "leftRightScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['-webkit-animation'] = "leftRightScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['animation'] = "leftRightScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+
+      console.log(cssObj);
+      break;
+    case RIGHTLEFT:
+      cssObj['-moz-transform'] = "translateX(100%)";
+      cssObj['-webkit-transform'] = "translateX(100%)";
+      cssObj['transform'] = "translateX(100%)";
+      cssObj['-moz-animation'] = "rightLeftScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['-webkit-animation'] = "rightLeftScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['animation'] = "rightLeftScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+
+      console.log(cssObj);
+      break;
+    case TOPBOTTOM:
+      cssObj['-moz-transform'] = "translateY(100%)";
+      cssObj['-webkit-transform'] = "translateY(100%)";
+      cssObj['transform'] = "translateY(100%)";
+      cssObj['-moz-animation'] = "topBottomScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['-webkit-animation'] = "topBottomScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['animation'] = "topBottomScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+
+      console.log(cssObj);
+      break;
+    case BOTTOMTOP:
+      cssObj['-moz-transform'] = "translateY(-100%)";
+      cssObj['-webkit-transform'] = "translateY(-100%)";
+      cssObj['transform'] = "translateY(-100%)";
+      cssObj['-moz-animation'] = "bottomTopScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['-webkit-animation'] = "bottomTopScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+      cssObj['animation'] = "bottomTopScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
+
+      console.log(cssObj);
+      break;
+    case NOSCROLL:
+    default:
+      cssObj['-moz-transform'] = "";
+      cssObj['-webkit-transform'] = "";
+      cssObj['transform'] = "";
+      cssObj['-moz-animation'] = "";
+      cssObj['-webkit-animation'] = "";
+      cssObj['animation'] = "";
+      break;
   }
+
+  return cssObj;
 }
 
 function handleWebsocketMessage(e)
@@ -224,9 +285,10 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
 function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
 {
   var itemElemId = '#item-{0}'.format(itemId);
+  var itemContainerId = '#item-{0}-container'.format(itemId);
   if ($(itemElemId).length == 0)
   {
-    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item unselected'></div>".format(itemId))
+    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId))
 
     setItemPosition(itemId, top, left, width, height, z, rotation);
 
@@ -243,7 +305,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
           imageUrl = itemData['image_url'];
         }
 
-        $(itemElemId).append("<img id='item-{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
+        $(itemContainerId).append("<img id='item-{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
         $(itemElemId).data('id', itemData['id']);
         $(itemElemId).data('item_type', itemType);
 
@@ -256,7 +318,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
       case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
 
-        $(itemElemId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
+        $(itemContainerId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
 
         $(iframeId).css({
           "opacity": itemData['opacity'],
@@ -267,7 +329,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
       case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
 
-        $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
         itemDict[itemId]['player_ready'] = false;
         itemDict[itemId]['player'] = undefined;
@@ -282,7 +344,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
         itemDict[itemId]['player'] = new Twitch.Player("item-{0}-player".format(itemId), {
           width: '100%',
@@ -297,7 +359,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemElemId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
         itemDict[itemId]['player'] = new Twitch.Player("item-{0}-player".format(itemId), {
           width: '100%',
@@ -311,11 +373,11 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
       case "text":
-        $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
         setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
         break;
       case "stopwatch":
-        $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
         if (itemData['paused'])
@@ -327,7 +389,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
         setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
         break;
       case "counter":
-        $(itemElemId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(editView, overlayElement, itemId, textContent, itemData);

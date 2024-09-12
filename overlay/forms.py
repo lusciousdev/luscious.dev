@@ -57,41 +57,6 @@ class DeleteCollaborativeOverlayForm(forms.Form):
       self.user.collaborativeoverlay_set.get(pk = data['overlay_id'])
     except CollaborativeOverlay.DoesNotExist:
       raise forms.ValidationError({ "overlay_id": "There is no overlay matching that ID." })
-    
-
-BASE_WIDGETS = {
-  'name': forms.TextInput(attrs={ "field-type": "text", 'size': 40 }),
-  'x': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
-  'y': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
-  'z': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
-  'width': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
-  'height': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
-  'rotation': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
-  'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0" }),
-  'visibility': forms.Select(attrs={ "field-type": "integer" }),
-  'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
-  'crop_top': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
-  'crop_bottom': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
-  'crop_left': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
-  'crop_right': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
-}
-
-BASE_WIDGET_ORDER = [
-  'name',
-  'x',
-  'y',
-  'z',
-  'width',
-  'height',
-  'rotation',
-  'crop_top',
-  'crop_left',
-  'crop_bottom',
-  'crop_right',
-  'visibility',
-  'minimized',
-  'opacity',
-]
 
 VISIBILITY_CHOICES = (
   (0, "Hidden"),
@@ -137,6 +102,53 @@ TEXT_ALIGNMENTS = (
   ("justify", "justify"),
 )
 
+SCROLL_DIRECTIONS = (
+  (0, "None"),
+  (1, "Left to right"),
+  (2, "Right to left"),
+  (3, "Top to bottom"),
+  (4, "Bottom to top"),
+)
+    
+
+BASE_WIDGETS = {
+  'name': forms.TextInput(attrs={ "field-type": "text", 'size': 40 }),
+  'x': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'y': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'z': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'width': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'height': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40 }),
+  'rotation': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0" }),
+  'visibility': forms.Select(attrs={ "field-type": "integer" }),
+  'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean" }),
+  'crop_top': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'crop_bottom': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'crop_left': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'crop_right': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+  'scroll_direction': forms.Select(attrs = { "field-type": "integer" }),
+  'scroll_duration': forms.NumberInput(attrs={ "field-type": "float", 'size': 40 }),
+}
+
+BASE_WIDGET_ORDER = [
+  'name',
+  'x',
+  'y',
+  'z',
+  'width',
+  'height',
+  'rotation',
+  'crop_top',
+  'crop_left',
+  'crop_bottom',
+  'crop_right',
+  'visibility',
+  'minimized',
+  'opacity',
+  'scroll_direction',
+  'scroll_duration',
+]
+
 BASE_TEXT_WIDGETS = {
   'font': forms.Select(attrs = { "field-type": "text" }),
   'font_size': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40 }),
@@ -178,6 +190,7 @@ class EditItemForm(forms.ModelForm):
   overlay_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
+  scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
   
   field_order = BASE_WIDGET_ORDER
   
@@ -333,6 +346,7 @@ class EditCounterItem(AbstractEditText):
     
 class AddItemForm(forms.ModelForm):
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
+  scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
   
   field_order = BASE_WIDGET_ORDER
   
