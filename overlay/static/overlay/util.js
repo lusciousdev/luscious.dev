@@ -47,8 +47,6 @@ function getDefaultCSS(editView, idata)
       cssObj['-moz-animation'] = "leftRightScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['-webkit-animation'] = "leftRightScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['animation'] = "leftRightScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
-
-      console.log(cssObj);
       break;
     case RIGHTLEFT:
       cssObj['-moz-transform'] = "translateX(100%)";
@@ -57,8 +55,6 @@ function getDefaultCSS(editView, idata)
       cssObj['-moz-animation'] = "rightLeftScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['-webkit-animation'] = "rightLeftScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['animation'] = "rightLeftScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
-
-      console.log(cssObj);
       break;
     case TOPBOTTOM:
       cssObj['-moz-transform'] = "translateY(100%)";
@@ -67,8 +63,6 @@ function getDefaultCSS(editView, idata)
       cssObj['-moz-animation'] = "topBottomScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['-webkit-animation'] = "topBottomScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['animation'] = "topBottomScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
-
-      console.log(cssObj);
       break;
     case BOTTOMTOP:
       cssObj['-moz-transform'] = "translateY(-100%)";
@@ -77,8 +71,6 @@ function getDefaultCSS(editView, idata)
       cssObj['-moz-animation'] = "bottomTopScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['-webkit-animation'] = "bottomTopScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
       cssObj['animation'] = "bottomTopScrollAnim {0}s linear infinite".format(idata["scroll_duration"]);
-
-      console.log(cssObj);
       break;
     case NOSCROLL:
     default:
@@ -264,6 +256,7 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
 {
   var overlayElemWidth = $(overlayElement).width();
   var textElemId = "#item-{0}-text".format(itemId);
+  var textElemContainerId = "#item-{0}-container".format(itemId);
   var fontSize = (overlayElemWidth * itemData['font_size']) / overlayWidth;
 
   $(textElemId).text(itemText);
@@ -276,10 +269,14 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
   itemCSS["text-shadow"] = "{0}pt {1}pt {2}pt {3}".format(itemData["drop_shadow_offset_x"], itemData["drop_shadow_offset_y"], itemData["drop_shadow_blur_radius"], itemData["drop_shadow_enabled"] ? itemData["drop_shadow_color"] : TRANSPARENT);
   itemCSS["-webkit-text-stroke-width"] = "{0}pt".format(itemData["text_outline_width"])
   itemCSS["-webkit-text-stroke-color"] = itemData["text_outline_enabled"] ? itemData["text_outline_color"] : TRANSPARENT
-  itemCSS["background-color"] = (itemData['background_enabled']) ? itemData['background_color'] : TRANSPARENT;
   itemCSS["text-align"] = itemData["text_alignment"];
 
+  var containerCss = {
+    "background-color": (itemData['background_enabled']) ? itemData['background_color'] : TRANSPARENT,
+  };
+
   $(textElemId).css(itemCSS);
+  $(textElemContainerId).css(containerCss);
 }
 
 function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
