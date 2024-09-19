@@ -283,6 +283,12 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
 {
   var itemElemId = '#item-{0}'.format(itemId);
   var itemContainerId = '#item-{0}-container'.format(itemId);
+
+  if(!editView && itemData["view_lock"])
+  {
+    return;
+  }
+
   if ($(itemElemId).length == 0)
   {
     $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId))

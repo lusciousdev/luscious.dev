@@ -67,6 +67,7 @@ class AbstractItem(NonConsecutiveModel):
   opacity = models.FloatField(default = 100.0)
   visibility = models.IntegerField(default = 1)
   minimized = models.BooleanField(default = False)
+  view_lock = models.BooleanField(default = False)
   scroll_direction = models.IntegerField(default = 0)
   scroll_duration = models.FloatField(default = 5.0)
   
@@ -91,6 +92,7 @@ class AbstractItem(NonConsecutiveModel):
       "opacity": self.opacity,
       "visibility": self.visibility,
       "minimized": self.minimized,
+      "view_lock": self.view_lock,
       "crop_top": self.crop_top,
       "crop_bottom": self.crop_bottom,
       "crop_left": self.crop_left,

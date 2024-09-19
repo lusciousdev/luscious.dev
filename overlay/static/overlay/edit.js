@@ -33,7 +33,7 @@ var otherSelectedItems = [];
 var sendEditTimeout = undefined;
 var sendEditChanges = {};
 
-const WEBSOCKET_SEND_COOLDOWN = 250; // ms
+const WEBSOCKET_SEND_COOLDOWN = 125; // ms
 
 var streamEmbed;
 
@@ -1180,6 +1180,24 @@ function onInputChange(inputEvent)
         sendEditChanges[itemId] = {};
       sendEditChanges[itemId][inputField] = inputVal;
 
+      switch (inputField)
+      {
+        case "visibility":
+        case "minimized":
+        case "scroll_direction":
+        case "font":
+        case "opacity":
+        case "view_lock":
+          otherSelectedItems.forEach((otherSelectedItemId, i) => {
+            if (!(otherSelectedItemId in sendEditChanges))
+              sendEditChanges[otherSelectedItemId] = {};
+            sendEditChanges[otherSelectedItemId][inputField] = inputVal;
+          });
+          break;
+        default:
+          break;
+      }
+
       if (sendEditTimeout == undefined)
         sendEditTimeout = setTimeout(sendEdits, WEBSOCKET_SEND_COOLDOWN);
       break;
@@ -1370,6 +1388,7 @@ function toggleEmbeddedTwitchStream(e)
     streamEmbed = new Twitch.Player("twitch-embed", {
       width: "100%",
       height: "100%",
+      muted: true,
       channel: overlayOwner,
     });
     if (!interactable)
