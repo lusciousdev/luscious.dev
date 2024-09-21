@@ -99,10 +99,10 @@ function addGrabbers(itemId)
   getItemDiv(itemId).append("<div class='grabber bottomleft'></div>");
   getItemDiv(itemId).append("<div class='grabber bottomright'></div>");
 
-  $('#item-{0} .topleft'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopLeft; });
-  $('#item-{0} .topright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.TopRight; });
-  $('#item-{0} .bottomleft'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.BottomLeft; });
-  $('#item-{0} .bottomright'.format(itemId)).on("mousedown", (event) => { grabType = GrabTypes.BottomRight; });
+  $('#item-{0} .topleft'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.TopLeft; });
+  $('#item-{0} .topright'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.TopRight; });
+  $('#item-{0} .bottomleft'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.BottomLeft; });
+  $('#item-{0} .bottomright'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.BottomRight; });
 }
 
 function updateItems(data, fullItemList = true, selfEdit = false)
@@ -195,7 +195,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
 
 function addItemCallback(itemId, itemType)
 {
-  getItemDiv(itemId).on("mousedown", onMousedownItem);
+  getItemDiv(itemId).on("mousedown touchstart", onMousedownItem);
   addGrabbers(itemId);
 
   var item = itemDict[itemId]
@@ -453,7 +453,6 @@ function documentScroll(event)
 {
   if (event.ctrlKey)
   {
-    console.log("preventing zoom.");
     event.preventDefault();
   }
 }
@@ -618,10 +617,24 @@ function onMousedownItem(e)
 
 function handleItemLeftClick(e, elem)
 {
+  e.preventDefault();
+
+  var pageX, pageY;
+  if (e.type == "touchstart")
+  {
+    pageX = e.changedTouches[0].pageX;
+    pageY = e.changedTouches[0].pageY;
+  }
+  else
+  {
+    pageX = e.pageX;
+    pageY = e.pageY;
+  }
+
   window.dragData = {};
-  dragData.pageP0 = new Point(e.pageX, e.pageY);
-  dragData.pagePn = new Point(e.pageX, e.pageY);
-  dragData.pagePn_m1 = new Point(e.pageX, e.pageY);
+  dragData.pageP0 = new Point(pageX, pageY);
+  dragData.pagePn = new Point(pageX, pageY);
+  dragData.pagePn_m1 = new Point(pageX, pageY);
   dragData.elem = elem;
 
   function getGrabberPos(grabber)
@@ -689,7 +702,7 @@ function handleItemLeftClick(e, elem)
   }
 
   dragData.elemP0 = new Point(parseFloat($(dragData.elem).css('left')), parseFloat($(dragData.elem).css('top')));
-  dragData.distP0 = Point.sub2(dragData.furthestCorner.point, new Point(e.pageX, e.pageY));
+  dragData.distP0 = Point.sub2(dragData.furthestCorner.point, new Point(pageX, pageY));
 
   dragData.selectedElem = {
     point0: getItemPos(selectedItem)
@@ -707,7 +720,19 @@ function handleItemLeftClick(e, elem)
 
   function handleDragging(e)
   {
-    dragData.pagePn = new Point(e.pageX, e.pageY);
+    var pageX, pageY;
+    if (e.type == "touchmove")
+    {
+      pageX = e.changedTouches[0].pageX;
+      pageY = e.changedTouches[0].pageY;
+    }
+    else
+    {
+      pageX = e.pageX;
+      pageY = e.pageY;
+    }
+
+    dragData.pagePn = new Point(pageX, pageY);
 
     if (grabType == GrabTypes.Move)
     {
@@ -830,7 +855,7 @@ function handleItemLeftClick(e, elem)
   
     setEditFormInputs(selectedItem);
 
-    dragData.pagePn_m1 = new Point(e.pageX, e.pageY);
+    dragData.pagePn_m1 = new Point(pageX, pageY);
   }
 
   function handleMouseUp(e){
@@ -844,10 +869,10 @@ function handleItemLeftClick(e, elem)
     });
 
     grabType = GrabTypes.Move;
-    $('#main-container').off('mousemove', handleDragging).off('mouseup mouseleave', handleMouseUp);
+    $('#main-container').off('mousemove touchmove', handleDragging).off('mouseup touchend mouseleave touchcancel', handleMouseUp);
   }
 
-  $('#main-container').on('mouseup mouseleave', handleMouseUp).on('mousemove', handleDragging);
+  $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
 }
 
 function onMouseMove(e)
@@ -890,10 +915,10 @@ function handleBodyMiddleClick(e)
   }
 
   function handleMouseUp(e){
-    $('#main-container').off('mousemove', handleDragging).off('mouseup mouseleave', handleMouseUp);
+    $('#main-container').off('mousemove touchmove', handleDragging).off('mouseup touchend mouseleave touchcancel', handleMouseUp);
   }
 
-  $('#main-container').on('mouseup mouseleave', handleMouseUp).on('mousemove', handleDragging);
+  $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
 }
 
 function onMouseDownBody(e)
@@ -1417,8 +1442,6 @@ function toggleEmbeddedStreamInteraction(e)
     $("#twitch-embed").addClass("noselect");
     $("#twitch-embed iframe").addClass("noselect");
   }
-
-  console.log("toggled interactivity");
 }
 
 function selectedVisibilityChange(e)
@@ -1466,8 +1489,8 @@ $(window).on('load', function() {
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   
-  $("#main-container").on("mousemove", onMouseMove);
-  $('#main-container').on("mousedown", onMouseDownBody);
+  $("#main-container").on("mousemove touchmove", onMouseMove);
+  $('#main-container').on("mousedown touchstart", onMouseDownBody);
   
   $(document).on('keyup keydown', function(e){window.shiftheld = e.shiftKey; window.ctrlheld = e.ctrlKey;} );
   

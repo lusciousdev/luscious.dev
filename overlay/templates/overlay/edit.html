@@ -42,88 +42,93 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   </head>
   <body>
-    <div id="sidebar">
-      <div class="site-title-container">
-        <div class="site-title">Edit {{ collaborativeoverlay.name }}</div>
-        <a href="{% url 'overlay:change_log' %}">Change log</a>
-      </div>
-
-      <div class="sidebar-section" id="sidebar-controls">
-        <div class="sidebar-item" id="enable-twitch-embed">
-          <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
-          <label for="enable-embed">Embed Twitch Stream</label>
-          <br/>
-          <input type="checkbox" id="embed-interact" name="interact-embed" value="Allow interaction with stream embed."/>
-          <label for="interact-embed">Allow interaction with embed</label>
-        </div>
-
-        <div class="big-button" id="open-add-item">
-          Add item.
-        </div>
-      </div>
-
-      <div class="sidebar-section" id="item-select-container">
-        <div class="sidebar-subsection" id="item-filter-container">
-          <label class="sidebar-label" for="item-filter">Filter:</label>
-          <input class="sidebar-text-input" type="text" id="item-filter" name="item-filter"></input>
-          <select class="sidebar-dropdown-input" id="item-type-filter" name="item-type-filter">
-            <option value="">All</option>
-            
-            {% for item_type in item_types %}
-            <option value="{{ item_type.get_simple_type }}">{{ item_type.get_pretty_type }}</button>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="item-select-list"></div>
-      </div>
-
-      <div class="sidebar-section" id="item-edit-forms">
-        {% for k, form in forms.edit.items %}
-        <div class="form-container edit-container hidden" id="edit-{{ form.Meta.model.get_simple_type }}-container">
-          <form class="item-form edit-form" id="edit-{{ form.Meta.model.get_simple_type }}-form">
-            <div class="item-title">
-              Edit {{ form.Meta.model.get_pretty_type }}
-            </div>
-            {{ form.non_field_errors }}
-            {% for field in form.hidden_fields %}
-            <span class="hidden">{{ field }}</span>
-            {% endfor %}
-            <table>
-            {% for field in form.visible_fields %}
-              <tr>
-                <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
-                <td>
-                  {{ field }}
-                  {% for error in field.errors %}
-                  <br>
-                  <span class="field-error">{{ error|escape }}</span>
-                  {% endfor %}
-                </td>
-              </tr>
-            {% endfor %}
-              <tr>
-                <td></td>
-                <td>
-                  {% if k == "StopwatchItem" %}
-                  <div class="medium-button pause-item" id="pause-{{ form.Meta.model.get_simple_type }}">Pause</div>
-                  <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
-                  {% elif k == "YouTubeEmbedItem" or k == "TwitchStreamEmbedItem" or k == "TwitchVideoEmbedItem" %}
-                  <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
-                  {% endif %}
-                  <div class="medium-button delete-item" id="delete-{{ form.Meta.model.get_simple_type }}">Delete</div>
-                </td>
-              </tr>
-            </table>
-          </form>
-        </div>
-        {% endfor %}
-      </div>
+    <div id="vert-title" class="vertical-element site-title-container">
+      <div class="site-title">Edit {{ collaborativeoverlay.name }}</div>
+      <a href="{% url 'overlay:change_log' %}">Change log</a>
     </div>
-    <div id="main-container">
-      <div id="cursor-container">
+    <div id="content-container">
+      <div id="sidebar">
+        <div class="horizontal-element site-title-container">
+          <div class="site-title">Edit {{ collaborativeoverlay.name }}</div>
+          <a href="{% url 'overlay:change_log' %}">Change log</a>
+        </div>
+        <div class="sidebar-section" id="sidebar-controls">
+          <div class="sidebar-item" id="enable-twitch-embed">
+            <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
+            <label for="enable-embed">Embed Twitch Stream</label>
+            <br/>
+            <input type="checkbox" id="embed-interact" name="interact-embed" value="Allow interaction with stream embed."/>
+            <label for="interact-embed">Allow interaction with embed</label>
+          </div>
+
+          <div class="big-button" id="open-add-item">
+            Add item.
+          </div>
+        </div>
+
+        <div class="sidebar-section" id="item-select-container">
+          <div class="sidebar-subsection" id="item-filter-container">
+            <label class="sidebar-label" for="item-filter">Filter:</label>
+            <input class="sidebar-text-input" type="text" id="item-filter" name="item-filter"></input>
+            <select class="sidebar-dropdown-input" id="item-type-filter" name="item-type-filter">
+              <option value="">All</option>
+              
+              {% for item_type in item_types %}
+              <option value="{{ item_type.get_simple_type }}">{{ item_type.get_pretty_type }}</button>
+              {% endfor %}
+            </select>
+          </div>
+          <div id="item-select-list"></div>
+        </div>
+
+        <div class="sidebar-section" id="item-edit-forms">
+          {% for k, form in forms.edit.items %}
+          <div class="form-container edit-container hidden" id="edit-{{ form.Meta.model.get_simple_type }}-container">
+            <form class="item-form edit-form" id="edit-{{ form.Meta.model.get_simple_type }}-form">
+              <div class="item-title">
+                Edit {{ form.Meta.model.get_pretty_type }}
+              </div>
+              {{ form.non_field_errors }}
+              {% for field in form.hidden_fields %}
+              <span class="hidden">{{ field }}</span>
+              {% endfor %}
+              <table>
+              {% for field in form.visible_fields %}
+                <tr>
+                  <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+                  <td>
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <br>
+                    <span class="field-error">{{ error|escape }}</span>
+                    {% endfor %}
+                  </td>
+                </tr>
+              {% endfor %}
+                <tr>
+                  <td></td>
+                  <td>
+                    {% if k == "StopwatchItem" %}
+                    <div class="medium-button pause-item" id="pause-{{ form.Meta.model.get_simple_type }}">Pause</div>
+                    <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
+                    {% elif k == "YouTubeEmbedItem" or k == "TwitchStreamEmbedItem" or k == "TwitchVideoEmbedItem" %}
+                    <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
+                    {% endif %}
+                    <div class="medium-button delete-item" id="delete-{{ form.Meta.model.get_simple_type }}">Delete</div>
+                  </td>
+                </tr>
+              </table>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
       </div>
-      <div id="overlay" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};">
-        <div id="twitch-embed" class="noselect" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};" />
+      <div id="main-container">
+        <div id="cursor-container">
+        </div>
+        <div id="overlay" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};">
+          <div id="twitch-embed" class="noselect" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};" />
+        </div>
       </div>
     </div>
     <div class="modal" id="add-item-modal">

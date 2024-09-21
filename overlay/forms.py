@@ -112,23 +112,23 @@ SCROLL_DIRECTIONS = (
     
 
 BASE_WIDGETS = {
-  'name': forms.TextInput(attrs={ "field-type": "text", 'size': 40, "title": "Item name" }),
-  'x': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40, "title": "X offset" }),
-  'y': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40, "title": "Y offset" }),
-  'z': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40, "title": "Z index. Higher Z appears on top of lower." }),
-  'width': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40, "title": "Item width" }),
-  'height': forms.NumberInput(attrs={ "field-type": "integer", 'size': 40, "title": "Item height" }),
-  'rotation': forms.NumberInput(attrs={ "field-type": "float", 'size': 40, "title": "Item rotation (degrees)" }),
+  'name': forms.TextInput(attrs={ "field-type": "text", "title": "Item name" }),
+  'x': forms.NumberInput(attrs={ "field-type": "integer", "title": "X offset" }),
+  'y': forms.NumberInput(attrs={ "field-type": "integer", "title": "Y offset" }),
+  'z': forms.NumberInput(attrs={ "field-type": "integer", "title": "Z index. Higher Z appears on top of lower." }),
+  'width': forms.NumberInput(attrs={ "field-type": "integer", "title": "Item width" }),
+  'height': forms.NumberInput(attrs={ "field-type": "integer", "title": "Item height" }),
+  'rotation': forms.NumberInput(attrs={ "field-type": "float", "title": "Item rotation (degrees)" }),
   'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0", 'title': "Item opacity" }),
   'visibility': forms.Select(attrs={ "field-type": "integer", "title": "Item visibility" }),
   'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean", "title": "Completely hide from editors and overlay." }),
   'view_lock': forms.CheckboxInput(attrs={ "field-type": "boolean", "title": "Item will not update on the overlay until unchecked." }),
-  'crop_top': forms.NumberInput(attrs={ "field-type": "float", 'size': 40, "title": "Crop percentage (from the top down)" }),
-  'crop_bottom': forms.NumberInput(attrs={ "field-type": "float", 'size': 40, "title": "Crop percentage (from the bottom up)" }),
-  'crop_left': forms.NumberInput(attrs={ "field-type": "float", 'size': 40, "title": "Crop percentage (from left to right)" }),
-  'crop_right': forms.NumberInput(attrs={ "field-type": "float", 'size': 40, "title": "Crop percentage (from right to left)" }),
+  'crop_top': forms.NumberInput(attrs={ "field-type": "float", "title": "Crop percentage (from the top down)" }),
+  'crop_bottom': forms.NumberInput(attrs={ "field-type": "float", "title": "Crop percentage (from the bottom up)" }),
+  'crop_left': forms.NumberInput(attrs={ "field-type": "float", "title": "Crop percentage (from left to right)" }),
+  'crop_right': forms.NumberInput(attrs={ "field-type": "float", "title": "Crop percentage (from right to left)" }),
   'scroll_direction': forms.Select(attrs = { "field-type": "integer", "title": "Scroll direction" }),
-  'scroll_duration': forms.NumberInput(attrs={ "field-type": "float", 'size': 40, "title": "Scroll duration" }),
+  'scroll_duration': forms.NumberInput(attrs={ "field-type": "float", "title": "Scroll duration" }),
 }
 
 BASE_WIDGET_ORDER = [
@@ -153,19 +153,19 @@ BASE_WIDGET_ORDER = [
 
 BASE_TEXT_WIDGETS = {
   'font': forms.Select(attrs = { "field-type": "text", 'title': "Font" }),
-  'font_size': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40, 'title': "Font size" }),
+  'font_size': forms.NumberInput(attrs = { "field-type": "integer", 'title': "Font size" }),
   'font_weight': forms.Select(attrs = { "field-type": "text", 'title': "Font weight" }),
-  'color': forms.TextInput(attrs = { "field-type": "text", 'size': 40, "title": "Text color" }),
+  'color': forms.TextInput(attrs = { "field-type": "text", "title": "Text color" }),
   'drop_shadow_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': "Enable drop shadow" }),
-  'drop_shadow_offset_x': forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "tabindex": 1, 'title': "Drop shadow X offset" }),
-  'drop_shadow_offset_y': forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "tabindex": 1, "title": "Drop shadow Y offset" }),
-  'drop_shadow_blur_radius': forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "tabindex": 1, 'title': 'Drop shadow blur radius' }),
-  'drop_shadow_color': forms.TextInput(attrs = { "field-type": "text", 'size': 40, 'title': "Drop shadow color" }),
+  'drop_shadow_offset_x': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, 'title': "Drop shadow X offset" }),
+  'drop_shadow_offset_y': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, "title": "Drop shadow Y offset" }),
+  'drop_shadow_blur_radius': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, 'title': 'Drop shadow blur radius' }),
+  'drop_shadow_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Drop shadow color" }),
   'text_outline_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': "Enable text outline" }),
-  'text_outline_width': forms.NumberInput(attrs = { "field-type": "float", 'size': 40, 'title': "Text outline width" }),
-  'text_outline_color': forms.TextInput(attrs = { "field-type": "text", 'size': 40, 'title': "Text outline color" }),
+  'text_outline_width': forms.NumberInput(attrs = { "field-type": "float", 'title': "Text outline width" }),
+  'text_outline_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Text outline color" }),
   'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': 'Enable background' }),
-  'background_color': forms.TextInput(attrs = { "field-type": "text", 'size': 40, 'title': "Background color" }),
+  'background_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Background color" }),
   'text_alignment': forms.Select(attrs = { "field-type": "text", 'title': "Text alignment" })
 }
 
@@ -200,41 +200,41 @@ BASE_VIDEO_WIDGET_ORDER = [
 ]
 
 IMAGE_WIDGETS = {
-  'url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40, "title": "Image URL. If you uploaded your own image, make sure this field is empty!" }),
+  'url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, "title": "Image URL. If you uploaded your own image, make sure this field is empty!" }),
   'image': forms.ClearableFileInput(attrs={ "field-type": "file", "title": "Upload an image." }),
 }
 
 EMBED_WIDGETS = {
-  'embed_url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40, "title": "Embed URL" }),
+  'embed_url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, "title": "Embed URL" }),
 }
 
 YOUTUBE_VIDEO_WIDGETS = {
-  'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40, "title": "YouTube Video ID (https://www.youtube.com/watch?v=<THIS PART>)" }),
-  'start_time': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40, "title": "Video start time (hit reset to seek to this time)" }),
+  'video_id': forms.TextInput(attrs = { "field-type": "text", "title": "YouTube Video ID (https://www.youtube.com/watch?v=<THIS PART>)" }),
+  'start_time': forms.NumberInput(attrs = { "field-type": "integer", "title": "Video start time (hit reset to seek to this time)" }),
 }
 
 TWITCH_STREAM_WIDGETS = {
-  'channel': forms.TextInput(attrs = { "field-type": "text", 'size': 40, "title": "Twitch channel name (i.e. itswill)" }),
+  'channel': forms.TextInput(attrs = { "field-type": "text", "title": "Twitch channel name (i.e. itswill)" }),
 }
 
 TWITCH_VIDEO_WIDGETS = {
-  'video_id': forms.TextInput(attrs = { "field-type": "text", 'size': 40, "title": "Twitch Video ID" }),
-  'start_time': forms.NumberInput(attrs = { "field-type": "integer", 'size': 40, "title": "Video start time (hit reset to seek to this time)" }),
+  'video_id': forms.TextInput(attrs = { "field-type": "text", "title": "Twitch Video ID" }),
+  'start_time': forms.NumberInput(attrs = { "field-type": "integer", "title": "Video start time (hit reset to seek to this time)" }),
 }
 
 TEXT_WIDGETS = {
-  'text': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40, "title": "Text" }),
+  'text': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, "title": "Text" }),
 }
 
 STOPWATCH_WIDGETS = {
-  'timer_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40, 'title': "Must include {0} as this gets replaced with the timer." }),
+  'timer_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'title': "Must include {0} as this gets replaced with the timer." }),
   'timer_start': forms.HiddenInput(attrs={ "field-type": "integer" }),
   'pause_time': forms.HiddenInput(attrs={ "field-type": "integer" }),
   'paused': forms.HiddenInput(attrs={ "field-type": "boolean", "title": "Paused" }),
 }
 
 COUNTER_WIDGETS = {
-  'counter_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'columns': 40, 'title': "Must include {0} as this gets replaced with the timer." }),
+  'counter_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'title': "Must include {0} as this gets replaced with the timer." }),
   'count': forms.NumberInput(attrs={ "field-type": "integer", "title": "Count" }),
 }
     
@@ -252,7 +252,7 @@ class EditItemForm(forms.ModelForm):
     exclude = [ "overlay", "id", "item_type" ]
     
 class EditImageItem(EditItemForm):
-  image_url = forms.CharField(max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", 'readonly': 'readonly', 'size': 40 }), label = "Uploaded Image URL")
+  image_url = forms.CharField(max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", 'readonly': 'readonly' }), label = "Uploaded Image URL")
   
   field_order = BASE_WIDGET_ORDER
   field_order.extend(["image", "image_url", "url"])
@@ -323,11 +323,11 @@ class AbstractEditText(EditItemForm):
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
   
-  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Drop shadow X offset" }))
-  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Drop shadow Y offset" }))
-  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow blur", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Drop shadow blur" }))
+  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Drop shadow X offset" }))
+  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Drop shadow Y offset" }))
+  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow blur", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Drop shadow blur" }))
   
-  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Text outline width" }))
+  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Text outline width" }))
   
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
@@ -437,11 +437,11 @@ class AbstractAddText(AddItemForm):
   font_weight = forms.ChoiceField(choices = FONT_WEIGHTS)
   text_alignment = forms.ChoiceField(choices = TEXT_ALIGNMENTS)
   
-  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Drop shadow X offset" }))
-  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Drop shadow Y offset" }))
-  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow blur", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Drop shadow blur" }))
+  drop_shadow_offset_x    = forms.DecimalField(label = "Drop shadow X",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Drop shadow X offset" }))
+  drop_shadow_offset_y    = forms.DecimalField(label = "Drop shadow Y",    decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Drop shadow Y offset" }))
+  drop_shadow_blur_radius = forms.DecimalField(label = "Drop shadow blur", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Drop shadow blur" }))
   
-  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", 'size': 40, "title": "Text outline width" }))
+  text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Text outline width" }))
   
   field_order = BASE_WIDGET_ORDER
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
