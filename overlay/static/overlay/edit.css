@@ -399,11 +399,26 @@ body {
   text-indent: 1em;
 }
 
-@media (max-width: 800px) {
+@media screen and (max-width: 300px)
+{
+  html {
+    font-size: 9pt;
+  }
+}
+@media screen and (min-width: 300px) and (max-width: 800px)
+{
   html {
     font-size: 10pt;
   }
+}
+@media screen and (min-width: 800px)
+{
+  html {
+    font-size: 12pt;
+  }
+}
 
+@media screen and ((max-width: 80rem) or (max-aspect-ratio: 1/1)) {
   body {
     flex-direction: column;
   }
@@ -444,7 +459,7 @@ body {
     width: 100%;
   }
 }
-@media (min-width: 800px) {
+@media screen and (min-width: 80rem) and (min-aspect-ratio: 1/1) {
   body {
     flex-direction: row;
   }
