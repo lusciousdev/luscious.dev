@@ -8,16 +8,6 @@ body {
   min-width: 100vw !important;
 }
 
-#vert-title {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  padding: 25px;
-  
-  background: var(--foreground);
-}
-
 #sidebar {
   display: flex;
   flex-direction: column;
@@ -55,7 +45,15 @@ body {
 }
 
 .site-title-container {
-  margin-bottom: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 25px 25px 25px;
+  width: 100%;
+  box-sizing: border-box;
+  
+  background: var(--foreground);
 }
 
 .site-title {
