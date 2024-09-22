@@ -25,7 +25,7 @@ function sendWebsocketMessage(cmd, objData)
 
 function getDefaultCSS(editView, idata)
 {
-  visible = "hidden";
+  var visible = "hidden";
 
   if ((idata['visibility'] == 1 && editView) || (idata["visibility"] == 2))
   {
@@ -254,6 +254,13 @@ function secondsToTimeFormat(totalSeconds)
 
 function setTextItemContent(editView, overlayElement, itemId, itemText, itemData)
 {
+  var visible = false;
+
+  if ((itemData['visibility'] == 1 && editView) || (itemData["visibility"] == 2))
+  {
+    visible = true;
+  }
+
   var overlayElemWidth = $(overlayElement).width();
   var textElemId = "#item-{0}-text".format(itemId);
   var textElemContainerId = "#item-{0}-container".format(itemId);
@@ -272,7 +279,7 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
   itemCSS["text-align"] = itemData["text_alignment"];
 
   var containerCss = {
-    "background-color": (itemData['background_enabled']) ? itemData['background_color'] : TRANSPARENT,
+    "background-color": (visible && itemData['background_enabled']) ? itemData['background_color'] : TRANSPARENT,
   };
 
   $(textElemId).css(itemCSS);
