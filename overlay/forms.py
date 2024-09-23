@@ -205,7 +205,7 @@ IMAGE_WIDGETS = {
 }
 
 AUDIO_WIDGETS = {
-  'audio': forms.FileInput(attrs={ "field-type": "file", "title": "Upload an audio file. Max file size: 25MB" }),
+  'audio': forms.FileInput(attrs={ "field-type": "file", "title": "Upload an audio file. Max file size: 25MB", "accept": "audio/*,video/*" }),
   'volume': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0", 'title': "Volume" }),
 }
 
