@@ -201,7 +201,12 @@ BASE_VIDEO_WIDGET_ORDER = [
 
 IMAGE_WIDGETS = {
   'url': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, "title": "Image URL. If you uploaded your own image, make sure this field is empty!" }),
-  'image': forms.ClearableFileInput(attrs={ "field-type": "file", "title": "Upload an image." }),
+  'image': forms.ClearableFileInput(attrs={ "field-type": "file", "title": "Upload an image. Max file size: 25MB" }),
+}
+
+AUDIO_WIDGETS = {
+  'audio': forms.FileInput(attrs={ "field-type": "file", "title": "Upload an audio file. Max file size: 25MB" }),
+  'volume': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0", 'title': "Volume" }),
 }
 
 EMBED_WIDGETS = {
@@ -237,13 +242,42 @@ COUNTER_WIDGETS = {
   'counter_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'title': "Must include {0} as this gets replaced with the timer." }),
   'count': forms.NumberInput(attrs={ "field-type": "integer", "title": "Count" }),
 }
+
+NO_DISPLAY_ITEM_EXCLUDES = [
+  "x",
+  "y",
+  "z",
+  "width",
+  "height",
+  "rotation",
+  "opacity",
+  "visibility",
+  "minimized",
+  "view_lock",
+  "scroll_direction",
+  "scroll_duration",
+  "crop_top",
+  "crop_bottom",
+  "crop_left",
+  "crop_right",
+]
     
 class EditItemForm(forms.ModelForm):
   item_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   overlay_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   
-  visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
+  visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES, initial = 1)
   scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
+  
+  field_order = BASE_WIDGET_ORDER
+  
+  class Meta:
+    abstract = True
+    exclude = [ "overlay", "id", "item_type" ]
+    
+class EditNoDisplayItemForm(forms.ModelForm):
+  item_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
+  overlay_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   
   field_order = BASE_WIDGET_ORDER
   
@@ -262,8 +296,22 @@ class EditImageItem(EditItemForm):
     exclude = EditItemForm.Meta.exclude
     
     widgets = IMAGE_WIDGETS
-    
     widgets.update(BASE_WIDGETS)
+    
+class EditAudioItem(EditNoDisplayItemForm):
+  audio_url = forms.CharField(max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", 'readonly': 'readonly' }), label = "Uploaded Audio URL")
+  
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(["audio", "audio_url"])
+  
+  class Meta:
+    model = AudioItem
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
+    exclude.extend(NO_DISPLAY_ITEM_EXCLUDES)
+    
+    widgets = BASE_WIDGETS
+    widgets.update(AUDIO_WIDGETS)
     
 class EditEmbedItem(EditItemForm):
   field_order = BASE_WIDGET_ORDER
@@ -273,7 +321,6 @@ class EditEmbedItem(EditItemForm):
     exclude = EditItemForm.Meta.exclude
     
     widgets = EMBED_WIDGETS
-    
     widgets.update(BASE_WIDGETS)
     
 class EditYouTubeEmbedItem(EditItemForm):
@@ -375,7 +422,7 @@ class EditCounterItem(AbstractEditText):
     widgets.update(BASE_TEXT_WIDGETS)
     
 class AddItemForm(forms.ModelForm):
-  visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES)
+  visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES, initial = 1)
   scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
   
   field_order = BASE_WIDGET_ORDER
@@ -384,14 +431,31 @@ class AddItemForm(forms.ModelForm):
     abstract = True
     exclude = [ "overlay", "id", "item_type" ]
     
+class AddNoDisplayItemForm(forms.ModelForm):
+  field_order = BASE_WIDGET_ORDER
+  
+  class Meta:
+    abstract = True
+    exclude = [ "overlay", "id", "item_type" ]
+  
+    
 class AddImageItem(AddItemForm):
   class Meta:
     model = ImageItem
     exclude = AddItemForm.Meta.exclude
     
     widgets = IMAGE_WIDGETS
-    
     widgets.update(BASE_WIDGETS)
+    
+class AddAudioItem(AddNoDisplayItemForm):
+  class Meta:
+    model = AudioItem
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
+    exclude.extend(NO_DISPLAY_ITEM_EXCLUDES)
+    
+    widgets = BASE_WIDGETS
+    widgets.update(AUDIO_WIDGETS)
     
 class AddEmbedItem(AddItemForm):
   class Meta:
@@ -399,7 +463,6 @@ class AddEmbedItem(AddItemForm):
     exclude = AddItemForm.Meta.exclude
     
     widgets = EMBED_WIDGETS
-    
     widgets.update(BASE_WIDGETS)
     
 class AddYouTubeEmbedItem(AddItemForm):
@@ -484,6 +547,7 @@ class AddCounterItem(AbstractAddText):
 FORMS_MAP = {
   "edit": {
     "ImageItem": EditImageItem,
+    "AudioItem": EditAudioItem,
     "EmbedItem": EditEmbedItem,
     "YouTubeEmbedItem": EditYouTubeEmbedItem,
     "TwitchStreamEmbedItem": EditTwitchStreamEmbedItem,
@@ -494,6 +558,7 @@ FORMS_MAP = {
   },
   "add": {
     "ImageItem": AddImageItem,
+    "AudioItem": AddAudioItem,
     "EmbedItem": AddEmbedItem,
     "YouTubeEmbedItem": AddYouTubeEmbedItem,
     "TwitchStreamEmbedItem": AddTwitchStreamEmbedItem,

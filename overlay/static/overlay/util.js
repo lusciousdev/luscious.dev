@@ -12,6 +12,57 @@ const RIGHTLEFT = 2;
 const TOPBOTTOM = 3;
 const BOTTOMTOP = 4;
 
+function handleWebsocketMessage(e)
+{
+  var eventData = JSON.parse(e.data);
+
+  var command = eventData.command;
+  var data = eventData.data;
+  var editor = data.editor;
+
+  switch (command)
+  {
+    case "list_overlay_items":
+      updateItems(data);
+      break;
+    case "overlay_item_added":
+      break;
+    case "overlay_item_edited":
+      updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == twitchUser));
+      break;
+    case "overlay_item_deleted":
+      deleteItem(data.item_id);
+      break;
+    case "item_event_triggered":
+      handleItemEvent(data.item_id, data.event);
+      break;
+    case "user_present":
+      userPresent(data);
+      break;
+    case "mouse_position":
+      repositionMouse(data);
+      break;
+    case "error":
+      console.warn(data);
+      break;
+    default:
+      console.log("Unknown command: {0}".format(command));
+      break;
+  }
+}
+
+function connectWebsocket(overlayId)
+{
+  var protocol = "ws:"
+  if (window.location.protocol == "https:")
+    protocol = "wss:"
+  WEBSOCKET = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, overlayId));
+
+  WEBSOCKET.onopen = (e) => { handleWebsocketOpen(e); };
+  WEBSOCKET.onmessage = (e) => { handleWebsocketMessage(e); };
+  WEBSOCKET.onclose = (e) => { attemptReconnect(e, overlayId); };
+}
+
 function sendWebsocketMessage(cmd, objData)
 {
   if (WEBSOCKET != undefined && WEBSOCKET.readyState == WebSocket.OPEN)
@@ -86,57 +137,6 @@ function getDefaultCSS(editView, idata)
   return cssObj;
 }
 
-function handleWebsocketMessage(e)
-{
-  var eventData = JSON.parse(e.data);
-
-  var command = eventData.command;
-  var data = eventData.data;
-  var editor = data.editor;
-
-  switch (command)
-  {
-    case "list_overlay_items":
-      updateItems(data);
-      break;
-    case "overlay_item_added":
-      break;
-    case "overlay_item_edited":
-      updateItems({ "items": [ { "item_type": data.item_type, "item_data": data.item_data, } ]}, false, (editor == twitchUser));
-      break;
-    case "overlay_item_deleted":
-      deleteItem(data.item_id);
-      break;
-    case "overlay_item_reset":
-      resetItem(data.item_id);
-      break;
-    case "user_present":
-      userPresent(data);
-      break;
-    case "mouse_position":
-      repositionMouse(data);
-      break;
-    case "error":
-      console.warn(data);
-      break;
-    default:
-      console.log("Unknown command: {0}".format(command));
-      break;
-  }
-}
-
-function connectWebsocket(overlayId)
-{
-  var protocol = "ws:"
-  if (window.location.protocol == "https:")
-    protocol = "wss:"
-  WEBSOCKET = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, overlayId));
-
-  WEBSOCKET.onopen = (e) => { handleWebsocketOpen(e); };
-  WEBSOCKET.onmessage = (e) => { handleWebsocketMessage(e); };
-  WEBSOCKET.onclose = (e) => { attemptReconnect(e, overlayId); };
-}
-
 function attemptReconnect(e, overlayId)
 {
   if (RECONNECT_INTERVAL == undefined)
@@ -184,12 +184,34 @@ function deleteItem(itemId)
   }
 }
 
+function handleItemEvent(itemId, event)
+{
+  switch(event)
+  {
+    case "reset_item":
+      resetItem(itemId);
+      break;
+    case "pause_item":
+      pauseItem(itemId);
+      break;
+    case "play_item":
+      playItem(itemId);
+      break;
+    default:
+      console.log("Item ID {0} recieved unrecognized event: {1}".format(itemId, event));
+      break;
+  }
+}
+
 function resetItem(itemId)
 {
   var itemType = itemDict[itemId]['item_type'];
   
   switch (itemType)
   {
+    case "audio":
+      resetAudioItem(itemId);
+      break;
     case "youtube_video":
       resetYouTubePlayer(itemId);
       break;
@@ -198,6 +220,34 @@ function resetItem(itemId)
       break;
     case "twitch_video":
       resetTwitchVideoEmbed(itemId);
+      break;
+    default:
+      break;
+  }
+}
+
+function playItem(itemId)
+{
+  var itemType = itemDict[itemId]['item_type'];
+  
+  switch (itemType)
+  {
+    case "audio":
+      playAudioItem(itemId);
+      break;
+    default:
+      break;
+  }
+}
+
+function pauseItem(itemId)
+{
+  var itemType = itemDict[itemId]['item_type'];
+  
+  switch (itemType)
+  {
+    case "audio":
+      pauseAudioItem(itemId);
       break;
     default:
       break;
@@ -286,7 +336,7 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
   $(textElemContainerId).css(containerCss);
 }
 
-function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
+function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
 {
   var itemElemId = '#item-{0}'.format(itemId);
   var itemContainerId = '#item-{0}-container'.format(itemId);
@@ -299,11 +349,11 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
   if ($(itemElemId).length == 0)
   {
     $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId))
-
+  
     setItemPosition(itemId, top, left, width, height, z, rotation);
 
     $(itemElemId).css({
-      "visibility": (!itemData['minimized']) ? "visible" : "hidden",
+      "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
     });
 
     switch (itemType)
@@ -324,6 +374,13 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
         $(imgElemId).on('dragstart', (event) => { event.preventDefault(); });
 
         $(imgElemId).css(getDefaultCSS(editView, itemData));
+        break;
+      case "audio":
+        audioUrl = itemData['audio_url'];
+
+        itemDict[itemId]['audio'] = new Audio(audioUrl);
+        itemDict[itemId]['audio'].load();
+        itemDict[itemId]['audio'].volume = (itemData['volume'] / 100.0);
         break;
       case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
@@ -415,7 +472,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
     setItemPosition(itemId, top, left, width, height, z, rotation);
 
     $(itemElemId).css({
-      "visibility": (!itemData['minimized']) ? "visible" : "hidden",
+      "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
     });
     
     switch (itemType)
@@ -436,6 +493,17 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, top, left, 
         $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
 
         $("#item-{0}-img".format(itemId)).css(getDefaultCSS(editView, itemData));
+        break;
+      case "audio":
+        audioUrl = itemData['audio_url'];
+
+        if (itemDict[itemId]['audio'].src != new URL(audioUrl, window.location.origin))
+        {
+          itemDict[itemId]['audio'].src = audioUrl;
+          itemDict[itemId]['audio'].load();
+        }
+
+        itemDict[itemId]['audio'].volume = (itemData['volume'] / 100.0);
         break;
       case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
@@ -510,6 +578,9 @@ function onYouTubeIframeAPIReady()
 }
 
 function onPlayerReady(event) {
+  event.target.setVolume(0);
+  event.target.pauseVideo();
+
   var itemElem = $(event.target.g).closest(".overlay-item");
   itemDict[itemElem.attr("itemid")]["player_ready"] = true;
 }
@@ -595,7 +666,62 @@ function updateYouTubePlayer(itemId)
 function resetYouTubePlayer(itemId)
 {
   if (YOUTUBE_PLAYER_API_LOADED) 
-    itemDict[itemId].player.loadVideoById(itemDict[itemId].item_data.video_id, itemDict[itemId].item_data.start_time);
+  {
+    itemDict[itemId].player.cueVideoById(itemDict[itemId].item_data.video_id, itemDict[itemId].item_data.start_time);
+  }
+}
+
+function resetAudioItem(itemId)
+{
+  console.log("Reseting...")
+  itemDict[itemId]['audio'].fastSeek(0);
+}
+
+function playAudioItem(itemId)
+{
+  console.log("Playing...")
+  itemDict[itemId]['audio'].play();
+}
+
+function pauseAudioItem(itemId)
+{
+  console.log("Pausing...")
+  itemDict[itemId]['audio'].pause();
+}
+
+function getItemIconName(itemType)
+{
+  var itemIcon = 'text_snippet'
+  switch (itemType)
+  {
+    case "image":
+      itemIcon = 'image';
+      break;
+    case "audio":
+      itemIcon = 'music_note';
+      break;
+    case "stopwatch":
+      itemIcon = 'timer';
+      break;
+    case "counter":
+      itemIcon = '123';
+      break;
+    case "embed":
+      itemIcon = "picture_in_picture";
+      break;
+    case "youtube_video":
+      itemIcon = "smart_display";
+      break;
+    case "twitch_stream":
+    case "twitch_video":
+      itemIcon = "live_tv";
+      break;
+    case "text":
+    default:
+      break;
+  }
+
+  return itemIcon;
 }
 
 window.addEventListener('load', function(e) {

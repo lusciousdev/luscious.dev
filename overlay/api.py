@@ -35,6 +35,7 @@ def get_overlay_items(request):
   for item in overlay_items:
     item_dict = {
       "item_type": item.get_simple_type(),
+      "is_displayed": item.is_displayed(),
       "item_data": item.to_data_dict()
     }
     

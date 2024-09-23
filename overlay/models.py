@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.http import int_to_base36
+from django.core.exceptions import ValidationError
+
 import logging
 
 logger = logging.getLogger("overlay")
@@ -18,7 +20,7 @@ def current_time_seconds() -> int:
   return int(datetime.datetime.now().timestamp())
 
 class ChangeLogEntry(models.Model):
-  date = models.DateTimeField(default = datetime.datetime.now())
+  date = models.DateTimeField(default = datetime.datetime.now)
   title = models.CharField(max_length = 255)
   description = models.TextField()
   
@@ -101,11 +103,17 @@ class AbstractItem(NonConsecutiveModel):
       'scroll_duration': self.scroll_duration,
     }
     
-def image_directory_path(instance : "AbstractItem", filename : str):
+def media_directory_path(instance : "AbstractItem", filename : str):
   return f"overlays/{instance.overlay.id}/{filename}"
+
+def validate_file_size(fieldfile_obj):
+  filesize = fieldfile_obj.file.size
+  megabyte_limit = 25.0
+  if filesize > megabyte_limit * 1024 * 1024:
+    raise ValidationError(f"Max file size is {megabyte_limit}MB.")
     
 class ImageItem(AbstractItem):
-  image = models.ImageField(upload_to = image_directory_path, blank = True, null = True)
+  image = models.ImageField(upload_to = media_directory_path, validators=[validate_file_size], blank = True, null = True, help_text="Max file size: 25MB")
   url = models.URLField(verbose_name = "URL", default = "", blank = True, null = True)
   
   def to_data_dict(self):
@@ -122,6 +130,32 @@ class ImageItem(AbstractItem):
   def get_simple_type():
     return "image"
   
+  @staticmethod
+  def is_displayed():
+    return True
+  
+class AudioItem(AbstractItem):
+  audio = models.FileField(upload_to = media_directory_path, validators=[validate_file_size], blank = False, null = False, help_text = "Max file size: 25MB")
+  volume = models.FloatField(default = 50.0)
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d['audio_url'] = self.audio.url
+    d['volume'] = self.volume
+    return d
+  
+  @staticmethod
+  def get_pretty_type():
+    return "Audio"
+  
+  @staticmethod
+  def get_simple_type():
+    return "audio"
+  
+  @staticmethod
+  def is_displayed():
+    return False
+
 class EmbedItem(AbstractItem):
   embed_url = models.URLField(verbose_name = "Embed URL", default = "", blank = True)
   
@@ -137,6 +171,10 @@ class EmbedItem(AbstractItem):
   @staticmethod
   def get_simple_type():
     return "embed"
+  
+  @staticmethod
+  def is_displayed():
+    return True
   
 class YouTubeEmbedItem(AbstractItem):
   video_id = models.CharField(max_length = 256, verbose_name = "YouTube Video ID", default = "", blank = True)
@@ -163,6 +201,10 @@ class YouTubeEmbedItem(AbstractItem):
   def get_simple_type():
     return "youtube_video"
   
+  @staticmethod
+  def is_displayed():
+    return True
+  
 class TwitchStreamEmbedItem(AbstractItem):
   channel = models.CharField(max_length = 256, verbose_name = "Twitch Channel Name", default = "", blank = True)
   
@@ -185,6 +227,10 @@ class TwitchStreamEmbedItem(AbstractItem):
   @staticmethod
   def get_simple_type():
     return "twitch_stream"
+  
+  @staticmethod
+  def is_displayed():
+    return True
   
 class TwitchVideoEmbedItem(AbstractItem):
   video_id = models.CharField(max_length = 256, verbose_name = "Twitch Video ID", default = "", blank = True)
@@ -210,6 +256,10 @@ class TwitchVideoEmbedItem(AbstractItem):
   @staticmethod
   def get_simple_type():
     return "twitch_video"
+  
+  @staticmethod
+  def is_displayed():
+    return True
   
 class AbstractTextItem(AbstractItem):
   font = models.CharField(max_length=255, default="Roboto Mono")
@@ -266,6 +316,10 @@ class TextItem(AbstractTextItem):
   def get_simple_type():
     return "text"
   
+  @staticmethod
+  def is_displayed():
+    return True
+  
 class StopwatchItem(AbstractTextItem):
   timer_format = models.TextField(default = "{0}")
   timer_start = models.BigIntegerField(default = current_time_seconds)
@@ -289,6 +343,10 @@ class StopwatchItem(AbstractTextItem):
   def get_simple_type():
     return "stopwatch"
   
+  @staticmethod
+  def is_displayed():
+    return True
+  
 class CounterItem(AbstractTextItem):
   counter_format = models.TextField(default = "Count: {0}")
   count = models.IntegerField(default = 0)
@@ -306,9 +364,14 @@ class CounterItem(AbstractTextItem):
   @staticmethod
   def get_simple_type():
     return "counter"
+  
+  @staticmethod
+  def is_displayed():
+    return True
 
 ITEM_TYPES = [
   ImageItem,
+  AudioItem,
   EmbedItem,
   YouTubeEmbedItem,
   TwitchStreamEmbedItem,

@@ -19,6 +19,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
   {
     var item = data['items'][index]
     var itemType = item["item_type"];
+    var isDisplayed = item["is_displayed"];
     var itemData = item["item_data"];
     var itemId = itemData['id'];
     
@@ -42,7 +43,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var z = itemData['z'];
     var rotation = itemData['rotation'];
     
-    addOrUpdateItem(false, "body", itemId, itemType, top, left, width, height, z, rotation, itemData,
+    addOrUpdateItem(false, "body", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData,
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }

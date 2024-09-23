@@ -117,6 +117,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
   {
     var item = data['items'][index]
     var itemType = item["item_type"];
+    var isDisplayed = item["is_displayed"];
     var itemData = item["item_data"];
     var itemId = itemData['id'];
 
@@ -146,7 +147,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var z = itemData['z'];
     var rotation = itemData['rotation'];
 
-    addOrUpdateItem(true, "#overlay", itemId, itemType, top, left, width, height, z, rotation, itemData, 
+    addOrUpdateItem(true, "#overlay", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, 
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }
@@ -200,36 +201,9 @@ function addItemCallback(itemId, itemType)
 
   var item = itemDict[itemId]
 
-  var itemIcon = 'text_snippet'
-  switch (itemType)
-  {
-    case "image":
-      itemIcon = 'image'
-      break
-    case "stopwatch":
-      itemIcon = 'timer'
-      break
-    case "counter":
-      itemIcon = '123'
-      break
-    case "embed":
-      itemIcon = "picture_in_picture";
-      break;
-    case "youtube_video":
-      itemIcon = "smart_display";
-      break;
-    case "twitch_stream":
-    case "twitch_video":
-      itemIcon = "live_tv";
-      break;
-    case "text":
-    default:
-      break;
-  }
-
   $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}" itemType="{3}">
     <span class="material-symbols-outlined">{1}</span> - {2}
-  </div>`.format(itemId, itemIcon, item["item_data"]["name"], item["item_type"]));
+  </div>`.format(itemId, getItemIconName(itemType), item["item_data"]["name"], item["item_type"]));
 
   $("#item-{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
 }
@@ -238,36 +212,9 @@ function updateItemCallback(itemId, itemType)
 {
   var item = itemDict[itemId]
 
-  var itemIcon = 'text_snippet'
-  switch (itemType)
-  {
-    case "image":
-      itemIcon = 'image';
-      break
-    case "stopwatch":
-      itemIcon = 'timer';
-      break
-    case "counter":
-      itemIcon = '123';
-      break
-    case "embed":
-      itemIcon = "picture_in_picture";
-      break;
-    case "youtube_video":
-      itemIcon = "smart_display";
-      break;
-    case "twitch_stream":
-    case "twitch_video":
-      itemIcon = "live_tv";
-      break;
-    case "text":
-    default:
-      break;
-  }
-
   $("#item-{0}-list-entry".format(itemId)).attr("itemName", item["item_data"]["name"]);
 
-  $("#item-{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(itemIcon, item["item_data"]["name"]));
+  $("#item-{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(getItemIconName(itemType), item["item_data"]["name"]));
 
   if (selectedItem != undefined) 
   {
@@ -1337,13 +1284,33 @@ function resetSelectedItem(e)
     case "youtube_video":
     case "twitch_stream":
     case "twitch_video":
-      sendWebsocketMessage("reset_overlay_item", { "item_id": selectedItem, "item_type": itemType })
+    case "audio":
+      sendWebsocketMessage("trigger_item_event", { "item_id": selectedItem, "item_type": itemType, "event": "reset_item" })
       break;
     default:
       break;
   }
 
   itemDict[selectedItem]["local_changes"] = true;
+}
+
+function playSelectedItem(e)
+{
+  if (selectedItem === undefined)
+  {
+    return;
+  }
+
+  var itemType = itemDict[selectedItem]['item_type'];
+  
+  switch (itemType)
+  {
+    case "audio":
+      sendWebsocketMessage("trigger_item_event", { "item_id": selectedItem, "item_type": itemType, "event": "play_item" });
+      break;
+    default:
+      break;
+  }
 }
 
 function pauseSelectedItem(e)
@@ -1381,6 +1348,9 @@ function pauseSelectedItem(e)
       editData["paused"] = !wasPaused;
 
       sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
+      break;
+    case "audio":
+      sendWebsocketMessage("trigger_item_event", { "item_id": selectedItem, "item_type": itemType, "event": "pause_item" });
       break;
     default:
       break;
@@ -1550,6 +1520,10 @@ $(window).on('load', function() {
   $(".pause-item").click((e) => {
     pauseSelectedItem(e);
   });
+
+  $(".play-item").click((e) => {
+    playSelectedItem(e);
+  })
 
   $(".edit-container input[id=id_visibility]").each((i, visibleCheckbox) => {
     $(visibleCheckbox).change((e) => selectedVisibilityChange(e));
