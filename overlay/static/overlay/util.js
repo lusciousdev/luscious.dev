@@ -673,19 +673,16 @@ function resetYouTubePlayer(itemId)
 
 function resetAudioItem(itemId)
 {
-  console.log("Reseting...")
-  itemDict[itemId]['audio'].fastSeek(0);
+  itemDict[itemId]['audio'].currentTime = 0;
 }
 
 function playAudioItem(itemId)
 {
-  console.log("Playing...")
   itemDict[itemId]['audio'].play();
 }
 
 function pauseAudioItem(itemId)
 {
-  console.log("Pausing...")
   itemDict[itemId]['audio'].pause();
 }
 
