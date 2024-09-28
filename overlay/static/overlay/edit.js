@@ -681,35 +681,64 @@ function handleItemLeftClick(e, elem)
 
     dragData.pagePn = new Point(pageX, pageY);
 
+    var overlayLoc = new Point($("#overlay").offset().left, $("#overlay").offset().top);
+    var borderWidth = parseFloat($(dragData.elem).css("border-left-width"));
+
     if (grabType == GrabTypes.Move)
     {
       var offsetPosition = Point.sub2(dragData.pagePn, dragData.pageP0);
 
-      var movedItemNewPos = Point.add2(dragData.elemP0, offsetPosition);
-      var movedItemDim = getItemDim($(dragData.elem).attr("itemId"));
-      if (itemDict[$(dragData.elem).attr("itemId")].item_data.rotation == 0)
+      if (!window.shiftheld)
       {
-        if (Math.abs(scaledOverlayHeight - (movedItemNewPos.y + movedItemDim.y)) < (0.01 * scaledOverlayHeight))
-          offsetPosition.addY(scaledOverlayHeight - (movedItemNewPos.y + movedItemDim.y));
-    
-        if (Math.abs(scaledOverlayWidth - (movedItemNewPos.x + movedItemDim.x)) < (0.01 * scaledOverlayWidth))
-          offsetPosition.addX(scaledOverlayWidth - (movedItemNewPos.x + movedItemDim.x));
-    
-        if (Math.abs(movedItemNewPos.y) < (0.01 * scaledOverlayHeight))
-          offsetPosition.subY(movedItemNewPos.y);
-    
-        if (Math.abs(movedItemNewPos.x) < (0.01 * scaledOverlayWidth))
-          offsetPosition.subX(movedItemNewPos.x);
+        var lowestXOffset = scaledOverlayWidth;
+        var lowestYOffset = scaledOverlayHeight;
+
+        dragData.initialGrabberCoords.forEach((grabberObj) => {
+          var movedGrabberPos = Point.add2(grabberObj.point, offsetPosition);
+
+          var grabberX = (movedGrabberPos.x - overlayLoc.x);
+          var grabberY = (movedGrabberPos.y - overlayLoc.y);
+
+          var distXLeft = grabberX;
+          var distXRight = grabberX - scaledOverlayWidth;
+
+          var distYTop = grabberY;
+          var distYBottom = grabberY - scaledOverlayHeight;
+
+          if (Math.abs(lowestXOffset) > Math.abs(distXLeft))
+            lowestXOffset = distXLeft;
+          if (Math.abs(lowestXOffset) > Math.abs(distXRight))
+            lowestXOffset = distXRight;
+
+          if (Math.abs(lowestYOffset) > Math.abs(distYTop))
+            lowestYOffset = distYTop;
+          if (Math.abs(lowestYOffset) > Math.abs(distYBottom))
+            lowestYOffset = distYBottom;
+        });
+
+        var itemRotRad = itemDict[$(dragData.elem).attr("itemId")].item_data.rotation * Math.PI / 180.0;
+
+        if (Math.abs(lowestXOffset) < (0.01 * scaledOverlayWidth))
+        {
+          offsetPosition.subX(lowestXOffset);
+        }
+
+        if (Math.abs(lowestYOffset) < (0.01 * scaledOverlayHeight))
+        {
+          offsetPosition.subY(lowestYOffset);
+        }
       }
   
       var newPos = Point.add2(dragData.selectedElem.point0, offsetPosition);
+      
       getItemDiv(selectedItem).css({
         top: "{0}px".format(newPos.y), 
         left: "{0}px".format(newPos.x),
       });
 
-      var itemTop  = editToViewLength(newPos.y);
-      var itemLeft = editToViewLength(newPos.x);
+      var itemTop  = editToViewLength(newPos.y + borderWidth);
+      var itemLeft = editToViewLength(newPos.x + borderWidth);
+      
       itemDict[selectedItem]['item_data']['x'] = Math.round(itemLeft);
       itemDict[selectedItem]['item_data']['y'] = Math.round(itemTop);
 
@@ -728,7 +757,41 @@ function handleItemLeftClick(e, elem)
     }
     else
     {
-      var relativePos = Point.sub2(dragData.furthestCorner.point, dragData.pagePn);
+      var mouseLoc = Point.sub2(dragData.pagePn, overlayLoc);
+      var mouseOffset = new Point(0, 0);
+
+      if (!window.shiftheld)
+      {
+        var distXLeft = mouseLoc.x;
+        var distXRight = mouseLoc.x - scaledOverlayWidth;
+
+        var distYTop = mouseLoc.y;
+        var distYBottom = mouseLoc.y - scaledOverlayHeight;
+
+        if (Math.abs(distXLeft) <= Math.abs(distXRight))
+        {
+          if (Math.abs(distXLeft) < (0.01 * scaledOverlayWidth))
+            mouseOffset.subX(distXLeft);
+        }
+        else
+        {
+          if (Math.abs(distXRight) < (0.01 * scaledOverlayWidth))
+            mouseOffset.subX(distXRight);
+        }
+
+        if (Math.abs(distYTop) <= Math.abs(distYBottom))
+        {
+          if (Math.abs(distYTop) < (0.01 * scaledOverlayHeight))
+            mouseOffset.subY(distYTop);
+        }
+        else
+        {
+          if (Math.abs(distYBottom) < (0.01 * scaledOverlayHeight))
+            mouseOffset.subY(distYBottom);
+        }
+      }
+
+      var relativePos = Point.sub2(dragData.furthestCorner.point, Point.add2(dragData.pagePn, mouseOffset));
 
       var itemRotRad = itemDict[$(dragData.elem).attr("itemId")].item_data.rotation * Math.PI / 180.0;
       
@@ -737,12 +800,12 @@ function handleItemLeftClick(e, elem)
       var newWidth = Math.abs(relativePos.x);
       var newHeight = Math.abs(relativePos.y);
 
-      newWidth = Math.max(25, newWidth);
-      newHeight = Math.max(25, newHeight);
+      newWidth = Math.max(viewToEditLength(25), newWidth);
+      newHeight = Math.max(viewToEditLength(25), newHeight);
 
       if (itemDict[$(dragData.elem).attr("itemId")].item_type == "image")
       {
-        if (!window.shiftheld)
+        if (window.shiftheld)
         {
           var imgNaturalWidth = $("#item-{0}-img".format(selectedItem)).get(0).naturalWidth;
           var imgNaturalHeight = $("#item-{0}-img".format(selectedItem)).get(0).naturalHeight;
@@ -763,11 +826,11 @@ function handleItemLeftClick(e, elem)
 
           newWidth = correctedWidth;
           newHeight = correctedHeight;
+
+          newWidth = Math.max(viewToEditLength(25), newWidth);
+          newHeight = Math.max(viewToEditLength(25), newHeight);
         }
       }
-
-      newWidth = Math.max(5, newWidth);
-      newHeight = Math.max(5, newHeight);
     
       $(dragData.elem).css({
         width: "{0}px".format(newWidth),
@@ -789,8 +852,8 @@ function handleItemLeftClick(e, elem)
         $("#item-{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
       }
   
-      var itemTop    = editToViewLength(newPos.y);
-      var itemLeft   = editToViewLength(newPos.x);
+      var itemTop    = editToViewLength(newPos.y + borderWidth);
+      var itemLeft   = editToViewLength(newPos.x + borderWidth);
       var itemWidth  = editToViewLength(newWidth);
       var itemHeight = editToViewLength(newHeight);
   

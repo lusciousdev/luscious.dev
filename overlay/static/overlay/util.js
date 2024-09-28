@@ -260,9 +260,10 @@ const escapeHtml = (unsafe) => {
 
 function setItemPosition(itemId, top, left, width, height, z, rotation)
 {
+  var borderWidth = parseFloat($("#item-{0}".format(itemId)).css("border-left-width"));
   $("#item-{0}".format(itemId)).css({
-    "top": "{0}px".format(top),
-    "left": "{0}px".format(left),
+    "top": "{0}px".format(top - borderWidth),
+    "left": "{0}px".format(left - borderWidth),
     "width": "{0}px".format(width),
     "height": "{0}px".format(height),
     "z-index": "{0}".format(z), 

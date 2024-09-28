@@ -9,6 +9,8 @@
 .overlay-item {
   position: absolute;
   display: inline-block;
+
+  box-sizing: content-box;
 }
 
 .overlay-item-container {
