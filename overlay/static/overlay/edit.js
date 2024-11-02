@@ -36,8 +36,12 @@ var sendEditChanges = {};
 var sendPointsTimeout = undefined;
 var sendCanvasPoints = {};
 
-const WEBSOCKET_SEND_COOLDOWN = 125; // ms
-const CANVAS_SEND_COOLDOWN = 200; // ms
+var sendMouseTimeout = undefined;
+
+const   FORM_SEND_COOLDOWN = 250; // ms
+const MOVING_SEND_COOLDOWN = 250;
+const CANVAS_SEND_COOLDOWN = 250;
+const  MOUSE_SEND_COOLDOWN = 250;
 
 var streamEmbed;
 
@@ -233,12 +237,14 @@ function sendPing()
   sendWebsocketMessage("ping", {});
 }
 
-function sendMousePosition()
+function checkMousePosition()
 {
   if ((mousePosition["x"] != lastMousePosition["x"]) || (mousePosition["y"] != lastMousePosition["y"]))
   {
-    sendWebsocketMessage("mouse_position", mousePosition);
     lastMousePosition = Object.assign({}, mousePosition);
+
+    if (sendMouseTimeout == undefined)
+      sendMouseTimeout = setTimeout(sendMousePos, MOUSE_SEND_COOLDOWN);
   }
 }
 
@@ -315,7 +321,7 @@ function handleWebsocketOpen(e)
   getOverlayItems();
 
   setInterval(sendPing, 5000);
-  setInterval(sendMousePosition, 50);
+  setInterval(checkMousePosition, 50);
   setInterval(removeInactiveUsers, 500);
   setInterval(removeInactiveCursors, 500);
 }
@@ -686,7 +692,7 @@ function handleItemLeftClick(e, elem)
     itemDict[itemId]['moving'] = true;
   });
 
-  var SEND_MOVE_INTERVAL = setInterval(sendMovingItemEdits, WEBSOCKET_SEND_COOLDOWN);
+  var SEND_MOVE_INTERVAL = setInterval(sendMovingItemEdits, MOVING_SEND_COOLDOWN);
 
   function handleDragging(e)
   {
@@ -1290,6 +1296,13 @@ function sendPoints()
   sendPointsTimeout = undefined;
 }
 
+function sendMousePos()
+{
+  sendWebsocketMessage("mouse_position", mousePosition);
+
+  sendMouseTimeout = undefined;
+}
+
 function onInputChange(inputEvent)
 {
   var targetedInput = $(inputEvent.currentTarget);
@@ -1338,7 +1351,7 @@ function onInputChange(inputEvent)
       }
 
       if (sendEditTimeout == undefined)
-        sendEditTimeout = setTimeout(sendEdits, WEBSOCKET_SEND_COOLDOWN);
+        sendEditTimeout = setTimeout(sendEdits, FORM_SEND_COOLDOWN);
       break;
   }
 }
@@ -1680,7 +1693,7 @@ $(window).on('load', function() {
 
   connectWebsocket(overlayId);
 
-  var getInterval = setInterval(function() { getOverlayItems(); }, 1000);
+  var getInterval = setInterval(function() { getOverlayItems(); }, 2500);
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   

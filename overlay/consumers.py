@@ -72,6 +72,8 @@ class OverlayConsumer(WebsocketConsumer):
     )
   
   def receive(self, text_data = None, bytes_data = None):
+    # startTime = time.time()
+    
     text_data_json = json.loads(text_data)
     
     command : str = text_data_json.get("command", "")
@@ -94,6 +96,8 @@ class OverlayConsumer(WebsocketConsumer):
       self.ping(data)
     elif command == "mouse_position":
       self.send_mouse_position(data)
+      
+    # print(f"{command}: {time.time() - startTime}")
     
   def get_overlay_items(self):
     overlay_items = []
