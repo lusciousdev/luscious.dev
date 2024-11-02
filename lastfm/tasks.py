@@ -26,7 +26,8 @@ def create_grid(size, image_urls) -> Image.Image:
       try:
         img_list.append(Image.open(BytesIO(resp.content)))
       except Exception as e:
-        logger.log(url, resp.content)
+        logger.log(url)
+        logger.log(resp.content)
         logger.log(e)
         img_list.append(Image.new('RGB', size = (300, 300), color = "black"))
     else:
