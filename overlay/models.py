@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.http import int_to_base36
 from django.core.exceptions import ValidationError
+from django.utils.timezone import now
 
 import logging
 
@@ -66,6 +67,8 @@ class AbstractItem(NonConsecutiveModel):
   width = models.IntegerField(default = 300)
   height = models.IntegerField(default = 100)
   rotation = models.FloatField(default = 0)
+  background_enabled = models.BooleanField(default = False)
+  background_color = models.CharField(max_length = 255, default = "#000000")
   opacity = models.FloatField(default = 100.0)
   visibility = models.IntegerField(default = 1)
   minimized = models.BooleanField(default = False)
@@ -91,6 +94,8 @@ class AbstractItem(NonConsecutiveModel):
       "width": self.width,
       "height": self.height,
       "rotation": self.rotation,
+      "background_enabled": self.background_enabled,
+      "background_color": self.background_color,
       "opacity": self.opacity,
       "visibility": self.visibility,
       "minimized": self.minimized,
@@ -133,6 +138,37 @@ class ImageItem(AbstractItem):
   @staticmethod
   def is_displayed():
     return True
+  
+class CanvasItem(AbstractItem):
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d['history'] = []
+    canvasaction : CanvasAction
+    for canvasaction in self.canvasaction_set.order_by("timestamp").all():
+      d['history'].append(canvasaction.action)
+    return d
+  
+  @staticmethod
+  def get_pretty_type():
+    return "Canvas"
+  
+  @staticmethod
+  def get_simple_type():
+    return "canvas"
+  
+  @staticmethod
+  def is_displayed():
+    return True
+  
+class CanvasAction(models.Model):
+  canvas = models.ForeignKey(CanvasItem, on_delete = models.CASCADE)
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, null = True, on_delete = models.SET_NULL)
+  
+  timestamp = models.DateTimeField(auto_now_add = True)
+  action = models.JSONField(default = dict)
+  
+  class Meta:
+    ordering = ('-timestamp', )
   
 class AudioItem(AbstractItem):
   audio = models.FileField(upload_to = media_directory_path, validators=[validate_file_size], blank = False, null = False, help_text = "Max file size: 25MB")
@@ -274,8 +310,6 @@ class AbstractTextItem(AbstractItem):
   text_outline_enabled = models.BooleanField(default = False)
   text_outline_width = models.FloatField(default = 0.0)
   text_outline_color = models.CharField(max_length = 255, default = "#000000")
-  background_enabled = models.BooleanField(default = False)
-  background_color = models.CharField(max_length = 255, default = "#000000")
   text_alignment = models.CharField(max_length = 128, default = "left")
   
   class Meta:
@@ -295,8 +329,6 @@ class AbstractTextItem(AbstractItem):
     d["text_outline_enabled"] = self.text_outline_enabled
     d["text_outline_width"] = self.text_outline_width
     d["text_outline_color"] = self.text_outline_color
-    d["background_enabled"] = self.background_enabled
-    d["background_color"] = self.background_color
     d["text_alignment"] = self.text_alignment
     return d
   
@@ -371,6 +403,7 @@ class CounterItem(AbstractTextItem):
 
 ITEM_TYPES = [
   ImageItem,
+  CanvasItem,
   AudioItem,
   EmbedItem,
   YouTubeEmbedItem,

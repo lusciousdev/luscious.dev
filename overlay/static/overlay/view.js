@@ -118,6 +118,39 @@ function createYouTubePlayer(itemId)
   });
 }
 
+function handleCanvasUpdate(itemId, history)
+{
+  const context = $("#item-{0}-canvas".format(itemId)).get(0).getContext('2d');
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
+  history.forEach((action, i) => {
+    if (action["type"] == "draw")
+    {
+      context.globalCompositeOperation = "source-over";
+      context.strokeStyle = action["strokeStyle"];
+    }
+    else if (action["type"] == "erase")
+    {
+      context.globalCompositeOperation = "destination-out";
+      context.strokeStyle = "rgba(0, 0, 0, 1)";
+    }
+
+    context.lineWidth = action["lineWidth"];
+    context.lineCap = 'round';
+
+    context.beginPath();
+    context.moveTo(action["points"][0][0], action["points"][0][1]);
+    context.lineTo(action["points"][0][0], action["points"][0][1]);
+
+    for (var i = 1; i < action["points"].length; i++)
+    {
+      context.lineTo(action["points"][i][0], action["points"][i][1]);
+    }
+    
+    context.stroke();
+  });
+}
+
 function userPresent(data) { }
 function repositionMouse(data) { }
 

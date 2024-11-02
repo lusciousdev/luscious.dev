@@ -45,7 +45,7 @@ def calc_lastfm_grid(username, period, size):
   
   grid, newgrid = LastFMGrid.objects.get_or_create(username = username, period = period, size = size)
   
-  if not newgrid and (timezone.now() - grid.created_at).total_seconds() < 120.0 and grid.results is not None:
+  if not newgrid and (timezone.now() - grid.created_at).total_seconds() < 300.0 and grid.results is not None:
     print("Grid has been recently edited.")
     return
   

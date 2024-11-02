@@ -109,7 +109,12 @@ SCROLL_DIRECTIONS = (
   (3, "Top to bottom"),
   (4, "Bottom to top"),
 )
-    
+
+CANVAS_ACTION_TYPES = (
+  ("move", "Move canvas"),
+  ("draw", "Pen"),
+  ("erase", "Eraser"),
+)
 
 BASE_WIDGETS = {
   'name': forms.TextInput(attrs={ "field-type": "text", "title": "Item name" }),
@@ -119,6 +124,8 @@ BASE_WIDGETS = {
   'width': forms.NumberInput(attrs={ "field-type": "integer", "title": "Item width" }),
   'height': forms.NumberInput(attrs={ "field-type": "integer", "title": "Item height" }),
   'rotation': forms.NumberInput(attrs={ "field-type": "float", "title": "Item rotation (degrees)" }),
+  'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': 'Enable background' }),
+  'background_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Background color" }),
   'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0", 'title': "Item opacity" }),
   'visibility': forms.Select(attrs={ "field-type": "integer", "title": "Item visibility" }),
   'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean", "title": "Completely hide from editors and overlay." }),
@@ -139,6 +146,8 @@ BASE_WIDGET_ORDER = [
   'width',
   'height',
   'rotation',
+  'background_enabled',
+  'background_color',
   'crop_top',
   'crop_left',
   'crop_bottom',
@@ -164,8 +173,6 @@ BASE_TEXT_WIDGETS = {
   'text_outline_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': "Enable text outline" }),
   'text_outline_width': forms.NumberInput(attrs = { "field-type": "float", 'title': "Text outline width" }),
   'text_outline_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Text outline color" }),
-  'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': 'Enable background' }),
-  'background_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Background color" }),
   'text_alignment': forms.Select(attrs = { "field-type": "text", 'title': "Text alignment" })
 }
 
@@ -183,8 +190,6 @@ BASE_TEXT_WIDGET_ORDER = [
   'text_outline_enabled',
   'text_outline_width',
   'text_outline_color',
-  'background_enabled',
-  'background_color',
 ]
 
 BASE_VIDEO_WIDGETS = {
@@ -295,7 +300,26 @@ class EditImageItem(EditItemForm):
     model = ImageItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = IMAGE_WIDGETS
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(IMAGE_WIDGETS)
+    
+class EditCanvasItem(EditItemForm):
+  drawing_mode = forms.ChoiceField(choices = CANVAS_ACTION_TYPES, widget = forms.Select(attrs={ "field-type": "text", "title": "Drawing mode", "prevent_send": 1 }))
+  
+  color = forms.CharField(initial = "#000000", max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", "title": "Color", "prevent_send": 1 }))
+  line_width = forms.DecimalField(label = "Line width", decimal_places = 1, step_size = 0.1, initial = 5.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Line width", "prevent_send": 1 }))
+  
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(["drawing_mode", "color", "line_width"])
+  
+  class Meta:
+    model = CanvasItem
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
+    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     
 class EditAudioItem(EditNoDisplayItemForm):
@@ -310,7 +334,8 @@ class EditAudioItem(EditNoDisplayItemForm):
     exclude.extend(EditItemForm.Meta.exclude)
     exclude.extend(NO_DISPLAY_ITEM_EXCLUDES)
     
-    widgets = BASE_WIDGETS
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
     widgets.update(AUDIO_WIDGETS)
     
 class EditEmbedItem(EditItemForm):
@@ -320,8 +345,9 @@ class EditEmbedItem(EditItemForm):
     model = EmbedItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = EMBED_WIDGETS
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(EMBED_WIDGETS)
     
 class EditYouTubeEmbedItem(EditItemForm):
   field_order = BASE_WIDGET_ORDER
@@ -332,10 +358,10 @@ class EditYouTubeEmbedItem(EditItemForm):
     model = YouTubeEmbedItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = YOUTUBE_VIDEO_WIDGETS
-    
-    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets.update(YOUTUBE_VIDEO_WIDGETS)
     
 class EditTwitchStreamEmbedItem(EditItemForm):
   field_order = BASE_WIDGET_ORDER
@@ -346,10 +372,10 @@ class EditTwitchStreamEmbedItem(EditItemForm):
     model = TwitchStreamEmbedItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = TWITCH_STREAM_WIDGETS
-    
-    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets.update(TWITCH_STREAM_WIDGETS)
     
 class EditTwitchVideoEmbedItem(EditItemForm):
   field_order = BASE_WIDGET_ORDER
@@ -360,10 +386,10 @@ class EditTwitchVideoEmbedItem(EditItemForm):
     model = TwitchVideoEmbedItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = TWITCH_VIDEO_WIDGETS
-    
-    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets.update(TWITCH_VIDEO_WIDGETS)
     
 class AbstractEditText(EditItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
@@ -390,10 +416,10 @@ class EditTextItem(AbstractEditText):
     model = TextItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = TEXT_WIDGETS
-    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(TEXT_WIDGETS)
     
 class EditStopwatchItem(AbstractEditText):
   field_order = BASE_WIDGET_ORDER
@@ -403,10 +429,10 @@ class EditStopwatchItem(AbstractEditText):
     model = StopwatchItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = STOPWATCH_WIDGETS
-    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(STOPWATCH_WIDGETS)
     
 class EditCounterItem(AbstractEditText):
   field_order = BASE_WIDGET_ORDER
@@ -416,10 +442,10 @@ class EditCounterItem(AbstractEditText):
     model = CounterItem
     exclude = EditItemForm.Meta.exclude
     
-    widgets = COUNTER_WIDGETS
-    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(COUNTER_WIDGETS)
     
 class AddItemForm(forms.ModelForm):
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES, initial = 1)
@@ -437,14 +463,25 @@ class AddNoDisplayItemForm(forms.ModelForm):
   class Meta:
     abstract = True
     exclude = [ "overlay", "id", "item_type" ]
-  
     
 class AddImageItem(AddItemForm):
   class Meta:
     model = ImageItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = IMAGE_WIDGETS
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(IMAGE_WIDGETS)
+    
+class AddCanvasItem(AddItemForm):
+  
+  class Meta:
+    model = CanvasItem
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
+    exclude.extend(["history"])
+    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     
 class AddAudioItem(AddNoDisplayItemForm):
@@ -454,7 +491,8 @@ class AddAudioItem(AddNoDisplayItemForm):
     exclude.extend(AddItemForm.Meta.exclude)
     exclude.extend(NO_DISPLAY_ITEM_EXCLUDES)
     
-    widgets = BASE_WIDGETS
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
     widgets.update(AUDIO_WIDGETS)
     
 class AddEmbedItem(AddItemForm):
@@ -462,38 +500,39 @@ class AddEmbedItem(AddItemForm):
     model = EmbedItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = EMBED_WIDGETS
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(EMBED_WIDGETS)
     
 class AddYouTubeEmbedItem(AddItemForm):
   class Meta:
     model = YouTubeEmbedItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = YOUTUBE_VIDEO_WIDGETS
-    
-    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets.update(YOUTUBE_VIDEO_WIDGETS)
     
 class AddTwitchStreamEmbedItem(AddItemForm):
   class Meta:
     model = TwitchStreamEmbedItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = TWITCH_STREAM_WIDGETS
-    
-    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets.update(TWITCH_STREAM_WIDGETS)
     
 class AddTwitchVideoEmbedItem(AddItemForm):
   class Meta:
     model = TwitchVideoEmbedItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = TWITCH_VIDEO_WIDGETS
-    
-    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets = {}
     widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_VIDEO_WIDGETS)
+    widgets.update(TWITCH_VIDEO_WIDGETS)
     
 class AbstractAddText(AddItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
@@ -512,41 +551,41 @@ class AbstractAddText(AddItemForm):
   class Meta:
     abstract = True
   
-    
 class AddTextItem(AbstractAddText):
   class Meta:
     model = TextItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = TEXT_WIDGETS
-    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(TEXT_WIDGETS)
     
 class AddStopwatchItem(AbstractAddText):
   class Meta:
     model = StopwatchItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = STOPWATCH_WIDGETS
-    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(STOPWATCH_WIDGETS)
     
 class AddCounterItem(AbstractAddText):
   class Meta:
     model = CounterItem
     exclude = AddItemForm.Meta.exclude
     
-    widgets = COUNTER_WIDGETS
-    
+    widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(COUNTER_WIDGETS)
     
 
 FORMS_MAP = {
   "edit": {
     "ImageItem": EditImageItem,
+    "CanvasItem": EditCanvasItem,
     "AudioItem": EditAudioItem,
     "EmbedItem": EditEmbedItem,
     "YouTubeEmbedItem": EditYouTubeEmbedItem,
@@ -558,6 +597,7 @@ FORMS_MAP = {
   },
   "add": {
     "ImageItem": AddImageItem,
+    "CanvasItem": AddCanvasItem,
     "AudioItem": AddAudioItem,
     "EmbedItem": AddEmbedItem,
     "YouTubeEmbedItem": AddYouTubeEmbedItem,

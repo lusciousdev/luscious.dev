@@ -33,7 +33,11 @@ var otherSelectedItems = [];
 var sendEditTimeout = undefined;
 var sendEditChanges = {};
 
+var sendPointsTimeout = undefined;
+var sendCanvasPoints = {};
+
 const WEBSOCKET_SEND_COOLDOWN = 125; // ms
+const CANVAS_SEND_COOLDOWN = 200; // ms
 
 var streamEmbed;
 
@@ -286,7 +290,7 @@ function removeInactiveUsers()
   var timeNow = Date.now();
 
   Object.keys(editorList).forEach(function(key) {
-    if ((timeNow - editorList[key]["last_seen"]) > 15000.0)
+    if ((timeNow - editorList[key]["last_seen"]) > 60000.0) // 60s
     {
       $("#{0}".format(key)).remove();
       delete editorList[key];
@@ -299,7 +303,7 @@ function removeInactiveCursors()
   var timeNow = Date.now();
 
   Object.keys(editorList).forEach(function(key) {
-    if ((timeNow - editorList[key]["last_mouse"]) > 5000.0)
+    if ((timeNow - editorList[key]["last_mouse"]) > 20000.0) // 20s
     {
       $("#{0}".format(key)).remove();
     }
@@ -584,6 +588,8 @@ function handleItemLeftClick(e, elem)
   dragData.pagePn_m1 = new Point(pageX, pageY);
   dragData.elem = elem;
 
+  var elemId = $(dragData.elem).attr("itemId");
+
   function getGrabberPos(grabber)
   {
     return new Point(
@@ -597,6 +603,14 @@ function handleItemLeftClick(e, elem)
     return new Point(
       parseFloat(getItemDiv(itemId).css('left')),
       parseFloat(getItemDiv(itemId).css('top')),
+    );
+  }
+
+  function getItemOffset(itemId)
+  {
+    return new Point(
+      getItemDiv(itemId).offset().left,
+      getItemDiv(itemId).offset().top
     );
   }
 
@@ -641,11 +655,20 @@ function handleItemLeftClick(e, elem)
     }
   }
 
-  selectItem($(dragData.elem).attr("itemId"));
+  var oldSelectedItem = selectedItem;
+  selectItem(elemId);
 
   if (selectedItem == undefined)
   {
     return;
+  }
+
+  var isCanvas = (itemDict[selectedItem]["item_type"] == "canvas");
+  var canvasDraw = isCanvas && !($("#edit-canvas-form #id_drawing_mode").val() == "move");
+
+  if (selectedItem != oldSelectedItem && isCanvas)
+  {
+    canvasDraw = false;
   }
 
   dragData.elemP0 = new Point(parseFloat($(dragData.elem).css('left')), parseFloat($(dragData.elem).css('top')));
@@ -716,7 +739,7 @@ function handleItemLeftClick(e, elem)
             lowestYOffset = distYBottom;
         });
 
-        var itemRotRad = itemDict[$(dragData.elem).attr("itemId")].item_data.rotation * Math.PI / 180.0;
+        var itemRotRad = itemDict[elemId].item_data.rotation * Math.PI / 180.0;
 
         if (Math.abs(lowestXOffset) < (0.01 * scaledOverlayWidth))
         {
@@ -793,7 +816,7 @@ function handleItemLeftClick(e, elem)
 
       var relativePos = Point.sub2(dragData.furthestCorner.point, Point.add2(dragData.pagePn, mouseOffset));
 
-      var itemRotRad = itemDict[$(dragData.elem).attr("itemId")].item_data.rotation * Math.PI / 180.0;
+      var itemRotRad = itemDict[elemId].item_data.rotation * Math.PI / 180.0;
       
       relativePos.rotate(-1 * itemRotRad);
 
@@ -803,7 +826,7 @@ function handleItemLeftClick(e, elem)
       newWidth = Math.max(viewToEditLength(25), newWidth);
       newHeight = Math.max(viewToEditLength(25), newHeight);
 
-      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "image")
+      if (itemDict[elemId].item_type == "image")
       {
         if (window.shiftheld)
         {
@@ -840,13 +863,13 @@ function handleItemLeftClick(e, elem)
       var newFurthestCornerPoint = getGrabberPos(dragData.furthestCorner.elem);
       var offsetPosition = Point.sub2(dragData.furthestCorner.point, newFurthestCornerPoint);
 
-      var newPos = Point.add2(getItemPos($(dragData.elem).attr("itemId")), offsetPosition);
+      var newPos = Point.add2(getItemPos(elemId), offsetPosition);
       $(dragData.elem).css({
         top: "{0}px".format(newPos.y), 
         left: "{0}px".format(newPos.x),
       });
 
-      if (itemDict[$(dragData.elem).attr("itemId")].item_type == "image")
+      if (itemDict[elemId].item_type == "image")
       {
         $("#item-{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
         $("#item-{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
@@ -857,15 +880,42 @@ function handleItemLeftClick(e, elem)
       var itemWidth  = editToViewLength(newWidth);
       var itemHeight = editToViewLength(newHeight);
   
-      itemDict[$(dragData.elem).attr("itemId")]['item_data']['x']      = Math.round(itemLeft);
-      itemDict[$(dragData.elem).attr("itemId")]['item_data']['y']      = Math.round(itemTop);
-      itemDict[$(dragData.elem).attr("itemId")]['item_data']['width']  = Math.round(itemWidth);
-      itemDict[$(dragData.elem).attr("itemId")]['item_data']['height'] = Math.round(itemHeight);
+      itemDict[elemId]['item_data']['x']      = Math.round(itemLeft);
+      itemDict[elemId]['item_data']['y']      = Math.round(itemTop);
+      itemDict[elemId]['item_data']['width']  = Math.round(itemWidth);
+      itemDict[elemId]['item_data']['height'] = Math.round(itemHeight);
     }
   
     setEditFormInputs(selectedItem);
 
     dragData.pagePn_m1 = new Point(pageX, pageY);
+  }
+
+  function handleDrawing(e)
+  {
+    var pageX, pageY;
+    if (e.type == "touchmove")
+    {
+      pageX = e.changedTouches[0].pageX;
+      pageY = e.changedTouches[0].pageY;
+    }
+    else
+    {
+      pageX = e.pageX;
+      pageY = e.pageY;
+    }
+
+    dragData.pagePn = new Point(pageX, pageY);
+
+    var relMousePos = editToViewPoint(Point.sub2(dragData.pagePn, getItemOffset(elemId)));
+
+    if (!(elemId in sendCanvasPoints))
+      sendCanvasPoints[elemId] = [];
+
+    sendCanvasPoints[elemId].push([relMousePos.x, relMousePos.y])
+    
+    if (sendPointsTimeout == undefined)
+      sendPointsTimeout = setTimeout(sendPoints, CANVAS_SEND_COOLDOWN);
   }
 
   function handleMouseUp(e){
@@ -879,10 +929,25 @@ function handleItemLeftClick(e, elem)
     });
 
     grabType = GrabTypes.Move;
-    $('#main-container').off('mousemove touchmove', handleDragging).off('mouseup touchend mouseleave touchcancel', handleMouseUp);
+    $('#main-container').off('mousemove touchmove', handleDragging).off('mousemove touchmove', handleDrawing).off('mouseup touchend mouseleave touchcancel', handleMouseUp);
   }
 
-  $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
+  if (isCanvas && canvasDraw)
+  {
+    var drawMode = $("#edit-canvas-form #id_drawing_mode").val();
+    var strokeStyle = $("#edit-canvas-form #id_color").val();
+    var lineWidth = $("#edit-canvas-form #id_line_width").val();
+
+    var relMousePos = editToViewPoint(Point.sub2(dragData.pageP0, getItemOffset(elemId)));
+
+    sendWebsocketMessage("record_canvas_event", { "item_id": selectedItem, "item_type": itemDict[selectedItem]["item_type"], "event": "start_action", "action": { "type": drawMode, "strokeStyle": strokeStyle, "lineWidth": lineWidth, "points": [[relMousePos.x, relMousePos.y]] }})
+
+    $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDrawing);
+  }
+  else
+  {
+    $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
+  }
 }
 
 function onMouseMove(e)
@@ -954,66 +1019,10 @@ function onMouseDownBody(e)
   }
 }
 
-function clearSelectedItem()
-{
-  if (selectedItem !== undefined)
-  {
-    getItemDiv(selectedItem).removeClass("selected").addClass("unselected");
-    $("#item-{0}-list-entry".format(selectedItem)).removeClass("selected-list-entry");
-
-    selectedItem = undefined;
-  }
-
-  otherSelectedItems.forEach((itemId) => {
-    getItemDiv(itemId).removeClass("selected").addClass("unselected");
-    $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
-  });
-
-  otherSelectedItems = [];
-  
-  for (var i = 0; i < $(".edit-container").length; i++)
-  {
-    $(".edit-container").eq(i).addClass("hidden");
-  }
-
-  $("#delete-item").addClass("hidden");
-
-  for (var i = 0; i < $(".edit-form").length; i++)
-  {
-    $(".edit-form").get(i).reset();
-  }
-}
-
-function unselectItem(itemId)
-{
-  if (itemId != selectedItem && !otherSelectedItems.includes(itemId))
-  {
-    return
-  }
-
-  if (itemId == selectedItem)
-  {
-    if (otherSelectedItems.length > 0)
-    {
-      selectedItem = otherSelectedItems.splice(0, 1)[0];
-      
-      openEditForm(selectedItem);
-      setEditFormInputs(selectedItem);
-    }
-    else
-    {
-      clearSelectedItem();
-      return;
-    }
-  }
-  else if (otherSelectedItems.includes(itemId))
-  {
-    otherSelectedItems.splice(otherSelectedItems.indexOf(itemId), 1);
-  }
-
-  getItemDiv(itemId).removeClass("selected").addClass("unselected");
-  $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
-}
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///    ITEM SELECTION
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 function selectItem(itemId)
 {
@@ -1052,6 +1061,82 @@ function selectItem(itemId)
     setEditFormInputs(selectedItem);
   }
 }
+
+function unselectItem(itemId)
+{
+  if (itemId != selectedItem && !otherSelectedItems.includes(itemId))
+  {
+    return
+  }
+
+  if (itemId == selectedItem)
+  {
+    if (otherSelectedItems.length > 0)
+    {
+      selectedItem = otherSelectedItems.splice(0, 1)[0];
+      
+      openEditForm(selectedItem);
+      setEditFormInputs(selectedItem);
+    }
+    else
+    {
+      clearSelectedItem();
+      return;
+    }
+  }
+  else if (otherSelectedItems.includes(itemId))
+  {
+    otherSelectedItems.splice(otherSelectedItems.indexOf(itemId), 1);
+  }
+
+  getItemDiv(itemId).removeClass("selected").addClass("unselected");
+  $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
+}
+
+function clearSelectedItem()
+{
+  if (selectedItem !== undefined)
+  {
+    getItemDiv(selectedItem).removeClass("selected").addClass("unselected");
+    $("#item-{0}-list-entry".format(selectedItem)).removeClass("selected-list-entry");
+
+    selectedItem = undefined;
+  }
+
+  otherSelectedItems.forEach((itemId) => {
+    getItemDiv(itemId).removeClass("selected").addClass("unselected");
+    $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
+  });
+
+  otherSelectedItems = [];
+  
+  for (var i = 0; i < $(".edit-container").length; i++)
+  {
+    $(".edit-container").eq(i).addClass("hidden");
+  }
+
+  $("#delete-item").addClass("hidden");
+
+  var canvasDrawMode = $("#edit-canvas-form #id_drawing_mode").val();
+  var canvasColor = $("#edit-canvas-form #id_color").val();
+  var canvasLineWidth = $("#edit-canvas-form #id_line_width").val();
+
+  console.log(canvasDrawMode, canvasColor, canvasLineWidth);
+
+  for (var i = 0; i < $(".edit-form").length; i++)
+  {
+    $(".edit-form").get(i).reset();
+  }
+
+  $("#edit-canvas-form #id_drawing_mode").val(canvasDrawMode);
+  $("#edit-canvas-form #id_color").val(canvasColor);
+  $("#edit-canvas-form #id_line_width").val(canvasLineWidth);
+}
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///         FORMS
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 function openEditForm(itemId)
 {
@@ -1192,6 +1277,19 @@ function sendEdits()
   sendEditTimeout = undefined;
 }
 
+function sendPoints()
+{
+  for (const itemId in sendCanvasPoints)
+  {
+    var itemType = itemDict[itemId]["item_type"];
+    sendWebsocketMessage("record_canvas_event", { "item_type": itemType, "item_id": itemId, "event": "add_points", "points": sendCanvasPoints[itemId] });
+
+    delete sendCanvasPoints[itemId];
+  }
+  
+  sendPointsTimeout = undefined;
+}
+
 function onInputChange(inputEvent)
 {
   var targetedInput = $(inputEvent.currentTarget);
@@ -1202,6 +1300,12 @@ function onInputChange(inputEvent)
   var itemType = itemDict[itemId]["item_type"];
 
   var inputField = targetedInput.attr('name');
+
+  if (targetedInput.attr("prevent_send") == 1)
+  {
+    console.log("Not sending edit changes due to prevent_send.");
+    return;
+  }
 
   switch (inputType)
   {
@@ -1420,6 +1524,28 @@ function pauseSelectedItem(e)
   }
 }
 
+function undoSelectedItem(e)
+{
+  if (selectedItem === undefined)
+  {
+    return;
+  }
+
+  var itemType = itemDict[selectedItem]['item_type'];
+  
+  switch (itemType)
+  {
+    case "canvas":
+      sendWebsocketMessage("record_canvas_event", {
+        "item_id": selectedItem,
+        "item_type": itemType,
+        "event": "undo"
+      });
+      break;
+    default:
+      break;
+  }
+}
 function openAddItemTab(event, tabId)
 {
   for (var i = 0; i < $(".tabcontent").length; i++)
@@ -1475,6 +1601,42 @@ function toggleEmbeddedStreamInteraction(e)
     $("#twitch-embed").addClass("noselect");
     $("#twitch-embed iframe").addClass("noselect");
   }
+}
+
+function handleCanvasUpdate(itemId, history)
+{
+  const context = $("#item-{0}-canvas".format(itemId)).get(0).getContext('2d');
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
+  history.forEach((action, i) => {
+    if (action["type"] == "draw")
+    {
+      context.globalCompositeOperation = "source-over";
+      context.strokeStyle = action["strokeStyle"];
+    }
+    else if (action["type"] == "erase")
+    {
+      context.globalCompositeOperation = "destination-out";
+      context.strokeStyle = "rgba(0, 0, 0, 1)";
+    }
+
+    context.lineWidth = viewToEditLength(action["lineWidth"]);
+    context.lineCap = 'round';
+
+    context.beginPath();
+
+    var p0 = viewToEditPoint(new Point(action["points"][0][0], action["points"][0][1]))
+    context.moveTo(p0.x, p0.y);
+    context.lineTo(p0.x, p0.y);
+
+    for (var i = 1; i < action["points"].length; i++)
+    {
+      var p_i = viewToEditPoint(new Point(action["points"][i][0], action["points"][i][1]))
+      context.lineTo(p_i.x, p_i.y);
+    }
+    
+    context.stroke();
+  });
 }
 
 function selectedVisibilityChange(e)
@@ -1586,7 +1748,9 @@ $(window).on('load', function() {
 
   $(".play-item").click((e) => {
     playSelectedItem(e);
-  })
+  });
+
+  $(".undo-item").click((e) => { undoSelectedItem(e); });
 
   $(".edit-container input[id=id_visibility]").each((i, visibleCheckbox) => {
     $(visibleCheckbox).change((e) => selectedVisibilityChange(e));

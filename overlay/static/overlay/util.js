@@ -36,6 +36,9 @@ function handleWebsocketMessage(e)
     case "item_event_triggered":
       handleItemEvent(data.item_id, data.event);
       break;
+    case "canvas_updated":
+      handleCanvasUpdate(data.item_id, data.history);
+      break;
     case "user_present":
       userPresent(data);
       break;
@@ -135,6 +138,22 @@ function getDefaultCSS(editView, idata)
   }
 
   return cssObj;
+}
+
+function getDefaultContainerCSS(editView, idata)
+{
+  var visible = false;
+
+  if ((idata['visibility'] == 1 && editView) || (idata["visibility"] == 2))
+  {
+    visible = true;
+  }
+
+  var containerCss = {
+    "background-color": (visible && idata['background_enabled']) ? idata['background_color'] : TRANSPARENT,
+  };
+  
+  return containerCss;
 }
 
 function attemptReconnect(e, overlayId)
@@ -305,16 +324,8 @@ function secondsToTimeFormat(totalSeconds)
 
 function setTextItemContent(editView, overlayElement, itemId, itemText, itemData)
 {
-  var visible = false;
-
-  if ((itemData['visibility'] == 1 && editView) || (itemData["visibility"] == 2))
-  {
-    visible = true;
-  }
-
   var overlayElemWidth = $(overlayElement).width();
   var textElemId = "#item-{0}-text".format(itemId);
-  var textElemContainerId = "#item-{0}-container".format(itemId);
   var fontSize = (overlayElemWidth * itemData['font_size']) / overlayWidth;
 
   $(textElemId).text(itemText);
@@ -329,12 +340,7 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
   itemCSS["-webkit-text-stroke-color"] = itemData["text_outline_enabled"] ? itemData["text_outline_color"] : TRANSPARENT
   itemCSS["text-align"] = itemData["text_alignment"];
 
-  var containerCss = {
-    "background-color": (visible && itemData['background_enabled']) ? itemData['background_color'] : TRANSPARENT,
-  };
-
   $(textElemId).css(itemCSS);
-  $(textElemContainerId).css(containerCss);
 }
 
 function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
@@ -352,6 +358,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed
     $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId))
   
     setItemPosition(itemId, top, left, width, height, z, rotation);
+    $(itemContainerId).css(getDefaultContainerCSS(editView, itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
@@ -367,14 +374,20 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed
         }
 
         $(itemContainerId).append("<img id='item-{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
-        $(itemElemId).data('id', itemData['id']);
-        $(itemElemId).data('item_type', itemType);
+        // $(itemElemId).data('id', itemData['id']);
+        // $(itemElemId).data('item_type', itemType);
 
         var imgElemId = "#item-{0}-img".format(itemId);
         
         $(imgElemId).on('dragstart', (event) => { event.preventDefault(); });
 
         $(imgElemId).css(getDefaultCSS(editView, itemData));
+        break;
+      case "canvas":
+        $(itemContainerId).append("<canvas id='item-{0}-canvas' width='{1}px' height='{2}px' />".format(itemId, width, height));
+
+        $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(editView, itemData));
+        handleCanvasUpdate(itemId, itemData["history"]);
         break;
       case "audio":
         audioUrl = itemData['audio_url'];
@@ -471,6 +484,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed
   else
   {
     setItemPosition(itemId, top, left, width, height, z, rotation);
+    $(itemContainerId).css(getDefaultContainerCSS(editView, itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
@@ -494,6 +508,13 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed
         $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
 
         $("#item-{0}-img".format(itemId)).css(getDefaultCSS(editView, itemData));
+        break;
+      case "canvas":
+        $("#item-{0}-canvas".format(itemId)).attr('width', "{0}px".format(width));
+        $("#item-{0}-canvas".format(itemId)).attr('height', "{0}px".format(height));
+
+        $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(editView, itemData));
+        handleCanvasUpdate(itemId, itemData["history"]);
         break;
       case "audio":
         audioUrl = itemData['audio_url'];
@@ -694,6 +715,9 @@ function getItemIconName(itemType)
   {
     case "image":
       itemIcon = 'image';
+      break;
+    case "canvas":
+      itemIcon = "palette";
       break;
     case "audio":
       itemIcon = 'music_note';

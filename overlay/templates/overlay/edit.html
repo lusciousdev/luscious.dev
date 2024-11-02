@@ -117,6 +117,8 @@
                     <div class="medium-button play-item" id="play-{{ form.Meta.model.get_simple_type }}">Play</div>
                     <div class="medium-button pause-item" id="pause-{{ form.Meta.model.get_simple_type }}">Pause</div>
                     <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
+                    {% elif k == "CanvasItem" %}
+                    <div class="medium-button undo-item" id="undo-{{ form.Meta.model.get_simple_type }}">Undo</div>
                     {% endif %}
                     <div class="medium-button delete-item" id="delete-{{ form.Meta.model.get_simple_type }}">Delete</div>
                   </td>

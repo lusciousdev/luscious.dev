@@ -88,6 +88,8 @@ class OverlayConsumer(WebsocketConsumer):
       self.delete_overlay_item(data)
     elif command == "trigger_item_event":
       self.trigger_item_event(data)
+    elif command == "record_canvas_event":
+      self.record_canvas_event(data)
     elif command == "ping":
       self.ping(data)
     elif command == "mouse_position":
@@ -356,6 +358,75 @@ class OverlayConsumer(WebsocketConsumer):
             "item_id": item_instance.id,
             "item_type": item_instance.get_simple_type(),
             "event": data["event"],
+          } 
+        } 
+      }
+    )
+      
+  def record_canvas_event(self, data):
+    if "event" not in data:
+      self.send_command("error", "Could not trigger an event because you did not provide an event.")
+      return
+    
+    if not self.owner_or_editor():
+      self.send_command("error", "Invalid user.")
+      return
+    
+    item_type = data.get("item_type", "")
+    item_id = data.get("item_id", "")
+    
+    if item_type == "" or item_id == "":
+      self.send_command("error", "Improperly formatted request.")
+      return
+    
+    item_model = None
+    for t in ITEM_TYPES:
+      type_name = t.get_simple_type()
+      
+      if item_type.lower() == type_name.lower():
+        item_model = t
+        break
+      
+    if item_model != CanvasItem:
+      self.send_command("error", f"Can't trigger a canvas event on a {item_model.get_pretty_type()}, silly.")
+      return
+    
+    if item_model is None:
+      self.send_command("error", "Unrecognized item type.")
+      return
+    
+    try:
+      item_instance = item_model.objects.get(id = item_id)
+    except item_model.DoesNotExist:
+      self.send_command("error", "That item does not exist.")
+      return
+    
+    if data["event"] == "start_action":
+      action : dict = data["action"]
+      action = CanvasAction.objects.create(canvas = item_instance, user = self.user, action = action)
+    elif data["event"] == "add_points":
+      action : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance).order_by("-timestamp").first()
+      action.action['points'].extend(data["points"])
+      action.save()
+    if data["event"] == "undo":
+      action : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance).order_by("-timestamp").first()
+      if action: 
+        action.delete()
+    
+    async_to_sync(self.channel_layer.group_send)(
+      self.overlay_group_name, 
+      { 
+        "type": "broadcast_event", 
+        "event_data": 
+        { 
+          "command": "canvas_updated", 
+          "data": 
+          {
+            "username": self.twitchaccount.extra_data["login"],
+            "uid": self.twitchaccount.uid,
+            "item_id": item_instance.id,
+            "item_type": item_instance.get_simple_type(),
+            "history": item_instance.to_data_dict()['history'], 
           } 
         } 
       }

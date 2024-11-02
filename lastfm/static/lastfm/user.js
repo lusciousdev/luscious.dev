@@ -20,6 +20,8 @@ function handleGridSuccess(data)
 
     $("#album-grid").html('<img id="grid-image" src="{0}">'.format(data.image));
 
+    $("#album-list").html('');
+
     data.topalbums.forEach(function(album, i) {
       $("#album-list").append(
         `<tr>
@@ -48,5 +50,5 @@ function getLastFMGrid()
 }
 
 $(window).on("load", function() {
-  getDataInterval = setInterval(getLastFMGrid, 500);
+  getDataInterval = setInterval(getLastFMGrid, 1000);
 });
