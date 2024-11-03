@@ -80,14 +80,24 @@ function viewToEditY(yCoord)
   return (yCoord * currentScale) + overlayOffset.y;
 }
 
-function editToViewPoint(p)
+function editToViewCoords(p)
 {
   return new Point(editToViewX(p.x), editToViewY(p.y));
 }
 
-function viewToEditPoint(p)
+function viewToEditCoords(p)
 {
   return new Point(viewToEditX(p.x), viewToEditY(p.y));
+}
+
+function editToViewPoint(p)
+{
+  return p.div(currentScale);
+}
+
+function viewToEditPoint(p)
+{
+  return p.mult(currentScale);
 }
 
 function editToViewLength(distance)
@@ -214,6 +224,8 @@ function addItemCallback(itemId, itemType)
   </div>`.format(itemId, getItemIconName(itemType), item["item_data"]["name"], item["item_type"]));
 
   $("#item-{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
+
+  setCanvasCursor();
 }
 
 function updateItemCallback(itemId, itemType)
@@ -228,6 +240,8 @@ function updateItemCallback(itemId, itemType)
   {
     setEditFormInputs(selectedItem);
   }
+
+  setCanvasCursor();
 }
 
 function handleEditItemsSuccess(data) {}
@@ -507,6 +521,11 @@ function setAllItemPositions()
       $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
     }
 
+    if (itemDict[prop]['item_type'] == "canvas")
+    {
+      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"]);
+    }
+
     if (itemDict[prop]['item_type'] == "text" ||
         itemDict[prop]['item_type'] == "counter" ||
         itemDict[prop]['item_type'] == "stopwatch")
@@ -524,6 +543,14 @@ function repositionOverlay()
     "left": viewToEditLength(overlayOffset.x),
     "top": viewToEditLength(overlayOffset.y),
   });
+
+  for (const prop in itemDict)
+  {
+    if (itemDict[prop]['item_type'] == "canvas")
+    {
+      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"]);
+    }
+  }
 }
 
 function onMouseDownItemList(e, itemId)
@@ -1316,7 +1343,6 @@ function onInputChange(inputEvent)
 
   if (targetedInput.attr("prevent_send") == 1)
   {
-    console.log("Not sending edit changes due to prevent_send.");
     return;
   }
 
@@ -1688,6 +1714,28 @@ function createYouTubePlayer(itemId)
   });
 }
 
+function setCanvasCursor() 
+{
+  var inputVal = $("#id_drawing_mode").val();
+
+  var cursorCss = "move";
+  switch (inputVal)
+  {
+    case "draw":
+      cursorCss = "url('/static/overlay/pen.cur'), auto";
+      break;
+    case "erase":
+      cursorCss = "url('/static/overlay/eraser.cur'), auto"
+      break;
+    default:
+      break;
+  }
+  
+  $(".selected.canvas-item").css({
+    "cursor": cursorCss,
+  });
+}
+
 $(window).on('load', function() {
   initialResize();
 
@@ -1711,6 +1759,11 @@ $(window).on('load', function() {
   });
 
   $("input[checkbox]").change((e) => {
+    onInputChange(e);
+  });
+
+  $("#id_drawing_mode").change((e) => {
+    setCanvasCursor();
     onInputChange(e);
   });
 

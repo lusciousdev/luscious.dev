@@ -355,7 +355,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed
 
   if ($(itemElemId).length == 0)
   {
-    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId))
+    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item {1}-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId, itemType))
   
     setItemPosition(itemId, top, left, width, height, z, rotation);
     $(itemContainerId).css(getDefaultContainerCSS(editView, itemData));
