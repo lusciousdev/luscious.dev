@@ -43,7 +43,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var z = itemData['z'];
     var rotation = itemData['rotation'];
     
-    addOrUpdateItem(false, "body", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData,
+    addOrUpdateItem(false, false, "body", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData,
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }

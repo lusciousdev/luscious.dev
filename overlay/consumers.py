@@ -14,6 +14,9 @@ from .forms import *
 logger = logging.getLogger("overlay")
 
 class OverlayConsumer(WebsocketConsumer):
+  response_list = []
+  broadcast_list = []
+  
   def owner_or_editor(self):
     self.user : UserLazyObject = self.scope["user"]
     if self.user.is_anonymous:
@@ -36,6 +39,12 @@ class OverlayConsumer(WebsocketConsumer):
   
   def send_command(self, command : str, data):
     self.send(text_data = json.dumps({ "command": command, "data": data }))
+    
+  def queue_command(self, command : str, data):
+    self.response_list.append({ "command": command, "data": data })
+    
+  def queue_broadcast(self, event_data):
+    self.broadcast_list.append(event_data)
   
   def connect(self):
     logger.debug("Connection attempt started...")
@@ -76,8 +85,32 @@ class OverlayConsumer(WebsocketConsumer):
     
     text_data_json = json.loads(text_data)
     
-    command : str = text_data_json.get("command", "")
-    data : dict = text_data_json.get("data", {})
+    if "commands" in text_data_json:
+      for command in text_data_json["commands"]:
+        self.handle_command(command)
+    elif "command" in text_data_json:
+      self.handle_command(text_data_json)
+      
+    if len(self.response_list) == 1:
+      self.send_command(self.response_list[0]["command"], self.response_list[0]["data"])
+    elif len(self.response_list) > 1:
+      self.send(text_data = json.dumps({ "commands": self.response_list }))
+      
+    self.response_list.clear()
+    
+    async_to_sync(self.channel_layer.group_send)(
+      self.overlay_group_name, 
+      { 
+        "type": "broadcast_events", 
+        "event_list": self.broadcast_list,
+      }
+    )
+    
+    self.broadcast_list.clear()
+    
+  def handle_command(self, command_json):
+    command : str = command_json.get("command", "")
+    data : dict = command_json.get("data", {})
     
     command = command.lower()
     if command == "get_overlay_items":
@@ -96,8 +129,6 @@ class OverlayConsumer(WebsocketConsumer):
       self.ping(data)
     elif command == "mouse_position":
       self.send_mouse_position(data)
-      
-    # print(f"{command}: {time.time() - startTime}")
     
   def get_overlay_items(self):
     overlay_items = []
@@ -114,17 +145,17 @@ class OverlayConsumer(WebsocketConsumer):
       
       response["items"].append(item_dict)
       
-    self.send_command("list_overlay_items", response)
+    self.queue_command("list_overlay_items", response)
     
   def add_overlay_item(self, data : dict):
     if not self.owner_or_editor():
-      self.send_command("error", "Invalid user.")
+      self.queue_command("error", "Invalid user.")
       return
     
     item_type = data.get("item_type", "")
     
     if item_type == "":
-      self.send_command("error", "Improperly formatted request.")
+      self.queue_command("error", "Improperly formatted request.")
       return
     
     item_model = None
@@ -136,7 +167,7 @@ class OverlayConsumer(WebsocketConsumer):
         break
     
     if item_model is None:
-      self.send_command("error", "Unrecognized item type.")
+      self.queue_command("error", "Unrecognized item type.")
       return
   
     item_instance = item_model()
@@ -153,33 +184,27 @@ class OverlayConsumer(WebsocketConsumer):
     item_instance.overlay_id = self.overlay.id
     item_instance.save()
     
-    async_to_sync(self.channel_layer.group_send)(
-      self.overlay_group_name, 
-      { 
-       "type": "broadcast_event", 
-       "event_data": { 
-         "command": "overlay_item_added", 
-         "data": {
-           "editor": self.twitchaccount.uid,
-           "item_type": item_instance.item_type,
-           "is_displayed": item_instance.is_displayed(),
-           "item_data": item_instance.to_data_dict(),
-           "edited_data": item_data,
-          } 
-        } 
-      }
-    )
+    self.queue_broadcast({ 
+      "command": "overlay_item_added", 
+      "data": {
+        "editor": self.twitchaccount.uid,
+        "item_type": item_instance.item_type,
+        "is_displayed": item_instance.is_displayed(),
+        "item_data": item_instance.to_data_dict(),
+        "edited_data": item_data,
+      } 
+    })
     
   def delete_overlay_item(self, data : dict):
     if not self.owner_or_editor():
-      self.send_command("error", "Invalid user.")
+      self.queue_command("error", "Invalid user.")
       return
     
     item_type = data.get("item_type", "")
     item_id = data.get("item_id", "")
     
     if item_type == "" or item_id == "":
-      self.send_command("error", "Improperly formatted request.")
+      self.queue_command("error", "Improperly formatted request.")
       return
     
     item_model = None
@@ -191,41 +216,35 @@ class OverlayConsumer(WebsocketConsumer):
         break
     
     if item_model is None:
-      self.send_command("error", "Unrecognized item type.")
+      self.queue_command("error", "Unrecognized item type.")
       return
     
     try:
       item_instance = item_model.objects.get(id = item_id)
     except item_model.DoesNotExist:
-      self.send_command("error", "That item does not exist.")
+      self.queue_command("error", "That item does not exist.")
       return
     
     item_instance.delete()
     
-    async_to_sync(self.channel_layer.group_send)(
-      self.overlay_group_name, 
-      { 
-       "type": "broadcast_event", 
-       "event_data": { 
-         "command": "overlay_item_deleted", 
-         "data": {
-           "editor": self.twitchaccount.uid,
-           "item_id": item_id, 
-          } 
-        } 
-      }
-    )
+    self.queue_broadcast({ 
+      "command": "overlay_item_deleted", 
+      "data": {
+        "editor": self.twitchaccount.uid,
+        "item_id": item_id, 
+      } 
+    })
     
   def edit_overlay_item(self, data : dict):
     if not self.owner_or_editor():
-      self.send_command("error", "Invalid user.")
+      self.queue_command("error", "Invalid user.")
       return
     
     item_type = data.get("item_type", "")
     item_id = data.get("item_id", "")
     
     if item_type == "" or item_id == "":
-      self.send_command("error", "Improperly formatted request.")
+      self.queue_command("error", "Improperly formatted request.")
       return
     
     item_model = None
@@ -237,13 +256,13 @@ class OverlayConsumer(WebsocketConsumer):
         break
     
     if item_model is None:
-      self.send_command("error", "Unrecognized item type.")
+      self.queue_command("error", "Unrecognized item type.")
       return
     
     try:
       item_instance = item_model.objects.get(id = item_id)
     except item_model.DoesNotExist:
-      self.send_command("error", "That item does not exist.")
+      self.queue_command("error", "That item does not exist.")
       return
     
     for attr, val in data.get("item_data", {}).items():
@@ -256,78 +275,56 @@ class OverlayConsumer(WebsocketConsumer):
     
     item_instance.save()
     
-    async_to_sync(self.channel_layer.group_send)(
-      self.overlay_group_name, 
-      { 
-       "type": "broadcast_event", 
-       "event_data": { 
-         "command": "overlay_item_edited", 
-         "data": {
-           "editor": self.twitchaccount.uid,
-           "item_type": item_instance.get_simple_type(),
-           "is_displayed": item_instance.is_displayed(),
-           "item_data": item_instance.to_data_dict(), 
-          } 
-        } 
-      }
-    )
+    self.queue_broadcast({ 
+      "command": "overlay_item_edited", 
+      "data": {
+        "editor": self.twitchaccount.uid,
+        "item_type": item_instance.get_simple_type(),
+        "is_displayed": item_instance.is_displayed(),
+        "item_data": item_instance.to_data_dict(), 
+      } 
+    })
     
   def ping(self, data):
     if self.owner_or_editor():
-      async_to_sync(self.channel_layer.group_send)(
-        self.overlay_group_name, 
-        { 
-          "type": "broadcast_event", 
-          "event_data": 
-          { 
-            "command": "user_present", 
-            "data": 
-            {
-              "username": self.twitchaccount.extra_data["login"],
-              "uid": self.twitchaccount.uid,
-            } 
-          } 
-        }
-      )
+      self.queue_broadcast({ 
+        "command": "user_present", 
+        "data": {
+          "username": self.twitchaccount.extra_data["login"],
+          "uid": self.twitchaccount.uid,
+        } 
+      })
       
   def send_mouse_position(self, data):
     if "x" not in data or "y" not in data:
-      self.send_command("error", "Mouse reposition missing data.")
+      self.queue_command("error", "Mouse reposition missing data.")
       return
     
     if self.owner_or_editor():
-      async_to_sync(self.channel_layer.group_send)(
-        self.overlay_group_name, 
-        { 
-          "type": "broadcast_event", 
-          "event_data": 
-          { 
-            "command": "mouse_position", 
-            "data": 
-            {
-              "username": self.twitchaccount.extra_data["login"],
-              "uid": self.twitchaccount.uid,
-              "x": data["x"],
-              "y": data["y"],
-            } 
-          } 
-        }
-      )
+      self.queue_broadcast({ 
+        "command": "mouse_position", 
+        "data": {
+          "username": self.twitchaccount.extra_data["login"],
+          "uid": self.twitchaccount.uid,
+          "x": data["x"],
+          "y": data["y"],
+        } 
+      })
       
   def trigger_item_event(self, data):
     if "event" not in data:
-      self.send_command("error", "Could not trigger an event because you did not provide an event.")
+      self.queue_command("error", "Could not trigger an event because you did not provide an event.")
       return
     
     if not self.owner_or_editor():
-      self.send_command("error", "Invalid user.")
+      self.queue_command("error", "Invalid user.")
       return
     
     item_type = data.get("item_type", "")
     item_id = data.get("item_id", "")
     
     if item_type == "" or item_id == "":
-      self.send_command("error", "Improperly formatted request.")
+      self.queue_command("error", "Improperly formatted request.")
       return
     
     item_model = None
@@ -339,48 +336,40 @@ class OverlayConsumer(WebsocketConsumer):
         break
     
     if item_model is None:
-      self.send_command("error", "Unrecognized item type.")
+      self.queue_command("error", "Unrecognized item type.")
       return
     
     try:
       item_instance = item_model.objects.get(id = item_id)
     except item_model.DoesNotExist:
-      self.send_command("error", "That item does not exist.")
+      self.queue_command("error", "That item does not exist.")
       return
     
-    async_to_sync(self.channel_layer.group_send)(
-      self.overlay_group_name, 
-      { 
-        "type": "broadcast_event", 
-        "event_data": 
-        { 
-          "command": "item_event_triggered", 
-          "data": 
-          {
-            "username": self.twitchaccount.extra_data["login"],
-            "uid": self.twitchaccount.uid,
-            "item_id": item_instance.id,
-            "item_type": item_instance.get_simple_type(),
-            "event": data["event"],
-          } 
-        } 
-      }
-    )
+    self.queue_broadcast({ 
+      "command": "item_event_triggered", 
+      "data": {
+        "username": self.twitchaccount.extra_data["login"],
+        "uid": self.twitchaccount.uid,
+        "item_id": item_instance.id,
+        "item_type": item_instance.get_simple_type(),
+        "event": data["event"],
+      } 
+    })
       
   def record_canvas_event(self, data):
     if "event" not in data:
-      self.send_command("error", "Could not trigger an event because you did not provide an event.")
+      self.queue_command("error", "Could not trigger an event because you did not provide an event.")
       return
     
     if not self.owner_or_editor():
-      self.send_command("error", "Invalid user.")
+      self.queue_command("error", "Invalid user.")
       return
     
     item_type = data.get("item_type", "")
     item_id = data.get("item_id", "")
     
     if item_type == "" or item_id == "":
-      self.send_command("error", "Improperly formatted request.")
+      self.queue_command("error", "Improperly formatted request.")
       return
     
     item_model = None
@@ -392,17 +381,17 @@ class OverlayConsumer(WebsocketConsumer):
         break
       
     if item_model != CanvasItem:
-      self.send_command("error", f"Can't trigger a canvas event on a {item_model.get_pretty_type()}, silly.")
+      self.queue_command("error", f"Can't trigger a canvas event on a {item_model.get_pretty_type()}, silly.")
       return
     
     if item_model is None:
-      self.send_command("error", "Unrecognized item type.")
+      self.queue_command("error", "Unrecognized item type.")
       return
     
     try:
       item_instance = item_model.objects.get(id = item_id)
     except item_model.DoesNotExist:
-      self.send_command("error", "That item does not exist.")
+      self.queue_command("error", "That item does not exist.")
       return
     
     if data["event"] == "start_action":
@@ -417,29 +406,28 @@ class OverlayConsumer(WebsocketConsumer):
       if action: 
         action.delete()
     
-    async_to_sync(self.channel_layer.group_send)(
-      self.overlay_group_name, 
-      { 
-        "type": "broadcast_event", 
-        "event_data": 
-        { 
-          "command": "canvas_updated", 
-          "data": 
-          {
-            "username": self.twitchaccount.extra_data["login"],
-            "uid": self.twitchaccount.uid,
-            "item_id": item_instance.id,
-            "item_type": item_instance.get_simple_type(),
-            "history": item_instance.to_data_dict()['history'], 
-          } 
-        } 
-      }
-    )
+    self.queue_broadcast({ 
+      "command": "canvas_updated", 
+      "data": {
+        "username": self.twitchaccount.extra_data["login"],
+        "uid": self.twitchaccount.uid,
+        "item_id": item_instance.id,
+        "item_type": item_instance.get_simple_type(),
+        "history": item_instance.to_data_dict()['history'], 
+      } 
+    })
     
   def broadcast_event(self, event):
-    event_data = event.get("event_data", "")
+    event_data = event.get("event_data", {})
     
     command = event_data.get("command", "")
     data = event_data.get("data", {})
     
-    self.send_command(command, data )
+    self.send_command( command, data )
+    
+  def broadcast_events(self, event):
+    event_list = event.get("event_list", [])
+    
+    self.send(text_data = json.dumps({ "commands": event_list }))
+    
+    

@@ -30,18 +30,13 @@ const scrollAmount = 50.0;
 var selectedItem = undefined;
 var otherSelectedItems = [];
 
-var sendEditTimeout = undefined;
 var sendEditChanges = {};
-
-var sendPointsTimeout = undefined;
 var sendCanvasPoints = {};
 
-var sendMouseTimeout = undefined;
+const MOUSE_MOVE_COOLDOWN = 16;
 
-const   FORM_SEND_COOLDOWN = 250; // ms
-const MOVING_SEND_COOLDOWN = 250;
-const CANVAS_SEND_COOLDOWN = 250;
-const  MOUSE_SEND_COOLDOWN = 250;
+const WEBSOCKET_SEND_COOLDOWN = 100; // ms
+var websocketEventQueue = []
 
 var streamEmbed;
 
@@ -165,7 +160,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var z = itemData['z'];
     var rotation = itemData['rotation'];
 
-    addOrUpdateItem(true, "#overlay", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, 
+    addOrUpdateItem(true, selfEdit, "#overlay", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, 
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }
@@ -246,9 +241,14 @@ function updateItemCallback(itemId, itemType)
 
 function handleEditItemsSuccess(data) {}
 
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           USER PRESENCE
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 function sendPing()
 {
-  sendWebsocketMessage("ping", {});
+  websocketEventQueue.push({ "command": "ping", "data": {} });
 }
 
 function checkMousePosition()
@@ -256,9 +256,6 @@ function checkMousePosition()
   if ((mousePosition["x"] != lastMousePosition["x"]) || (mousePosition["y"] != lastMousePosition["y"]))
   {
     lastMousePosition = Object.assign({}, mousePosition);
-
-    if (sendMouseTimeout == undefined)
-      sendMouseTimeout = setTimeout(sendMousePos, MOUSE_SEND_COOLDOWN);
   }
 }
 
@@ -266,6 +263,9 @@ function userPresent(data)
 {
   if (data["uid"] == twitchUser)
     return;
+
+  if (!(data["uid"] in editorList))
+    editorList[data["uid"]] = {};
 
   if (!editorList.hasOwnProperty(data["uid"]))
   {
@@ -302,6 +302,9 @@ function repositionMouse(data)
     "left": "{0}px".format(left),
   });
 
+  if (!(data["uid"] in editorList))
+    editorList[data["uid"]] = {};
+
   editorList[data["uid"]]["last_mouse"] = Date.now();
 }
 
@@ -330,6 +333,11 @@ function removeInactiveCursors()
   });
 }
 
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///      WEBSOCKETS & HTTP
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 function handleWebsocketOpen(e)
 {
   getOverlayItems();
@@ -338,6 +346,7 @@ function handleWebsocketOpen(e)
   setInterval(checkMousePosition, 50);
   setInterval(removeInactiveUsers, 500);
   setInterval(removeInactiveCursors, 500);
+  setInterval(sendAllMessages, WEBSOCKET_SEND_COOLDOWN);
 }
 
 function handleAjaxError(data)
@@ -346,36 +355,46 @@ function handleAjaxError(data)
   console.log(data);
 }
 
-function sendOverlayItemUpdates()
+function sendAllMessages()
 {
-  items = []
+  msgList = Array.from(websocketEventQueue);
+  websocketEventQueue = [];
+  
   for (const itemId in itemDict)
   {
-    if (itemDict[itemId]['local_changes'])
+    if (itemDict[itemId]['moving'])
     {
-      itemFormData = new FormData();
-      itemFormData.set("overlay_id", overlayId);
-      itemFormData.set("item_id", itemId);
-      itemFormData.set("item_type", itemDict[itemId]['item_type']);
-      
-      for (const itemProp in itemDict[itemId]['item_data'])
-      {
-        itemFormData.set(itemProp, itemDict[itemId]['item_data'][itemProp]);
-      }
+      var itemData = {};
+      itemData['x']      = itemDict[itemId].item_data.x;
+      itemData['y']      = itemDict[itemId].item_data.y;
+      itemData['width']  = itemDict[itemId].item_data.width;
+      itemData['height'] = itemDict[itemId].item_data.height;
 
-      items.push(itemFormData);
+      var itemType = itemDict[itemId]["item_type"];
 
-      if (!itemDict[itemId]['locked']) itemDict[itemId]['local_changes'] = false;
+      msgList.push({ "command": "edit_overlay_item", "data": { "item_type": itemType, "item_id": itemId, "item_data": itemData } });
     }
   }
 
-  if (items.length > 0)
+  for (const itemId in sendEditChanges)
   {
-    for (const i in items)
-    {
-      QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, editOverlayItemUrl, items[i], handleEditItemsSuccess, handleAjaxError));
-    }
+    var itemType = itemDict[itemId]["item_type"];
+    msgList.push({ "command": "edit_overlay_item", "data": { "item_type": itemType, "item_id": itemId, "item_data": sendEditChanges[itemId] } });
+
+    delete sendEditChanges[itemId];
   }
+
+  for (const itemId in sendCanvasPoints)
+  {
+    var itemType = itemDict[itemId]["item_type"];
+    msgList.push({ "command": "record_canvas_event", "data": { "item_type": itemType, "item_id": itemId, "event": "add_points", "points": sendCanvasPoints[itemId] } });
+
+    delete sendCanvasPoints[itemId];
+  }
+  
+  msgList.push({ "command": "mouse_position", "data": mousePosition });
+
+  sendWebsocketMessages(msgList);
 }
 
 function initialResize(event)
@@ -523,7 +542,7 @@ function setAllItemPositions()
 
     if (itemDict[prop]['item_type'] == "canvas")
     {
-      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"]);
+      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"], false);
     }
 
     if (itemDict[prop]['item_type'] == "text" ||
@@ -548,7 +567,7 @@ function repositionOverlay()
   {
     if (itemDict[prop]['item_type'] == "canvas")
     {
-      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"]);
+      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"], false);
     }
   }
 }
@@ -556,26 +575,6 @@ function repositionOverlay()
 function onMouseDownItemList(e, itemId)
 {
   selectItem(itemId);
-}
-
-function sendMovingItemEdits()
-{
-  items = []
-  for (const itemId in itemDict)
-  {
-    if (itemDict[itemId]['moving'])
-    {
-      var itemData = {};
-      itemData['x']      = itemDict[itemId].item_data.x;
-      itemData['y']      = itemDict[itemId].item_data.y;
-      itemData['width']  = itemDict[itemId].item_data.width;
-      itemData['height'] = itemDict[itemId].item_data.height;
-
-      var itemType = itemDict[itemId]["item_type"];
-
-      sendWebsocketMessage("edit_overlay_item", { "item_type": itemType, "item_id": itemId, "item_data": itemData });
-    }
-  }
 }
 
 function onMousedownItem(e) 
@@ -719,10 +718,41 @@ function handleItemLeftClick(e, elem)
     itemDict[itemId]['moving'] = true;
   });
 
-  var SEND_MOVE_INTERVAL = setInterval(sendMovingItemEdits, MOVING_SEND_COOLDOWN);
+  if (isCanvas && canvasDraw)
+  {
+    var drawMode = getCanvasDrawingMode();
+    var strokeStyle = getCanvasColor();
+    var lineWidth = getCanvasLineWidth();
+
+    var relMousePos = editToViewPoint(Point.sub2(dragData.pageP0, getItemOffset(elemId)));
+
+    websocketEventQueue.push({ "command": "record_canvas_event", "data": { "item_id": selectedItem, "item_type": itemDict[selectedItem]["item_type"], "event": "start_action", "action": { "type": drawMode, "strokeStyle": strokeStyle, "lineWidth": lineWidth, "points": [[relMousePos.x, relMousePos.y]] } } });
+
+    itemDict[elemId]["drawing"] = true;
+
+    $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDrawing);
+  }
+  else
+  {
+    $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
+  }
+
+  var enableMoveHandler = false;
+  var mouseMoveTimeout = setInterval(() => {
+    enableMoveHandler = true;
+  }, MOUSE_MOVE_COOLDOWN);
 
   function handleDragging(e)
   {
+    if (enableMoveHandler)
+    {
+      enableMoveHandler = false;
+    }
+    else
+    {
+      return;
+    }
+
     var pageX, pageY;
     if (e.type == "touchmove")
     {
@@ -926,6 +956,15 @@ function handleItemLeftClick(e, elem)
 
   function handleDrawing(e)
   {
+    if (enableMoveHandler)
+    {
+      enableMoveHandler = false;
+    }
+    else
+    {
+      return;
+    }
+
     var pageX, pageY;
     if (e.type == "touchmove")
     {
@@ -940,22 +979,33 @@ function handleItemLeftClick(e, elem)
 
     dragData.pagePn = new Point(pageX, pageY);
 
+    var lastMousePos = editToViewPoint(Point.sub2(dragData.pagePn_m1, getItemOffset(elemId)));
     var relMousePos = editToViewPoint(Point.sub2(dragData.pagePn, getItemOffset(elemId)));
 
     if (!(elemId in sendCanvasPoints))
       sendCanvasPoints[elemId] = [];
 
     sendCanvasPoints[elemId].push([relMousePos.x, relMousePos.y])
-    
-    if (sendPointsTimeout == undefined)
-      sendPointsTimeout = setTimeout(sendPoints, CANVAS_SEND_COOLDOWN);
+
+    drawLine(elemId, lastMousePos, relMousePos);
+
+    dragData.pagePn_m1 = new Point(pageX, pageY);
   }
 
   function handleMouseUp(e){
-    clearInterval(SEND_MOVE_INTERVAL);
-    sendMovingItemEdits();
+    clearInterval(mouseMoveTimeout);
+
+    if (isCanvas && canvasDraw)
+    {
+      handleDrawing(e);
+    }
+    else
+    {
+      handleDragging(e);
+    }
 
     itemDict[selectedItem]['moving'] = false;
+    itemDict[elemId]["drawing"] = false;
   
     otherSelectedItems.forEach((itemId) => {
       itemDict[itemId]['moving'] = false;
@@ -963,23 +1013,6 @@ function handleItemLeftClick(e, elem)
 
     grabType = GrabTypes.Move;
     $('#main-container').off('mousemove touchmove', handleDragging).off('mousemove touchmove', handleDrawing).off('mouseup touchend mouseleave touchcancel', handleMouseUp);
-  }
-
-  if (isCanvas && canvasDraw)
-  {
-    var drawMode = $("#edit-canvas-form #id_drawing_mode").val();
-    var strokeStyle = $("#edit-canvas-form #id_color").val();
-    var lineWidth = $("#edit-canvas-form #id_line_width").val();
-
-    var relMousePos = editToViewPoint(Point.sub2(dragData.pageP0, getItemOffset(elemId)));
-
-    sendWebsocketMessage("record_canvas_event", { "item_id": selectedItem, "item_type": itemDict[selectedItem]["item_type"], "event": "start_action", "action": { "type": drawMode, "strokeStyle": strokeStyle, "lineWidth": lineWidth, "points": [[relMousePos.x, relMousePos.y]] }})
-
-    $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDrawing);
-  }
-  else
-  {
-    $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
   }
 }
 
@@ -1297,39 +1330,6 @@ function inputToValue(inputObj)
   }
 }
 
-function sendEdits()
-{
-  for (const itemId in sendEditChanges)
-  {
-    var itemType = itemDict[itemId]["item_type"];
-    sendWebsocketMessage("edit_overlay_item", { "item_type": itemType, "item_id": itemId, "item_data": sendEditChanges[itemId] });
-
-    delete sendEditChanges[itemId];
-  }
-  
-  sendEditTimeout = undefined;
-}
-
-function sendPoints()
-{
-  for (const itemId in sendCanvasPoints)
-  {
-    var itemType = itemDict[itemId]["item_type"];
-    sendWebsocketMessage("record_canvas_event", { "item_type": itemType, "item_id": itemId, "event": "add_points", "points": sendCanvasPoints[itemId] });
-
-    delete sendCanvasPoints[itemId];
-  }
-  
-  sendPointsTimeout = undefined;
-}
-
-function sendMousePos()
-{
-  sendWebsocketMessage("mouse_position", mousePosition);
-
-  sendMouseTimeout = undefined;
-}
-
 function onInputChange(inputEvent)
 {
   var targetedInput = $(inputEvent.currentTarget);
@@ -1376,8 +1376,6 @@ function onInputChange(inputEvent)
           break;
       }
 
-      if (sendEditTimeout == undefined)
-        sendEditTimeout = setTimeout(sendEdits, FORM_SEND_COOLDOWN);
       break;
   }
 }
@@ -1463,7 +1461,7 @@ function deleteSelectedItem(e)
   {
     var itemType = itemDict[selectedItem]['item_type'];
   
-    sendWebsocketMessage("delete_overlay_item", { "item_type": itemType, "item_id": selectedItem });
+    websocketEventQueue.push({ "command": "delete_overlay_item", "data": { "item_type": itemType, "item_id": selectedItem } });
   }
 }
 
@@ -1485,13 +1483,13 @@ function resetSelectedItem(e)
       editData["timer_start"] = timeNow;
       editData["pause_time"]  = timeNow;
 
-      sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
+      websocketEventQueue.push({"command": "edit_overlay_item", "data": { "item_id": selectedItem, "item_type": itemType, "item_data": editData }});
       break;
     case "youtube_video":
     case "twitch_stream":
     case "twitch_video":
     case "audio":
-      sendWebsocketMessage("trigger_item_event", { "item_id": selectedItem, "item_type": itemType, "event": "reset_item" })
+      websocketEventQueue.push({"command": "trigger_item_event", "data": { "item_id": selectedItem, "item_type": itemType, "event": "reset_item" }});
       break;
     default:
       break;
@@ -1512,7 +1510,7 @@ function playSelectedItem(e)
   switch (itemType)
   {
     case "audio":
-      sendWebsocketMessage("trigger_item_event", { "item_id": selectedItem, "item_type": itemType, "event": "play_item" });
+      websocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": selectedItem, "item_type": itemType, "event": "play_item" }});
       break;
     default:
       break;
@@ -1553,10 +1551,10 @@ function pauseSelectedItem(e)
 
       editData["paused"] = !wasPaused;
 
-      sendWebsocketMessage("edit_overlay_item", { "item_id": selectedItem, "item_type": itemType, "item_data": editData });
+      websocketEventQueue.push({ "command": "edit_overlay_item", "data": { "item_id": selectedItem, "item_type": itemType, "item_data": editData } });
       break;
     case "audio":
-      sendWebsocketMessage("trigger_item_event", { "item_id": selectedItem, "item_type": itemType, "event": "pause_item" });
+      websocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": selectedItem, "item_type": itemType, "event": "pause_item" } });
       break;
     default:
       break;
@@ -1626,24 +1624,22 @@ function toggleEmbeddedTwitchStream(e)
   }
 }
 
-function toggleEmbeddedStreamInteraction(e)
-{
-  var checked = $("#embed-interact").is(":checked");
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           CANVAS
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  if (checked)
-  {
-    $("#twitch-embed").removeClass("noselect");
-    $("#twitch-embed iframe").removeClass("noselect");
-  }
-  else
-  {
-    $("#twitch-embed").addClass("noselect");
-    $("#twitch-embed iframe").addClass("noselect");
-  }
-}
-
-function handleCanvasUpdate(itemId, history)
+function handleCanvasUpdate(itemId, history, selfEdit)
 {
+  if (selfEdit)
+  {
+    return;
+  }
+  if (itemDict[itemId]["drawing"])
+  {
+    return;
+  }
+
   const context = $("#item-{0}-canvas".format(itemId)).get(0).getContext('2d');
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
@@ -1662,9 +1658,9 @@ function handleCanvasUpdate(itemId, history)
     context.lineWidth = viewToEditLength(action["lineWidth"]);
     context.lineCap = 'round';
 
-    context.beginPath();
-
     var p0 = viewToEditPoint(new Point(action["points"][0][0], action["points"][0][1]))
+
+    context.beginPath();
     context.moveTo(p0.x, p0.y);
     context.lineTo(p0.x, p0.y);
 
@@ -1676,6 +1672,68 @@ function handleCanvasUpdate(itemId, history)
     
     context.stroke();
   });
+}
+
+function drawLine(itemId, p0, p1)
+{
+  const context = $("#item-{0}-canvas".format(itemId)).get(0).getContext('2d');
+
+  var drawingMode = getCanvasDrawingMode();
+  var color = getCanvasColor();
+  var lineWidth = getCanvasLineWidth();
+
+  if (drawingMode == "draw")
+  {
+    context.globalCompositeOperation = "source-over";
+    context.strokeStyle = color;
+  }
+  else if (drawingMode == "erase")
+  {
+    context.globalCompositeOperation = "destination-out";
+    context.strokeStyle = "rgba(0, 0, 0, 1)";
+  }
+
+  context.lineWidth = viewToEditLength(lineWidth);
+  context.lineCap = 'round';
+
+  var ep0 = viewToEditPoint(p0);
+  var ep1 = viewToEditPoint(p1);
+
+  context.beginPath();
+  context.moveTo(ep0.x, ep0.y);
+  context.lineTo(ep1.x, ep1.y);
+  context.stroke();
+}
+
+function getCanvasDrawingMode()
+{
+  return $("#edit-canvas-form #id_drawing_mode").val();
+}
+
+function getCanvasColor()
+{
+  return $("#edit-canvas-form #id_color").val();
+}
+
+function getCanvasLineWidth()
+{
+  return $("#edit-canvas-form #id_line_width").val();
+}
+
+function toggleEmbeddedStreamInteraction(e)
+{
+  var checked = $("#embed-interact").is(":checked");
+
+  if (checked)
+  {
+    $("#twitch-embed").removeClass("noselect");
+    $("#twitch-embed iframe").removeClass("noselect");
+  }
+  else
+  {
+    $("#twitch-embed").addClass("noselect");
+    $("#twitch-embed iframe").addClass("noselect");
+  }
 }
 
 function selectedVisibilityChange(e)

@@ -16,9 +16,29 @@ function handleWebsocketMessage(e)
 {
   var eventData = JSON.parse(e.data);
 
-  var command = eventData.command;
-  var data = eventData.data;
-  var editor = data.editor;
+  if ("commands" in eventData)
+  {
+    eventData.commands.forEach( (commandData) => {
+      var command = commandData["command"];
+      var data = commandData["data"];
+
+      handleWebsocketCommand(command, data);
+    });
+  }
+  else if ("command" in eventData)
+  {
+    var command = eventData.command;
+    var data = eventData.data;
+
+    handleWebsocketCommand(command, data);
+  }
+}
+
+function handleWebsocketCommand(command, data)
+{
+  var editor = "";
+  if ("editor" in data)
+    editor = data.editor;
 
   switch (command)
   {
@@ -37,7 +57,7 @@ function handleWebsocketMessage(e)
       handleItemEvent(data.item_id, data.event);
       break;
     case "canvas_updated":
-      handleCanvasUpdate(data.item_id, data.history);
+      handleCanvasUpdate(data.item_id, data.history, (editor == twitchUser));
       break;
     case "user_present":
       userPresent(data);
@@ -74,6 +94,14 @@ function sendWebsocketMessage(cmd, objData)
       "command": cmd,
       "data": objData,
     }));
+  }
+}
+
+function sendWebsocketMessages(msgList)
+{
+  if (WEBSOCKET != undefined && WEBSOCKET.readyState == WebSocket.OPEN)
+  {
+    WEBSOCKET.send(JSON.stringify({ "commands": msgList }));
   }
 }
 
@@ -343,7 +371,7 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
   $(textElemId).css(itemCSS);
 }
 
-function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
+function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
 {
   var itemElemId = '#item-{0}'.format(itemId);
   var itemContainerId = '#item-{0}-container'.format(itemId);
@@ -387,7 +415,7 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed
         $(itemContainerId).append("<canvas id='item-{0}-canvas' width='{1}px' height='{2}px' />".format(itemId, width, height));
 
         $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(editView, itemData));
-        handleCanvasUpdate(itemId, itemData["history"]);
+        handleCanvasUpdate(itemId, itemData["history"], (selfEdit && editView));
         break;
       case "audio":
         audioUrl = itemData['audio_url'];
@@ -510,11 +538,14 @@ function addOrUpdateItem(editView, overlayElement, itemId, itemType, isDisplayed
         $("#item-{0}-img".format(itemId)).css(getDefaultCSS(editView, itemData));
         break;
       case "canvas":
-        $("#item-{0}-canvas".format(itemId)).attr('width', "{0}px".format(width));
-        $("#item-{0}-canvas".format(itemId)).attr('height', "{0}px".format(height));
-
         $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(editView, itemData));
-        handleCanvasUpdate(itemId, itemData["history"]);
+        
+        if (!itemDict[itemId]["drawing"])
+        {
+          $("#item-{0}-canvas".format(itemId)).attr('width', "{0}px".format(width));
+          $("#item-{0}-canvas".format(itemId)).attr('height', "{0}px".format(height));
+        }
+        handleCanvasUpdate(itemId, itemData["history"], (selfEdit && editView));
         break;
       case "audio":
         audioUrl = itemData['audio_url'];
