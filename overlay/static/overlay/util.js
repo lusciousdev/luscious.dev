@@ -527,23 +527,28 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
           imageUrl = itemData['image_url'];
         }
 
-        if ($("#item-{0}-img".format(itemId)).attr('src') != imageUrl)
+        var imgTag = $("#item-{0}-img".format(itemId));
+
+        if (imgTag.attr('src') != imageUrl)
         {
-          $("#item-{0}-img".format(itemId)).attr('src', imageUrl);
+          imgTag.attr('src', imageUrl);
         }
 
-        $("#item-{0}-img".format(itemId)).attr('width', "{0}px".format(width));
-        $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
+        imgTag.attr('width', "{0}px".format(width));
+        imgTag.attr('height', "{0}px".format(height));
 
-        $("#item-{0}-img".format(itemId)).css(getDefaultCSS(editView, itemData));
+        imgTag.css(getDefaultCSS(editView, itemData));
         break;
       case "canvas":
-        $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(editView, itemData));
+        var canvasId = "#item-{0}-canvas".format(itemId);
+        var canvasTag = $(canvasId);
+
+        canvasTag.css(getDefaultCSS(editView, itemData));
         
         if (!itemDict[itemId]["drawing"])
         {
-          $("#item-{0}-canvas".format(itemId)).attr('width', "{0}px".format(width));
-          $("#item-{0}-canvas".format(itemId)).attr('height', "{0}px".format(height));
+          if (Math.abs(width - canvasTag.width()) > 1) canvasTag.attr('width', "{0}px".format(width));
+          if (Math.abs(height - canvasTag.height()) > 1) canvasTag.attr('height', "{0}px".format(height));
         }
         handleCanvasUpdate(itemId, itemData["history"], (selfEdit && editView));
         break;

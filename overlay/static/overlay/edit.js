@@ -227,9 +227,11 @@ function updateItemCallback(itemId, itemType)
 {
   var item = itemDict[itemId]
 
-  $("#item-{0}-list-entry".format(itemId)).attr("itemName", item["item_data"]["name"]);
+  var itemListEntry = $("#item-{0}-list-entry".format(itemId));
 
-  $("#item-{0}-list-entry".format(itemId)).html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(getItemIconName(itemType), item["item_data"]["name"]));
+  itemListEntry.attr("itemName", item["item_data"]["name"]);
+
+  itemListEntry.html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(getItemIconName(itemType), item["item_data"]["name"]));
 
   if (selectedItem != undefined) 
   {
@@ -431,8 +433,9 @@ function initialResize(event)
     
     if (itemDict[prop]['item_type'] == "image")
     {
-      $("#item-{0}-img".format(itemId)).attr('width', "{0}px".format(width));
-      $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
+      var imgTag = $("#item-{0}-img".format(itemId));
+      imgTag.attr('width', "{0}px".format(width));
+      imgTag.attr('height', "{0}px".format(height));
     }
 
     setItemPosition(itemId, top, left, width, height, itemData['rotation']);
@@ -536,8 +539,9 @@ function setAllItemPositions()
     
     if (itemDict[prop]['item_type'] == "image")
     {
-      $("#item-{0}-img".format(itemId)).attr('width', "{0}px".format(width));
-      $("#item-{0}-img".format(itemId)).attr('height', "{0}px".format(height));
+      var imgTag = $("#item-{0}-img".format(itemId));
+      imgTag.attr('width', "{0}px".format(width));
+      imgTag.attr('height', "{0}px".format(height));
     }
 
     if (itemDict[prop]['item_type'] == "canvas")
@@ -893,8 +897,9 @@ function handleItemLeftClick(e, elem)
       {
         if (window.shiftheld)
         {
-          var imgNaturalWidth = $("#item-{0}-img".format(selectedItem)).get(0).naturalWidth;
-          var imgNaturalHeight = $("#item-{0}-img".format(selectedItem)).get(0).naturalHeight;
+          var imgTag = $("#item-{0}-img".format(selectedItem));
+          var imgNaturalWidth = imgTag.get(0).naturalWidth;
+          var imgNaturalHeight = imgTag.get(0).naturalHeight;
 
           var widthScale = newWidth / imgNaturalWidth;
           var heightScale = newHeight / imgNaturalHeight;
@@ -934,8 +939,9 @@ function handleItemLeftClick(e, elem)
 
       if (itemDict[elemId].item_type == "image")
       {
-        $("#item-{0}-img".format(selectedItem)).attr("width", "{0}px".format(newWidth));
-        $("#item-{0}-img".format(selectedItem)).attr("height", "{0}px".format(newHeight));
+        var imgTag = $("#item-{0}-img".format(selectedItem));
+        imgTag.attr("width", "{0}px".format(newWidth));
+        imgTag.attr("height", "{0}px".format(newHeight));
       }
   
       var itemTop    = editToViewLength(newPos.y + borderWidth);
