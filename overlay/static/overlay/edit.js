@@ -220,6 +220,15 @@ function addItemCallback(itemId, itemType)
 
   $("#item-{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
 
+  if (item["item_data"]["position_lock"])
+  {
+    getItemDiv(itemId).addClass("position-locked");
+  }
+  else
+  {
+    getItemDiv(itemId).removeClass("position-locked");
+  }
+
   setCanvasCursor();
 }
 
@@ -236,6 +245,15 @@ function updateItemCallback(itemId, itemType)
   if (selectedItem != undefined) 
   {
     setEditFormInputs(selectedItem);
+  }
+
+  if (item["item_data"]["position_lock"])
+  {
+    getItemDiv(itemId).addClass("position-locked");
+  }
+  else
+  {
+    getItemDiv(itemId).removeClass("position-locked");
   }
 
   setCanvasCursor();
@@ -713,13 +731,11 @@ function handleItemLeftClick(e, elem)
   dragData.selectedElem = {
     point0: getItemPos(selectedItem)
   }
-  itemDict[selectedItem]['moving'] = true;
 
   dragData.otherElems = {}
   otherSelectedItems.forEach((itemId) => {
     dragData.otherElems[itemId] = {};
     dragData.otherElems[itemId]["point0"] = getItemPos(itemId);
-    itemDict[itemId]['moving'] = true;
   });
 
   if (isCanvas && canvasDraw)
@@ -736,9 +752,15 @@ function handleItemLeftClick(e, elem)
 
     $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDrawing);
   }
-  else
+  else if (!itemDict[selectedItem]["item_data"]["position_lock"])
   {
     $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
+
+    itemDict[selectedItem]['moving'] = true;
+
+    otherSelectedItems.forEach((itemId) => {
+      itemDict[itemId]['moving'] = true;
+    });
   }
 
   var enableMoveHandler = false;
@@ -1109,7 +1131,7 @@ function selectItem(itemId)
 
   if (selectedItem !== undefined && !window.ctrlheld)
   {
-    clearSelectedItem();
+    clearSelectedItem(true);
   }
   
   var addingItem = false;
@@ -1127,10 +1149,14 @@ function selectItem(itemId)
   getItemDiv(itemId).removeClass("unselected").addClass("selected");
   $("#item-{0}-list-entry".format(itemId)).addClass("selected-list-entry");
 
+  $("#item-select-list").animate({
+    scrollTop: $("#item-select-list").scrollTop() - $("#item-select-list").offset().top + $("#item-{0}-list-entry".format(itemId)).offset().top - 25
+  }, 333);
+
   if (!addingItem)
   {
     openEditForm(selectedItem);
-    setEditFormInputs(selectedItem);
+    setEditFormInputs(selectedItem, true);
   }
 }
 
@@ -1148,7 +1174,7 @@ function unselectItem(itemId)
       selectedItem = otherSelectedItems.splice(0, 1)[0];
       
       openEditForm(selectedItem);
-      setEditFormInputs(selectedItem);
+      setEditFormInputs(selectedItem, true);
     }
     else
     {
@@ -1165,7 +1191,7 @@ function unselectItem(itemId)
   $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
 }
 
-function clearSelectedItem()
+function clearSelectedItem(swapping = false)
 {
   if (selectedItem !== undefined)
   {
@@ -1193,8 +1219,6 @@ function clearSelectedItem()
   var canvasColor = $("#edit-canvas-form #id_color").val();
   var canvasLineWidth = $("#edit-canvas-form #id_line_width").val();
 
-  console.log(canvasDrawMode, canvasColor, canvasLineWidth);
-
   for (var i = 0; i < $(".edit-form").length; i++)
   {
     $(".edit-form").get(i).reset();
@@ -1203,6 +1227,15 @@ function clearSelectedItem()
   $("#edit-canvas-form #id_drawing_mode").val(canvasDrawMode);
   $("#edit-canvas-form #id_color").val(canvasColor);
   $("#edit-canvas-form #id_line_width").val(canvasLineWidth);
+
+  if (!swapping)
+  {
+    $("#item-select-container").css({ "max-height": "" });
+
+    $("#item-select-list").animate({
+      scrollTop: $("#item-select-list").scrollTop() - $("#item-select-list").offset().top
+    }, 333);
+  }
 }
 
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1214,6 +1247,8 @@ function openEditForm(itemId)
 {
   var itemType = itemDict[selectedItem]['item_type'];
   var editContainerId = "#edit-{0}-container".format(itemType);
+
+  $("#item-select-container").css({ "max-height": "15em" });
 
   if ($(editContainerId).hasClass('hidden'))
   {
@@ -1231,7 +1266,7 @@ function openEditForm(itemId)
   }
 }
 
-function setEditFormInputs(itemId)
+function setEditFormInputs(itemId, ignoreFocus = false)
 {
   var itemType = itemDict[selectedItem]['item_type'];
   var formId = "#edit-{0}-form".format(itemType);
@@ -1246,7 +1281,7 @@ function setEditFormInputs(itemId)
     if (key == "id") continue;
     var input = $(formId).find("#id_{0}".format(key))
 
-    if (input.is(":focus"))
+    if (input.is(":focus") && !ignoreFocus)
     {
       continue;
     }
@@ -1372,6 +1407,7 @@ function onInputChange(inputEvent)
         case "font":
         case "opacity":
         case "view_lock":
+        case "position_lock":
           otherSelectedItems.forEach((otherSelectedItemId, i) => {
             if (!(otherSelectedItemId in sendEditChanges))
               sendEditChanges[otherSelectedItemId] = {};
