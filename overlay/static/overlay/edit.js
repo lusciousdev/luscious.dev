@@ -1648,12 +1648,8 @@ function toggleEmbeddedTwitchStream(e)
 
   if (checked)
   {
-    streamEmbed = new Twitch.Player("twitch-embed", {
-      width: "100%",
-      height: "100%",
-      muted: true,
-      channel: overlayOwner,
-    });
+    streamEmbed = createTwitchStreamPlayer("twitch-embed", overlayOwner);
+    
     if (!interactable)
     {
       $("#twitch-embed iframe").addClass("noselect");

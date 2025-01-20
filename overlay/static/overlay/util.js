@@ -455,13 +455,16 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
 
         $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
-        itemDict[itemId]['player'] = new Twitch.Player("item-{0}-player".format(itemId), {
-          width: '100%',
-          height: '100%',
-          channel: itemDict[itemId].item_data.channel,
-        });
-
-        updateTwitchStreamPlayer(itemId);
+        if (itemDict[itemId].item_data.channel != "")
+        {
+          itemDict[itemId]['player'] = createTwitchStreamPlayer("item-{0}-player".format(itemId), itemDict[itemId].item_data.channel);
+  
+          updateTwitchStreamPlayer(itemId);
+        }
+        else
+        {
+          itemDict[itemId]['player'] = null;
+        }
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
@@ -470,14 +473,18 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
 
         $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
-        itemDict[itemId]['player'] = new Twitch.Player("item-{0}-player".format(itemId), {
-          width: '100%',
-          height: '100%',
-          video: itemDict[itemId].item_data.video_id,
-          time: startTimeToTwitchVideoTime(itemDict[itemId].item_data.start_time),
-        });
-
-        updateTwitchVideoPlayer(itemId);
+        if (itemDict[itemId].item_data.video_id != "")
+        {
+          itemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
+                                                               itemDict[itemId].item_data.video_id, 
+                                                               startTimeToTwitchVideoTime(itemDict[itemId].item_data.start_timeh));
+  
+          updateTwitchVideoPlayer(itemId);
+        }
+        else
+        {
+          itemDict[itemId]['player'] = null;
+        }
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
@@ -594,14 +601,32 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId);
 
-        updateTwitchStreamPlayer(itemId);
+        if (itemDict[itemId].item_data.channel != "")
+        {
+          if (itemDict[itemId]['player'] == null)
+          {
+            itemDict[itemId]['player'] = createTwitchStreamPlayer("item-{0}-player".format(itemId), itemDict[itemId].item_data.channel);
+          }
+
+          updateTwitchStreamPlayer(itemId);
+        }
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
-        updateTwitchVideoPlayer(itemId);
+        if (itemDict[itemId].item_data.video_id != "")
+        {
+          if (itemDict[itemId]['player'] == null)
+          {
+            itemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
+                                                                 itemDict[itemId].item_data.video_id, 
+                                                                 startTimeToTwitchVideoTime(itemDict[itemId].item_data.start_timeh));
+          }
+  
+          updateTwitchVideoPlayer(itemId);
+        }
 
         $(playerId).css(getDefaultCSS(editView, itemData));
         break;
@@ -643,8 +668,23 @@ function onPlayerReady(event) {
   itemDict[itemElem.attr("itemid")]["player_ready"] = true;
 }
 
+function createTwitchStreamPlayer(divId, channel)
+{
+  return new Twitch.Player(divId, {
+    width: '100%',
+    height: '100%',
+    muted: true,
+    channel:  channel,
+  });
+}
+
 function updateTwitchStreamPlayer(itemId)
 {
+  if (itemDict[itemId].player == null)
+  {
+    return
+  }
+
   if (itemDict[itemId].player.getChannel() != itemDict[itemId].item_data.channel)
   {
     itemDict[itemId].player.setChannel(itemDict[itemId].item_data.channel);
@@ -658,8 +698,24 @@ function resetTwitchStreamEmbed(itemId)
   itemDict[itemId].player.setChannel(itemDict[itemId].item_data.channel);
 }
 
+function createTwitchVideoPlayer(divId, video, time)
+{
+  return new Twitch.Player(divId, {
+    width: '100%',
+    height: '100%',
+    muted: true,
+    video: video,
+    time: time,
+  });
+}
+
 function updateTwitchVideoPlayer(itemId)
 {
+  if (itemDict[itemId].player == null)
+  {
+    return
+  }
+
   if (itemDict[itemId].player.getVideo() != itemDict[itemId].item_data.video_id)
   {
     itemDict[itemId].player.setVideo(itemDict[itemId].item_data.video_id, itemDict[itemId].item_data.start_time);
