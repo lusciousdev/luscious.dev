@@ -126,7 +126,6 @@ body {
   
   box-sizing: border-box;
   
-  min-height: 15em;
   transition: all 333ms ease-in-out;
 }
 
