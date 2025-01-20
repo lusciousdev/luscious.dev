@@ -1230,7 +1230,7 @@ function clearSelectedItem(swapping = false)
 
   if (!swapping)
   {
-    $("#item-select-container").css({ "max-height": "" });
+    $("#item-select-list").css({ "max-height": "" });
 
     $("#item-select-list").animate({
       scrollTop: $("#item-select-list").scrollTop() - $("#item-select-list").offset().top
@@ -1248,7 +1248,7 @@ function openEditForm(itemId)
   var itemType = itemDict[selectedItem]['item_type'];
   var editContainerId = "#edit-{0}-container".format(itemType);
 
-  $("#item-select-container").css({ "max-height": "15em" });
+  $("#item-select-list").css({ "max-height": "15em" });
 
   if ($(editContainerId).hasClass('hidden'))
   {
