@@ -41,7 +41,7 @@ class CollaborativeOverlay(NonConsecutiveModel):
   owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete = models.CASCADE)
   
   name = models.CharField(max_length = 256, default = "My Overlay")
-  description = models.CharField(max_length = 256)
+  description = models.CharField(max_length = 256, blank = True)
   
   width = models.IntegerField(default = 1920)
   height = models.IntegerField(default = 1080)

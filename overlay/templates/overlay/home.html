@@ -1,28 +1,24 @@
-{% extends "overlay/base.html" %}
+{% extends "base.html" %}
 
 {% load static %}
 {% load socialaccount %}
 
 {% block stylesheets %}
-<link rel="stylesheet" href="{% static 'overlay/index.css' %}">
+<link rel="stylesheet" href="{% static 'overlay/home.css' %}">
 {% endblock %}
 
 {% block title %}Collaborative Overlay{% endblock %}
 
 {% block content %}
-<h1>Collaborative Overlay</h1>
+<div id="header">
+  <h1 id="page-title">Collaborative Overlay</h1>
 
-{% if user.is_authenticated %}
-<p>Welcome <i>{{ user.username }}</i></p>
-<p><a href="{% url "overlay:profile" %}">Your profile</a></p>
-<form action="{% url 'account_logout' %}?next={% url 'overlay:index' %}" method="post">{% csrf_token %}<input class="small-button" id="logout-button" type="submit" value="Log out"></form>
-{% else %}
-{% url 'overlay:profile' as next_url %}
-<form action="{% provider_login_url 'twitch' next=next_url %}" method="post">
-  {% csrf_token %}
-  <button class="small-button" id="login-button" id="twitch-login" type="submit">Log in with Twitch</button>
-</form>
-{% endif %}
+  {% url 'overlay:home' as next_url %}
+  <form action="{% provider_login_url 'twitch' next=next_url %}" method="post">
+    {% csrf_token %}
+    <button class="small-button" id="login-button" id="twitch-login" type="submit">Log in with Twitch</button>
+  </form>
+</div>
 
 <div class="info" id="site-summary">
   <h2 class="info-header">About</h2>
@@ -40,7 +36,7 @@
     <ol class="info-ordered-list">
       <li>Sign in with your Twitch account</li>
       <li>Create an overlay. It's recommended to use the resolution of your OBS capture but not necessary as it can be resized in OBS.</li>
-      <li>From the profile view, find the overlay you want to add to your OBS capture. Copy the [view] link.</li>
+      <li>From the home page (while logged in), find the overlay you want to add to your OBS capture. Copy the [view] link.</li>
       <li>Add the copied link to your OBS scene as a Browser Source. Set the width and height to the resolution of your overlay.</li>
       <li>You can test your overlay by clicking the [edit] link and adding text or an image. It should show up in your OBS scene.</li>
       <li>You can add editors by Twitch username from your profile view. Editors can edit any overlay you have created.</li>

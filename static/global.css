@@ -1,18 +1,26 @@
 :root {
-  --darker: #141312;
-  --background: #252422;
-  --foreground: #403d39;
-  --lighter: #ccc5b9;
-  --text: #fffcf2;
-  --link: #eb5e28;
+  color-scheme: light dark;
+
+  --dark-darker: #060606;
+  --dark-background: #121212;
+  --dark-foreground: #212121;
+  --dark-lighter: #323232;
+  --dark-text: #fffcf2;
+  --light-darker: #B2B2B2;
+  --light-background: #CDCDCD;
+  --light-foreground: #DEDEDE;
+  --light-lighter: #EDEDED;
+  --light-text: #00030D;
+  --logo: #eb5e28;
 }
 
 html {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Roboto Mono", monospace;
+  font-size: 0.9em;
   margin: 0;
   padding: 0;
-  background: var(--background);
-  color: var(--text);
+  background: light-dark(var(--light-background), var(--dark-background));
+  color: light-dark(var(--light-text), var(--dark-text));
 }
 
 html, body, .container {
@@ -20,11 +28,11 @@ html, body, .container {
 }
 
 a {
-  color: var(--link);
+  color: var(--logo);
 }
 
 a:visited {
-  color: var(--link);
+  color: var(--logo);
 }
 
 body {
@@ -43,15 +51,23 @@ body {
   align-items: flex-start;
 
   box-sizing: border-box;
-  box-shadow: 0px 0px 25px 0px #000;
+  box-shadow: 0px 0px 25px 0px light-dark(var(--light-darker), var(--dark-darker));
 
-  background: var(--foreground);
+  background: light-dark(var(--light-foreground), var(--dark-foreground));
 }
 
 .field-error {
   font-size: 0.8em;
   font-weight: bold;
   color: #f74040;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24;
 }
 
 @media (max-width: 500px) {

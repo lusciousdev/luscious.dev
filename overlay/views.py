@@ -22,26 +22,41 @@ User : models.Model = settings.AUTH_USER_MODEL
 MARKDOWN = markdown.Markdown(extensions = [ "fenced_code" ])
 
 # Create your views here.
-class IndexView(generic.TemplateView):
-  template_name = "overlay/index.html"
-
-class ProfileView(generic.ListView):
-  context_object_name = "editable_overlay_list"
-  template_name="overlay/profile.html"
-  
+class HomeView(generic.TemplateView):
   @method_decorator(login_required)
-  def dispatch(self, *args, **kwargs):
+  def post(self, request, **kwargs):
     try:
       twitchaccount = self.request.user.socialaccount_set.all().get(provider="twitch")
-      return super(ProfileView, self).dispatch(*args, **kwargs)
     except:
-      return HttpResponseRedirect(reverse("overlay:index"))
+      return HttpResponseRedirect(reverse("overlay:home"))
+    
+    action = request.POST.get("action", "")
+    
+    if action == "delete_overlay":
+      form = DeleteCollaborativeOverlayForm(request.user, request.POST)
+      
+      try:
+        overlay = request.user.collaborativeoverlay_set.get(pk = request.POST["overlay_id"])
+        overlay.delete()
+      except:
+        form.add_error("overlay_id", "That overlay does not exist.")
+        return render(request, reverse("overlay:home"), { "delete_overlay_form": form })
+        
+      return HttpResponseRedirect(reverse("overlay:home"))
+    
+  def get_template_names(self):
+    if (self.request.user.is_authenticated):
+      return [ "overlay/userhome.html" ]
+    else:
+      return [ "overlay/home.html" ]
   
-  def get_queryset(self):
+  def get_context_data(self, **kwargs) -> dict[str, Any]:
+    context = super(HomeView, self).get_context_data(**kwargs)
+    
     try:
       user_id = self.request.user.socialaccount_set.all().get(provider="twitch").uid
-    except SocialAccount.DoesNotExist:
-      return HttpResponseRedirect(reverse("overlay:index"))
+    except:
+      return {}
         
     # get entries for the current user in the editor table
     editor_records = Editor.objects.filter(twitch_id = user_id)
@@ -53,7 +68,69 @@ class ProfileView(generic.ListView):
     for user in editable_users:
       editable_overlays.extend(user.collaborativeoverlay_set.all())
     
-    return editable_overlays
+    context["editable_overlay_list"] = editable_overlays
+    
+    return context
+    
+class ProfileView(generic.TemplateView):
+  template_name="overlay/profile.html"
+  
+  @method_decorator(login_required)
+  def get(self, request, **kwargs):
+    try:
+      twitchaccount = self.request.user.socialaccount_set.all().get(provider="twitch")
+      return super(ProfileView, self).get(request, **kwargs)
+    except:
+      return HttpResponseRedirect(reverse("overlay:home"))
+    
+  @method_decorator(login_required)
+  def post(self, request, **kwargs):
+    try:
+      twitchaccount = self.request.user.socialaccount_set.all().get(provider="twitch")
+    except:
+      return HttpResponseRedirect(reverse("overlay:home"))
+    
+    action = request.POST.get("action", "")
+    
+    if action == "remove_editor":
+      remove_editor_form = EditorForm(request.user, "remove", request.POST)
+    
+      if remove_editor_form.is_valid():
+        editor = remove_editor_form.save(commit = False)
+        
+        try:
+          instance = request.user.editor_set.get(twitch_id = editor.twitch_id)
+        except Editor.DoesNotExist:
+          logger.error("Somehow editor does not exist even though we validated.")
+          return render(request, "overlay/profile.html", { "add_editor_form": EditorForm(request.user, "add"), "remove_editor_form": remove_editor_form})
+        
+        instance.delete()
+        return render(request, "overlay/profile.html", { "add_editor_form": EditorForm(request.user, "add"), "remove_editor_form": remove_editor_form})
+      else:
+        return render(request, "overlay/profile.html", { "add_editor_form": EditorForm(request.user, "add"), "remove_editor_form": remove_editor_form})
+    elif action == "add_editor":
+      add_editor_form = EditorForm(request.user, "add", request.POST)
+      
+      if add_editor_form.is_valid():
+        editor = add_editor_form.save(commit = False)
+        
+        editor.owner = request.user
+        editor.save()
+        
+      return render(request, "overlay/profile.html", { "add_editor_form": add_editor_form, "remove_editor_form": EditorForm(request.user, "remove")})
+  
+  def get_context_data(self, **kwargs):
+    context = super(ProfileView, self).get_context_data(**kwargs)
+    
+    try:
+      user_id = self.request.user.socialaccount_set.all().get(provider="twitch").uid
+    except SocialAccount.DoesNotExist:
+      return HttpResponseRedirect(reverse("overlay:home"))
+    
+    context['add_editor_form'] = EditorForm(self.request.user, "add")
+    context['remove_editor_form'] = EditorForm(self.request.user, "remove")
+  
+    return context
   
 class ChangeLogView(generic.ListView):
   context_object_name = "change_log"
@@ -78,14 +155,14 @@ class EditOverlayView(generic.DetailView):
     try:
       twitchaccount = self.request.user.socialaccount_set.all().get(provider="twitch")
     except:
-      return HttpResponseRedirect(reverse("overlay:index"))
+      return HttpResponseRedirect(reverse("overlay:home"))
     
     overlay = self.get_object()
     if not (overlay.owner.id == self.request.user.id):
       try:
         editormatch = overlay.owner.editor_set.all().get(twitch_id = twitchaccount.uid)
       except:
-        return HttpResponseRedirect(reverse("overlay:profile"))
+        return HttpResponseRedirect(reverse("overlay:home"))
     
     return super(EditOverlayView, self).dispatch(*args, **kwargs)
   
@@ -97,10 +174,6 @@ class EditOverlayView(generic.DetailView):
     context['twitchuserid'] = self.request.user.socialaccount_set.all().get(provider="twitch").uid
     
     return context
-  
-class ViewOverlayView(generic.DetailView):
-  model = CollaborativeOverlay
-  template_name = "overlay/view.html"
 
 def view_overlay(request, pk):
   try:
@@ -109,44 +182,6 @@ def view_overlay(request, pk):
     return Http404("Overlay does not exist.")
   
   return render(request, "overlay/view.html", { "collaborativeoverlay": overlay })
-  
-@login_required
-def add_editor(request):
-  form = EditorForm(request.user, "add")
-  if request.method == "POST":
-    form = EditorForm(request.user, "add", request.POST)
-    
-    if form.is_valid():
-      editor = form.save(commit = False)
-      
-      editor.owner = request.user
-      editor.save()
-      
-      return HttpResponseRedirect(reverse("overlay:profile"))
-  return render(request, "overlay/editor.html", { "form": form, "action": "add" })
-  
-@login_required
-def remove_editor(request):
-  form = EditorForm(request.user, "remove")
-  if request.method == "POST":
-    form = EditorForm(request.user, "remove", request.POST)
-    
-    if form.is_valid():
-      editor = form.save(commit = False)
-      
-      try:
-        instance = request.user.editor_set.get(twitch_id = editor.twitch_id)
-      except Editor.DoesNotExist:
-        logger.error("Somehow editor does not exist even though we validated.")
-        return render(request, "overlay/editor.html", { "form": form, "action": "remove" })
-      
-      instance.delete()
-      
-      return HttpResponseRedirect(reverse("overlay:profile"))
-    else:
-      return render(request, "overlay/editor.html", { "form": form, "action": "remove"})
-    
-  return render(request, "overlay/editor.html", { "form": form, "action": "remove" })
   
 @login_required
 def create_overlay(request):
@@ -160,22 +195,6 @@ def create_overlay(request):
       overlay.owner = request.user
       overlay.save()
       
-      return HttpResponseRedirect(reverse("overlay:profile"))
+      return HttpResponseRedirect(reverse("overlay:home"))
     
-  return render(request, "overlay/overlay.html", { "form": form, "action": "create" })
-
-@login_required
-def delete_overlay(request):
-  form = DeleteCollaborativeOverlayForm(request.user)
-  if request.method == "POST":
-    form = DeleteCollaborativeOverlayForm(request.user, request.POST)
-    
-    try:
-      overlay = request.user.collaborativeoverlay_set.get(pk = request.POST["overlay_id"])
-      overlay.delete()
-    except:
-      form.add_error("overlay_id", "That overlay does not exist.")
-      return render(request, "overlay/overlay.html", { "form": form, "action": "delete" })
-      
-    return HttpResponseRedirect(reverse("overlay:profile"))
-  return render(request, "overlay/overlay.html", { "form": form, "action": "delete" })
+  return render(request, "overlay/createoverlay.html", { "form": form, "action": "create" })

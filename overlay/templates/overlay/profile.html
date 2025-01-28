@@ -1,86 +1,99 @@
-{% extends "overlay/base.html" %}
+{% extends "base.html" %}
 
 {% load static %}
 {% load socialaccount %}
 
 {% block stylesheets %}
-<link rel="stylesheet" href="{% static 'overlay/profile.css' %}">
+<link rel="stylesheet" href="{% static 'overlay/home.css' %}">
 {% endblock %}
 
 {% block title %}Profile - Collaborative Overlay{% endblock %}
 
 {% block content %}
-<div class="section" id="summary">
-  <div class="page-title">Profile</div>
-  <span>Logged in as <i>{{ user.username }}</i> <form class="inline-form" action="{% url 'account_logout' %}?next={% url 'overlay:index' %}" method="post">{% csrf_token %}<input class="text-button" type="submit" value="[logout]"></form></span>
+<div id="header">
+  <h1 id="page-title">Profile</h1>
+
+  <div id="account-button-container">
+    <a class="button-link" href="{% url "overlay:home" %}"><span class="material-symbols-outlined inline-symbol">home</span> Home</a>
+    <form action="{% url 'account_logout' %}?next={% url 'overlay:home' %}" method="post" style="display: inline-block">
+      {% csrf_token %}
+      <button class="small-button" id="logout-button" type="submit">
+        <span class="material-symbols-outlined inline-symbol">logout</span> Log out
+      </button>
+    </form>
+  </div>
 </div>
+
+<p>Logged in as: <i>{{ user.username }}</i></p>
 
 <div class="section" id="editors">
   <div>
     <span class="section-title">Editors</span>
-    <a href="{% url 'overlay:add_editor' %}" class="quick-link">[add]</a>
   </div>
-  <form action="{% url 'overlay:remove_editor' %}" method="post" class="section-form">
+  <form action="{% url 'overlay:profile' %}" method="post" class="section-form">
     {% csrf_token %}
+    <input type="hidden" name="action" value="remove_editor" />
+    {{ remove_editor_form.non_field_errors }}
     <ul class="section-list">
     {% if user.editor_set.all %}
       {% for editor in user.editor_set.all %}
       <li>
         {{ editor.username }} 
-        <button class="text-button" type="submit" name="username" value="{{ editor.username }}">[remove]</button>
+        <button class="text-button small-text no-decor" type="submit" name="username" value="{{ editor.username }}">[remove]</button>
       </li>
       {% endfor %}
     {% else %}
       <li>No editors</li>
     {% endif %}
-    </ul>
-  </form>
-</div>
-
-<div class="section" id="overlays">
-  <div>
-    <span class="section-title">Collaborative Overlays</span>
-    <a href="{% url 'overlay:create_overlay' %}" class="quick-link" >[create]</a>
-  </div>
-  <form action="{% url 'overlay:delete_overlay' %}" method="post" class="section-form" onsubmit="return confirm('Delete forever?');">
-    {% csrf_token %}
-    <ul class="section-list">
-    {% if user.collaborativeoverlay_set.all %}
-      {% for overlay in user.collaborativeoverlay_set.all %}
-      <li>
-        {{ overlay.name }} 
-        <button class="text-button" type="submit" name="overlay_id" value="{{overlay.id}}">[delete]</button> 
-        <a href="{% url 'overlay:edit_overlay' overlay.id %}" class="quick-link">[edit]</a> 
-        <a href="{% url 'overlay:view_overlay' overlay.id %}" class="quick-link">[view]</a> 
-        <br>
-        {{ overlay.description }}
-      </li>
-      {% endfor %}
-    {% else %}
-      <li>No overlays</li>
-    {% endif %}
-    </ul>
-  </form>
-</div>
-
-<div class="section" id="editable">
-  <div>
-    <span class="section-title">Overlays you can edit</span>
-  </div>
-  <ul class="section-list">
-  {% if editable_overlay_list %}
-    {% for overlay in editable_overlay_list %}
-    <li>
-      {{ overlay.name }} - {{ overlay.owner }} 
-      <a href="{% url 'overlay:edit_overlay' overlay.id %}" class="quick-link">[edit]</a> 
-      <a href="{% url 'overlay:view_overlay' overlay.id %}" class="quick-link">[view]</a> 
+    {% for field in remove_editor_form %}
+      {% for error in field.errors %}
       <br>
-      {{ overlay.description }}
-    </li>
+      <span class="field-error">{{ error|escape }}</span>
+      {% endfor %}
     {% endfor %}
-  {% else %}
-    <li>No overlays</li>
-  {% endif %}
-  </ul>
+    </ul>
+  </form>
+  <form action="{% url 'overlay:profile' %}" method="post" class="section-form" id="add-editor-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_editor" />
+    {{ add_editor_form.non_field_errors }}
+    {% if add_editor_form.fields|length == 0 %}
+    {% elif add_editor_form.fields|length == 1%}
+    <div class="row-form">
+      {% for field in add_editor_form %}
+      <label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label>
+      {{ field }}
+      {% endfor %}
+      <input type="submit" value="Add">
+    </div>
+    <div class="form-errors">
+      {% for field in add_editor_form %}
+      {% for error in field.errors %}
+      <span class="field-error">{{ error|escape }}</span>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <table>
+    {% for field in add_editor_form %}
+      <tr>
+        <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+        <td>
+          {{ field }}
+          {% for error in field.errors %}
+          <br>
+          <span class="field-error">{{ error|escape }}</span>
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+      <tr>
+        <td></td>
+        <td><input type="submit" value="Add"></td>
+      </tr>
+    </table>
+    {% endif %}
+</form>
 </div>
+{{ context }}
 {% endblock %}

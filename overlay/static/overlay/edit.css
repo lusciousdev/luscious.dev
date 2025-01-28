@@ -16,7 +16,7 @@ body {
   
   box-sizing: border-box;
   
-  background: var(--foreground);
+  background: light-dark(var(--light-foreground), var(--dark-foreground));
 }
 
 #content-container {
@@ -53,7 +53,7 @@ body {
   width: 100%;
   box-sizing: border-box;
   
-  background: var(--foreground);
+  background: light-dark(var(--light-foreground), var(--dark-foreground));
 }
 
 .site-title {
@@ -76,7 +76,7 @@ body {
 
   border-radius: 0.3em;
 
-  background-color: var(--link);
+  background-color: var(--logo);
   cursor: pointer;
   padding: 10px;
 }
@@ -87,7 +87,7 @@ body {
 
   border-radius: 0.2em;
 
-  background-color: var(--link);
+  background-color: var(--logo);
   cursor: pointer;
   padding: 5px 10px;
   margin: 0px 3px;
@@ -131,7 +131,7 @@ body {
   box-sizing: border-box;
   width: 100%;
   
-  border-color: var(--darker);
+  border-color: light-dark(var(--light-darker), var(--dark-darker));
   border-style: solid;
   border-width: 0.4em;
   border-radius: 0.25em;
@@ -147,8 +147,8 @@ body {
   font-size: 1.2em;
   line-height: 1;
 
-  color: var(--background);
-  background-color: var(--lighter);
+  color: light-dark(var(--light-text), var(--dark-text));
+  background-color: light-dark(var(--light-lighter), var(--dark-lighter));
 
   box-sizing: border-box;
 
@@ -167,7 +167,7 @@ body {
 }
 
 .selected-list-entry {
-  background-color: var(--link);
+  background-color: var(--logo);
 }
 
 #item-edit-forms {
@@ -201,8 +201,8 @@ body {
 .item-form input[type=submit] {
   font-size: 1.0em;
   font-family: inherit;
-  color: var(--text);
-  background-color: var(--link);
+  color: light-dark(var(--light-text), var(--dark-text));
+  background-color: var(--logo);
   
   border: none;
   outline: none;
@@ -258,7 +258,7 @@ body {
 }
 
 .selected {
-  border-color: var(--link);
+  border-color: var(--logo);
   border-width: var(--border-width);
   border-style: solid;
 
@@ -349,7 +349,7 @@ body {
 }
 
 .modal-content {
-  background-color: var(--background);
+  background-color: light-dark(var(--light-background), var(--dark-background));
   padding: 25px;
   min-height: 0;
   max-height: 90%;
@@ -357,7 +357,7 @@ body {
 }
 
 .close {
-  color: var(--link);
+  color: var(--logo);
   float: right;
   font-size: 3em;
   font-weight: bold;
@@ -381,8 +381,8 @@ body {
 
 .tab {
   overflow: hidden;
-  border: 1px solid var(--foreground);
-  background-color: var(--lighter);
+  border: 1px solid light-dark(var(--light-foreground), var(--dark-foreground));
+  background-color: light-dark(var(--light-lighter), var(--dark-lighter));
 }
 
 .tab button {
@@ -396,11 +396,11 @@ body {
 }
 
 .tab button:hover {
-  background-color: var(--foreground);
+  background-color: light-dark(var(--light-foreground), var(--dark-foreground));
 }
 
 .tab button.active {
-  background-color: var(--link);
+  background-color: var(--logo);
 }
 
 .tabcontent {
@@ -410,7 +410,7 @@ body {
   top: 0;
   left: 0;
   padding: 6px 12px;
-  border: 1px solid var(--foreground);
+  border: 1px solid light-dark(var(--light-foreground), var(--dark-foreground));
   border-top: none;
   box-sizing: border-box;
 }
@@ -479,7 +479,7 @@ body {
     min-height: 50vh !important;
     width: 100%;
   }
-  
+
   #item-select-container {
     max-height: 60vh;
   }

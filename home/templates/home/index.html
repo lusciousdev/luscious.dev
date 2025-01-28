@@ -16,12 +16,14 @@
         <h1>luscious.dev</h1>
       </div>
       <div class="content-section" id="links">
-        <h2 class="section-title">Projects</h2>
+        <h2 class="section-title"><a href="{% url 'overlay:home' %}">Collaborative Overlays</a></h2>
+        <dl class="link-list">
+          <dt>Collaborative Overlay tool for live streamers.<br>Let your mods/other trusted individuals add text, images, and more to your stream live.</dd>
+        </dl>
+        <h2 class="section-title">Other Projects</h2>
         <dl class="link-list">
           <dt><a href="{% url 'lastfm:index' %}">last.fm Collage Generator</a></dt>
           <dd>Create a grid of your most listened to albums as logged on last.fm</dd>
-          <dt><a href="{% url 'overlay:index' %}">Collaborative Overlay for Twitch</a></dt>
-          <dd>Collaborative Overlay tool for live streamers.<br>Let your mods/other trusted individuals add text and images to your stream live.</dd>
           <dt><a href="https://github.com/lusciousdev/obswsgui/">OBS WebSocket GUI</a></dt>
           <dd>First iteration of the Collaborative Overlay.<br>Let people add sources to your OBS through a Python GUI.</dd>
           <dt><a href="https://github.com/lusciousdev/ctwitch/">Twitch API Wrapper for C++</a></dt>

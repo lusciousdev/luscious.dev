@@ -32,6 +32,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     ".localhost",
     "192.168.1.70",
+    "192.168.1.71",
     "test.luscious.dev",
     "139.144.46.80",
 ]
@@ -78,7 +79,9 @@ ROOT_URLCONF = 'lusciousdev.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+          BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

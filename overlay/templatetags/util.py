@@ -15,3 +15,7 @@ def add_attr(field, css):
       attrs[key] = val
   
   return field.as_widget(attrs=attrs)
+
+@register.filter
+def keyvalue(dictionary, key):
+  return dictionary[key]

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load socialaccount %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'overlay/home.css' %}">
+{% endblock %}
+
+{% block title %}Collaborative Overlay{% endblock %}
+
+{% block content %}
+<div id="header">
+  <h1 id="page-title">Collaborative Overlay</h1>
+
+  <div id="account-button-container">
+    <a class="button-link" href="{% url "overlay:profile" %}"><span class="material-symbols-outlined inline-symbol">person</span> Profile</a>
+    <form action="{% url 'account_logout' %}?next={% url 'overlay:home' %}" method="post" style="display: inline-block">
+      {% csrf_token %}
+      <button class="small-button" id="logout-button" type="submit">
+        <span class="material-symbols-outlined inline-symbol">logout</span> Log out
+      </button>
+    </form>
+  </div>
+</div>
+
+<p>Logged in as: <i>{{ user.username }}</i></p>
+
+<div class="section" id="overlays">
+  <div>
+    <span class="section-title">Your Overlays</span>
+    <a href="{% url 'overlay:create_overlay' %}" class="no-decor">[create]</a>
+  </div>
+  <form action="{% url 'overlay:home' %}" method="post" class="section-form" onsubmit="return confirm('Delete forever?');">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete_overlay" />
+    <ul class="section-list">
+    {% if user.collaborativeoverlay_set.all %}
+      {% for overlay in user.collaborativeoverlay_set.all %}
+      <li>
+        {{ overlay.name }} 
+        <button type="submit" name="overlay_id" value="{{overlay.id}}" class="text-button small-text no-decor" >[delete]</button> 
+        <a href="{% url 'overlay:edit_overlay' overlay.id %}" class="small-text no-decor">[edit]</a> 
+        <a href="{% url 'overlay:view_overlay' overlay.id %}" class="small-text no-decor">[view]</a> 
+        <br>
+        {{ overlay.description }}
+      </li>
+      {% endfor %}
+    {% else %}
+      <li>No overlays</li>
+    {% endif %}
+    </ul>
+  </form>
+</div>
+
+<div class="section" id="editable">
+  <div>
+    <span class="section-title">Overlays you can edit</span>
+  </div>
+  <ul class="section-list">
+  {% if editable_overlay_list %}
+    {% for overlay in editable_overlay_list %}
+    <li>
+      {{ overlay.name }} - {{ overlay.owner }} 
+      <a href="{% url 'overlay:edit_overlay' overlay.id %}" class="small-text no-decor">[edit]</a> 
+      <a href="{% url 'overlay:view_overlay' overlay.id %}" class="small-text no-decor">[view]</a> 
+      <br>
+      {{ overlay.description }}
+    </li>
+    {% endfor %}
+  {% else %}
+    <li>No overlays</li>
+  {% endif %}
+  </ul>
+</div>
+
+<div class="info" id="site-summary">
+  <h2 class="info-header">About</h2>
+  <p class="info-paragraph">
+    Collaborative Overlays are a tool for live streamers to give some control over their stream to trusted individuals.
+  </p>
+  <p class="info-paragraph">
+    Create an overlay, add the view URL to OBS as a Browser Source, and add editors by their Twitch usernames. Anyone on your editors list can add images and text to the overlay and it will appear on your stream live.
+  </p>
+</div>
+
+<div class="info" id="site-summary">
+  <h2 class="info-header">Setup Guide</h2>
+  <p class="info-paragraph">
+    <ol class="info-ordered-list">
+      <li>Create an overlay. It's recommended to use the resolution of your OBS capture but not necessary as it can be resized in OBS.</li>
+      <li>Find the overlay you want to add to your OBS capture. Copy the [view] link.</li>
+      <li>Add the copied link to your OBS scene as a Browser Source. Set the width and height to the resolution of your overlay.</li>
+      <li>You can test your overlay by clicking the [edit] link and adding text or an image. It should show up in your OBS scene.</li>
+      <li>You can add editors by Twitch username from your profile view. Editors can edit any overlay you have created.</li>
+    </ol>
+  </p>
+  <span>Check out the <a href="{% url 'overlay:change_log' %}">change log</a>.</span>
+</div>
+
+{% endblock %}

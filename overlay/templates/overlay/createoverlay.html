@@ -1,16 +1,22 @@
-{% extends "overlay/base.html" %}
+{% extends "base.html" %}
 
 {% load static %}
 {% load socialaccount %}
 
 {% block stylesheets %}
-<link rel="stylesheet" href="{% static 'overlay/style.css' %}">
+<link rel="stylesheet" href="{% static 'overlay/home.css' %}">
 {% endblock %}
 
-{% block title %}{{ action|capfirst }} Overlay - Collaborative Overlay{% endblock %}
+{% block title %}Create Overlay - Collaborative Overlay{% endblock %}
 
 {% block content%}
-<h1 class="site-title">{{ action|capfirst }} a collaborative overlay</h1>
+<div id="header">
+  <h1 id="page-title">Create a collaborative overlay</h1>
+  <div id="account-button-container">
+    <a class="button-link" href="{% url "overlay:home" %}"><span class="material-symbols-outlined inline-symbol">home</span> Home</a>
+  </div>
+</div>
+
 <div class="editor-form">
   <div>
     <form method="post" class="editor-form">
@@ -30,7 +36,7 @@
         {% endfor %}
           <tr>
             <td></td>
-            <td><input type="submit" value="{{ action|capfirst }}"></td>
+            <td><input type="submit" value="Create"></td>
           </tr>
         </table>
     </form>

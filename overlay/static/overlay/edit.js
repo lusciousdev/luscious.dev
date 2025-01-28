@@ -215,7 +215,7 @@ function addItemCallback(itemId, itemType)
   var item = itemDict[itemId]
 
   $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}" itemType="{3}">
-    <span class="material-symbols-outlined">{1}</span> - {2}
+    <span class="material-symbols-outlined">{1}</span>&nbsp;{2}
   </div>`.format(itemId, getItemIconName(itemType), item["item_data"]["name"], item["item_type"]));
 
   $("#item-{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
@@ -240,7 +240,7 @@ function updateItemCallback(itemId, itemType)
 
   itemListEntry.attr("itemName", item["item_data"]["name"]);
 
-  itemListEntry.html(`<span class="material-symbols-outlined">{0}</span><span> - {1}</span>`.format(getItemIconName(itemType), item["item_data"]["name"]));
+  itemListEntry.html(`<span class="material-symbols-outlined">{0}</span><span>&nbsp;{1}</span>`.format(getItemIconName(itemType), item["item_data"]["name"]));
 
   if (selectedItem != undefined) 
   {
