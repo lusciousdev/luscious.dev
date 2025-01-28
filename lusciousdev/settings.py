@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'home',
     'lastfm',
     'overlay',
+    'youtubeapi',
     
     'django_cleanup.apps.CleanupConfig',
 ]
