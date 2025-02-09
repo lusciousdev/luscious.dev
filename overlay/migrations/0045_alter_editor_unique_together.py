@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterUniqueTogether(
             name='editor',
-            unique_together={('id_type', 'identifier')},
+            unique_together={('owner', 'id_type', 'identifier')},
         ),
     ]
