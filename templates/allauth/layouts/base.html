@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block pre_content %}
+<div class="button-container">
+  {% if request.GET.previousRoute %}
+  <a class="button-link" href="{{ request.GET.previousRoute }}"><span class="material-symbols-outlined">arrow_back_ios_new</span></a>
+  {% else %}
+  <a class="button-link" href="{% url "home:index" %}"><span class="material-symbols-outlined inline-symbol">home</span> Home</a>
+  {% endif %}
+  <a class="button-link" href="{% url "account_email" %}{% if request.GET.previousRoute %}?previousRoute={{ request.GET.previousRoute }}{% endif %}"><span class="material-symbols-outlined inline-symbol">mail</span>Change email</a>
+  <a class="button-link" href="{% url "account_change_password" %}{% if request.GET.previousRoute %}?previousRoute={{ request.GET.previousRoute }}{% endif %}"><span class="material-symbols-outlined inline-symbol">key</span>Change Password</a>
+  <a class="button-link" href="{% url "socialaccount_connections" %}{% if request.GET.previousRoute %}?previousRoute={{ request.GET.previousRoute }}{% endif %}"><span class="material-symbols-outlined inline-symbol">key</span>3rd party connections</a>
+</div>
+{% endblock %}

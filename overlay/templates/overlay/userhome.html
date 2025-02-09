@@ -74,28 +74,6 @@
   </ul>
 </div>
 
-<div class="info" id="site-summary">
-  <h2 class="info-header">About</h2>
-  <p class="info-paragraph">
-    Collaborative Overlays are a tool for live streamers to give some control over their stream to trusted individuals.
-  </p>
-  <p class="info-paragraph">
-    Create an overlay, add the view URL to OBS as a Browser Source, and add editors by their Twitch usernames. Anyone on your editors list can add images and text to the overlay and it will appear on your stream live.
-  </p>
-</div>
-
-<div class="info" id="site-summary">
-  <h2 class="info-header">Setup Guide</h2>
-  <p class="info-paragraph">
-    <ol class="info-ordered-list">
-      <li>Create an overlay. It's recommended to use the resolution of your OBS capture but not necessary as it can be resized in OBS.</li>
-      <li>Find the overlay you want to add to your OBS capture. Copy the [view] link.</li>
-      <li>Add the copied link to your OBS scene as a Browser Source. Set the width and height to the resolution of your overlay.</li>
-      <li>You can test your overlay by clicking the [edit] link and adding text or an image. It should show up in your OBS scene.</li>
-      <li>You can add editors by Twitch username from your profile view. Editors can edit any overlay you have created.</li>
-    </ol>
-  </p>
-  <span>Check out the <a href="{% url 'overlay:change_log' %}">change log</a>.</span>
-</div>
+{% include "overlay/about.html" %}
 
 {% endblock %}

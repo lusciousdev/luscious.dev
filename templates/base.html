@@ -20,10 +20,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}luscious.dev{% endblock %}</title>
+    {% block header %}
+    {% endblock %}
   </head>
   <body>
     <div class="container">
-      {% block content %}{% endblock %}
+      {% block pre_content %}
+      {% endblock %}
+      {% block content %}
+      {% endblock %}
+      {% block extra_body %}
+      {% endblock extra_body %}
     </div>
   </body>
 </html>

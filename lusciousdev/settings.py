@@ -103,6 +103,17 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = "smtp.fastmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = FASTMAIL_USER
+EMAIL_HOST_PASSWORD = FASTMAIL_PASSWORD
+DEFAULT_FROM_EMAIL = "noreply@luscious.dev"
+SERVER_EMAIL = "django@luscious.dev"
+ADMINS = [ ("luscious", "admin@luscious.dev"), ]
+
 SITE_ID = 1
 
 ACCOUNT_EMAIL_VERIFICATION = "none"
@@ -233,6 +244,11 @@ LOGGING = {
       "filename": "./logs/lastfm.log",
       "encoding": "utf-8",
     },
+    "mail_admins": {
+      "level": "ERROR",
+      "class": "django.utils.log.AdminEmailHandler",
+      "include_html": True,
+    }
   },
   "loggers": {
     "django": {

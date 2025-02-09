@@ -15,6 +15,7 @@
 
   <div id="account-button-container">
     <a class="button-link" href="{% url "overlay:home" %}"><span class="material-symbols-outlined inline-symbol">home</span> Home</a>
+    <a class="button-link" href="{% url "account_email" %}?previousRoute={% url "overlay:profile" %}"><span class="material-symbols-outlined inline-symbol">manage_accounts</span> Manage account</a>
     <form action="{% url 'account_logout' %}?next={% url 'overlay:home' %}" method="post" style="display: inline-block">
       {% csrf_token %}
       <button class="small-button" id="logout-button" type="submit">
@@ -24,22 +25,37 @@
   </div>
 </div>
 
-<p>Logged in as: <i>{{ user.username }}</i></p>
+<p>
+  Logged in as: <i>{{ user.username }}</i> <br>
+  Your Overlay User ID is: {{ overlay_identifier }} <br>
+</p>
 
 <div class="section" id="editors">
   <div>
     <span class="section-title">Editors</span>
   </div>
-  <form action="{% url 'overlay:profile' %}" method="post" class="section-form">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="remove_editor" />
     {{ remove_editor_form.non_field_errors }}
     <ul class="section-list">
     {% if user.editor_set.all %}
       {% for editor in user.editor_set.all %}
       <li>
-        {{ editor.username }} 
-        <button class="text-button small-text no-decor" type="submit" name="username" value="{{ editor.username }}">[remove]</button>
+        <form action="{% url 'overlay:profile' %}" method="post" class="section-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove_editor" />
+        <input type="hidden" name="id_type" value="{{ editor.id_type }}" />
+        {% if editor.id_type == 0%}
+        <input type="hidden" name="id_input" value="{{ editor.username }}" />
+        Twitch User: 
+        {% elif editor.id_type == 1 %}
+        <input type="hidden" name="id_input" value="{{ editor.identifier }}" />
+        Email:
+        {% elif editor.id_type == 2 %}
+        <input type="hidden" name="id_input" value="{{ editor.identifier }}" />
+        Overlay User: 
+        {% endif %}
+        {{ editor.username }}
+        <button class="text-button small-text no-decor" type="submit">[remove]</button>
+        </form>
       </li>
       {% endfor %}
     {% else %}
@@ -52,11 +68,9 @@
       {% endfor %}
     {% endfor %}
     </ul>
-  </form>
   <form action="{% url 'overlay:profile' %}" method="post" class="section-form" id="add-editor-form">
     {% csrf_token %}
     <input type="hidden" name="action" value="add_editor" />
-    {{ add_editor_form.non_field_errors }}
     {% if add_editor_form.fields|length == 0 %}
     {% elif add_editor_form.fields|length == 1%}
     <div class="row-form">
@@ -92,8 +106,12 @@
         <td><input type="submit" value="Add"></td>
       </tr>
     </table>
+    {% if add_editor_form.non_field_errors %}
+      <div class="form-errors">
+        {{ add_editor_form.non_field_errors|join:"<br>" }}
+      </div>
+    {% endif %}
     {% endif %}
 </form>
 </div>
-{{ context }}
 {% endblock %}

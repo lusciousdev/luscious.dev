@@ -1,25 +1,18 @@
 import datetime
-import uuid
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.utils.http import int_to_base36
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
+from django.contrib.auth.models import User
 
 import logging
+
+from lusciousdev.util.modelutil import *
 
 logger = logging.getLogger("overlay")
 
 # Create your models here.
-
-ID_LENGTH = 16
-def id_gen() -> str:
-  return int_to_base36(uuid.uuid4().int)[:ID_LENGTH]
-
-def current_time_seconds() -> int:
-  return int(datetime.datetime.now().timestamp())
-
 class ChangeLogEntry(models.Model):
   date = models.DateTimeField(default = datetime.datetime.now)
   title = models.CharField(max_length = 255)
@@ -50,11 +43,37 @@ class CollaborativeOverlay(NonConsecutiveModel):
   def __str__(self):
     return f"{self.name} ({self.description})"
   
+class OverlayUserId(models.Model):
+  user = models.OneToOneField(User, on_delete = models.CASCADE, related_name = "ovl", unique = True)
+  
+  identifier = models.CharField(max_length = ID_LENGTH, default = id_gen, editable = False)
+  
+  class Meta:
+    indexes = [
+      models.Index(fields = ["user_id", ]),
+    ]
+
+class OverlayUser(User):
+  @property
+  def overlay(self):
+    try:
+      return self.ovl
+    except OverlayUserId.DoesNotExist:
+      return OverlayUserId.objects.create(user = self)
+  
+  class Meta:
+    proxy = True
+  
 class Editor(NonConsecutiveModel):
   owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete = models.CASCADE)
   
+  id_type = models.IntegerField(verbose_name = "Identification method", default = 0)
+  
   username = models.CharField(max_length = 256)
-  twitch_id = models.CharField(max_length = 256)
+  identifier = models.CharField(max_length = 256)
+  
+  class Meta:
+    unique_together = ('owner', 'id_type', 'identifier')
   
 class AbstractItem(NonConsecutiveModel):
   overlay = models.ForeignKey(CollaborativeOverlay, on_delete = models.CASCADE)

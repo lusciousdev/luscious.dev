@@ -62,7 +62,7 @@ def add_overlay_item(request : HttpRequest):
   
   if not (overlay.owner.id == request.user.id):
     try:
-      editormatch = overlay.owner.editor_set.all().get(twitch_id = twitchaccount.uid)
+      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
     except Editor.DoesNotExist:
       return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
@@ -126,7 +126,7 @@ def delete_overlay_item(request):
   
   if not (overlay.owner.id == request.user.id):
     try:
-      editormatch = overlay.owner.editor_set.all().get(twitch_id = twitchaccount.uid)
+      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
     except Editor.DoesNotExist:
       return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
@@ -177,7 +177,7 @@ def edit_overlay_item(request : HttpRequest):
   
   if not (overlay.owner.id == request.user.id):
     try:
-      editormatch = overlay.owner.editor_set.all().get(twitch_id = twitchaccount.uid)
+      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
     except Editor.DoesNotExist:
       return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
@@ -238,7 +238,7 @@ def edit_overlay_items(request):
   
   if not (overlay.owner.id == request.user.id):
     try:
-      editormatch = overlay.owner.editor_set.all().get(twitch_id = twitchaccount.uid)
+      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
     except Editor.DoesNotExist:
       return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     

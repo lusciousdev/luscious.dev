@@ -1,4 +1,7 @@
+import allauth.socialaccount
 from django import forms
+from django.core.validators import validate_email
+from allauth.socialaccount.models import SocialAccount
 from .models import *
 from .twitch import *
 
@@ -12,10 +15,19 @@ class CollaborativeOverlayForm(forms.ModelForm):
     model = CollaborativeOverlay
     fields = [ "name", "description", "width", "height" ]
     
+EDITOR_ID_TYPES = (
+  (0, "Twitch Username"),
+  (1, "Verified email address"),
+  (2, "Overlay User ID"),
+)
+    
 class EditorForm(forms.ModelForm):
+  id_type = forms.ChoiceField(choices = EDITOR_ID_TYPES, label = "Type", initial = 0)
+  id_input = forms.CharField(max_length = 256, strip = True, label = "Identifier")
+  
   class Meta:
     model = Editor
-    fields = [ "username" ]
+    fields = [ "id_type", "id_input" ]
     
   def __init__(self, user, action, *args, **kwargs):
     self.user = user
@@ -26,20 +38,69 @@ class EditorForm(forms.ModelForm):
     self.cleaned_data = super(EditorForm, self).clean()
     
     data = self.cleaned_data
-    user_id = get_user_id(data['username'])
     
-    if user_id == None:
-      raise forms.ValidationError({"username": "Twitch user does not exist."})
-    else:
-      if self.action == "remove":
-        try:
-          self.user.editor_set.get(twitch_id = user_id)
-        except Editor.DoesNotExist:
-          raise forms.ValidationError({ "username": "That user is not an editor." })
+    id_type = int(data['id_type'])
+    
+    if id_type == 0: # Twitch username
+      username = data['id_input']
+      identifier = get_user_id(username)
       
-      self.cleaned_data['twitch_id'] = user_id
-      self.instance.twitch_id = user_id
-      return self.cleaned_data
+      if identifier == None:
+        raise forms.ValidationError({"id_input": "Twitch user does not exist."})
+      
+      if self.action == "add":
+        try:
+          twitchaccount = self.user.socialaccount_set.all().get(provider="twitch")
+          if identifier == twitchaccount.uid:
+            raise forms.ValidationError({ "id_input": "You can't add yourself as an editor."})
+        except SocialAccount.DoesNotExist:
+          pass
+      
+    elif id_type ==  1: # Email address
+      username = data['id_input']
+      identifier = username
+      
+      try:
+        validate_email(identifier)
+      except ValidationError:
+        raise forms.ValidationError({ "id_input": "Invalid email address." })
+      
+      if self.action == "add":
+        if identifier == self.user.email:
+          raise forms.ValidationError({ "id_input": "You can't add yourself as an editor."})
+      
+    elif id_type == 2: # Overlay User ID
+      identifier = data['id_input']
+      
+      try:
+        ovl_user_id = OverlayUserId.objects.get(identifier = identifier)
+      except OverlayUserId.DoesNotExist:
+        raise forms.ValidationError({ "id_input": "That overlay user does not exist." })
+      
+      username = ovl_user_id.user.username
+      
+      if self.action == "add":
+        if ovl_user_id.user == self.user:
+          raise forms.ValidationError({ "id_input": "You can't add yourself as an editor."})
+      
+    if self.action == "remove":
+      try:
+        self.user.editor_set.get(id_type = id_type, identifier = identifier)
+      except Editor.DoesNotExist:
+        raise forms.ValidationError({ "id_input": "That user is not an editor." })
+    else:
+      try:
+        self.user.editor_set.get(id_type = id_type, identifier = identifier)
+        raise forms.ValidationError({ "id_input": "That user is already an editor!" })
+      except Editor.DoesNotExist:
+        pass
+      
+    self.cleaned_data['username'] = username
+    self.cleaned_data['identifier'] = identifier
+    self.instance.username = username
+    self.instance.identifier = identifier
+
+    return self.cleaned_data
     
 class DeleteCollaborativeOverlayForm(forms.Form):
   overlay_id = forms.IntegerField()

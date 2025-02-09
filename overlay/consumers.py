@@ -30,7 +30,7 @@ class OverlayConsumer(WebsocketConsumer):
     
     if not (self.overlay.owner.id == self.user.id):
       try:
-        editormatch = self.overlay.owner.editor_set.get(twitch_id = self.twitchaccount.uid)
+        editormatch = self.overlay.owner.editor_set.get(identifier = self.twitchaccount.uid)
       except Editor.DoesNotExist:
         logging.debug("User is not an editor.")
         return False

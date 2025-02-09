@@ -62,12 +62,38 @@ body {
   color: #f74040;
 }
 
+.button-link {
+  padding: 5px 10px;
+  margin: 0 3px;
+
+  background-color: var(--logo);
+  color: light-dark(var(--light-text), var(--dark-text)) !important;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+
+  text-decoration: none;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: row;
+}
+
 .material-symbols-outlined {
   font-variation-settings:
   'FILL' 0,
   'wght' 400,
   'GRAD' 0,
   'opsz' 24;
+}
+
+.inline-symbol {
+  font-size: 1.25em;
+  line-height: 1;
+  margin-right: 0.25em;
 }
 
 @media (max-width: 500px) {

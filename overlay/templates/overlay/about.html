@@ -1,0 +1,43 @@
+
+
+<div class="info" id="site-summary">
+  <h2 class="info-header">About</h2>
+  <p class="info-paragraph">
+    Collaborative Overlays are a tool for live streamers to give some control over their stream to trusted individuals.
+  </p>
+  <p class="info-paragraph">
+    This tool is absolutely free to use! If you have any questions or feedback feel free to email me at <b>admin[at]luscious.dev</b> or message me on Discord <b>@luscious.dev</b>
+  </p>
+  <p class="info-paragraph">
+    Create an overlay, add the view URL to OBS as a Browser Source, and add editors. Anyone on your editors list can add images and text to the overlay and it will appear on your stream live.
+  </p>
+  <p class="info-paragraph">
+    Head to the {% if request.user.is_authenticated %}<a href="{% url "overlay:profile" %}">Profile page</a>{% else %}Profile page{% endif %} to manage editors and/or your account.
+  </p>
+  <p class="info-paragraph">
+    If you'd like to give me money for some reason, 
+  </p>
+  <span style="display: flex; flex-direction: row; align-items: center;">{% include "kofi.html" %} {% include "liberapay.html" %}</span>
+</div>
+
+<div class="info" id="site-summary">
+  <h2 class="info-header">Setup Guide</h2>
+  <p class="info-paragraph">
+    <ol class="info-ordered-list">
+      <li>Sign up/Sign in</li>
+      <li>Create an overlay. It's recommended to use the resolution of your OBS capture but not necessary as it can be resized in OBS.</li>
+      <li>From the home page (while logged in), find the overlay you want to add to your OBS capture. Copy the [view] link.</li>
+      <li>Add the copied link to your OBS scene as a Browser Source. Set the width and height to the resolution of your overlay.</li>
+      <li>You can test your overlay by clicking the [edit] link and adding text or an image. It should show up in your OBS scene.</li>
+      <li>
+        Editors can edit any overlay you have created. There are three ways to add an editor on the {% if request.user.is_authenticated %}<a href="{% url "overlay:profile" %}">Profile page</a>{% else %}Profile page{% endif %}:
+        <ul>
+          <li><b>Twitch username.</b></li>
+          <li><b>Verified email address.</b> The editor must verify their email address to be able to edit your overlays.</li>
+          <li><b>Overlay User ID.</b> This is a unique ID that can be found on the Profile page. Just ask them to share it with you.</li>
+        </ul>
+      </li>
+    </ol>
+  </p>
+  <span>Check out the <a href="{% url 'overlay:change_log' %}">change log</a>.</span>
+</div>
