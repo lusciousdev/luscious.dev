@@ -154,11 +154,6 @@ class EditOverlayView(generic.DetailView):
   
   @method_decorator(login_required)
   def dispatch(self, *args, **kwargs):
-    try:
-      twitchaccount = self.request.user.socialaccount_set.all().get(provider="twitch")
-    except:
-      return HttpResponseRedirect(reverse("overlay:home"))
-    
     overlay = self.get_object()
     if (overlay.owner.id == self.request.user.id):    
       return super(EditOverlayView, self).dispatch(*args, **kwargs)
@@ -178,6 +173,7 @@ class EditOverlayView(generic.DetailView):
       
       try:
         editormatch = overlay.owner.editor_set.get(id_type = 2, identifier = OverlayUser.objects.get(id = self.request.user.id).overlay.identifier)
+        return super(EditOverlayView, self).dispatch(*args, **kwargs)
       except:
         pass
     
