@@ -22,20 +22,33 @@ class OverlayConsumer(WebsocketConsumer):
     if self.user.is_anonymous:
       return False
     
-    try:
-      self.twitchaccount = self.user.socialaccount_set.get(provider = "twitch")
-    except SocialAccount.DoesNotExist:
-      logging.debug("User does not have a linked Twitch account.")
-      return False
+    self.overlay_user_id = OverlayUser.objects.get(id = self.user.id).overlay.identifier
     
-    if not (self.overlay.owner.id == self.user.id):
-      try:
-        editormatch = self.overlay.owner.editor_set.get(identifier = self.twitchaccount.uid)
-      except Editor.DoesNotExist:
-        logging.debug("User is not an editor.")
-        return False
+    if self.overlay.owner.id == self.user.id:
+      return True
+    
+    try:
+      twitchaccount = self.user.socialaccount_set.get(provider="twitch")
+      editormatch = self.overlay.owner.editor_set.get(id_type = 0, identifier = twitchaccount.uid)
+      return True
+    except Exception as e:
+      pass
       
-    return True
+    for email_address in self.user.emailaddress_set.filter(verified = True).all():
+      try:
+        editormatch = self.overlay.owner.editor_set.get(id_type = 1, identifier = email_address.email)
+        return True
+      except:
+        pass
+      
+    try:
+      editormatch = self.overlay.owner.editor_set.get(id_type = 2, identifier = self.overlay_user_id)
+      return True
+    except:
+      pass
+    
+    logging.debug("User is not an editor.")
+    return False
   
   def send_command(self, command : str, data):
     self.send(text_data = json.dumps({ "command": command, "data": data }))
@@ -187,7 +200,7 @@ class OverlayConsumer(WebsocketConsumer):
     self.queue_broadcast({ 
       "command": "overlay_item_added", 
       "data": {
-        "editor": self.twitchaccount.uid,
+        "editor": self.overlay_user_id,
         "item_type": item_instance.item_type,
         "is_displayed": item_instance.is_displayed(),
         "item_data": item_instance.to_data_dict(),
@@ -230,7 +243,7 @@ class OverlayConsumer(WebsocketConsumer):
     self.queue_broadcast({ 
       "command": "overlay_item_deleted", 
       "data": {
-        "editor": self.twitchaccount.uid,
+        "editor": self.overlay_user_id,
         "item_id": item_id, 
       } 
     })
@@ -278,7 +291,7 @@ class OverlayConsumer(WebsocketConsumer):
     self.queue_broadcast({ 
       "command": "overlay_item_edited", 
       "data": {
-        "editor": self.twitchaccount.uid,
+        "editor": self.overlay_user_id,
         "item_type": item_instance.get_simple_type(),
         "is_displayed": item_instance.is_displayed(),
         "item_data": item_instance.to_data_dict(), 
@@ -290,8 +303,8 @@ class OverlayConsumer(WebsocketConsumer):
       self.queue_broadcast({ 
         "command": "user_present", 
         "data": {
-          "username": self.twitchaccount.extra_data["login"],
-          "uid": self.twitchaccount.uid,
+          "username": self.user.username,
+          "uid": self.overlay_user_id,
         } 
       })
       
@@ -304,8 +317,8 @@ class OverlayConsumer(WebsocketConsumer):
       self.queue_broadcast({ 
         "command": "mouse_position", 
         "data": {
-          "username": self.twitchaccount.extra_data["login"],
-          "uid": self.twitchaccount.uid,
+          "username": self.user.username,
+          "uid": self.overlay_user_id,
           "x": data["x"],
           "y": data["y"],
         } 
@@ -348,8 +361,8 @@ class OverlayConsumer(WebsocketConsumer):
     self.queue_broadcast({ 
       "command": "item_event_triggered", 
       "data": {
-        "username": self.twitchaccount.extra_data["login"],
-        "uid": self.twitchaccount.uid,
+        "username": self.user.username,
+        "uid": self.overlay_user_id,
         "item_id": item_instance.id,
         "item_type": item_instance.get_simple_type(),
         "event": data["event"],
@@ -409,8 +422,8 @@ class OverlayConsumer(WebsocketConsumer):
     self.queue_broadcast({ 
       "command": "canvas_updated", 
       "data": {
-        "username": self.twitchaccount.extra_data["login"],
-        "uid": self.twitchaccount.uid,
+        "username": self.user.username,
+        "uid": self.overlay_user_id,
         "item_id": item_instance.id,
         "item_type": item_instance.get_simple_type(),
         "history": item_instance.to_data_dict()['history'], 

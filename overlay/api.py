@@ -15,6 +15,37 @@ import typing
 logger = logging.getLogger("overlay")
 
 User : models.Model = settings.AUTH_USER_MODEL
+  
+def owner_or_editor(overlay : CollaborativeOverlay, user : User):
+  if user.is_anonymous:
+    return False
+  
+  overlay_user_id = OverlayUser.objects.get(id = user.id).overlay.identifier
+  
+  if overlay.owner.id == user.id:
+    return True
+  
+  try:
+    twitchaccount = user.socialaccount_set.get(provider="twitch")
+    editormatch = overlay.owner.editor_set.get(id_type = 0, identifier = twitchaccount.uid)
+    return True
+  except Exception as e:
+    pass
+    
+  for email_address in user.emailaddress_set.filter(verified = True).all():
+    try:
+      editormatch = overlay.owner.editor_set.get(id_type = 1, identifier = email_address.email)
+      return True
+    except:
+      pass
+    
+  try:
+    editormatch = overlay.owner.editor_set.get(id_type = 2, identifier = self.overlay_user_id)
+    return True
+  except:
+    pass
+  
+  return False
 
 def get_overlay_items(request):
   if request.method != "GET":
@@ -55,16 +86,8 @@ def add_overlay_item(request : HttpRequest):
   except CollaborativeOverlay.DoesNotExist:
     return JsonResponse({ "error": "Overlay does not exist." }, status = 404)
   
-  try:
-    twitchaccount = request.user.socialaccount_set.all().get(provider = "twitch")
-  except SocialAccount.DoesNotExist:
-    return JsonResponse({ "error": "User is does not have a Twitch account linked." }, status = 401)
-  
-  if not (overlay.owner.id == request.user.id):
-    try:
-      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
-    except Editor.DoesNotExist:
-      return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
+  if not owner_or_editor(overlay, request.user):
+    return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
   item_type = request.POST.get("item_type", "")
   
@@ -119,16 +142,8 @@ def delete_overlay_item(request):
   except CollaborativeOverlay.DoesNotExist:
     return JsonResponse({ "error": "Overlay does not exist." }, status = 404)
   
-  try:
-    twitchaccount = request.user.socialaccount_set.all().get(provider = "twitch")
-  except SocialAccount.DoesNotExist:
-    return JsonResponse({ "error": "User is does not have a Twitch account linked." }, status = 401)
-  
-  if not (overlay.owner.id == request.user.id):
-    try:
-      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
-    except Editor.DoesNotExist:
-      return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
+  if not owner_or_editor(overlay, request.user):
+    return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
   item_type = json_data.get("item_type", "")
   item_id = json_data.get("item_id", "")
@@ -170,16 +185,8 @@ def edit_overlay_item(request : HttpRequest):
   except CollaborativeOverlay.DoesNotExist:
     return JsonResponse({ "error": "Overlay does not exist." }, status = 404)
   
-  try:
-    twitchaccount = request.user.socialaccount_set.all().get(provider = "twitch")
-  except SocialAccount.DoesNotExist:
-    return JsonResponse({ "error": "User is does not have a Twitch account linked." }, status = 401)
-  
-  if not (overlay.owner.id == request.user.id):
-    try:
-      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
-    except Editor.DoesNotExist:
-      return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
+  if not owner_or_editor(overlay, request.user):
+    return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
   item_model = None
   for t in ITEM_TYPES:
@@ -231,16 +238,8 @@ def edit_overlay_items(request):
   except CollaborativeOverlay.DoesNotExist:
     return JsonResponse({ "error": "Overlay does not exist." }, status = 404)
   
-  try:
-    twitchaccount = request.user.socialaccount_set.all().get(provider = "twitch")
-  except SocialAccount.DoesNotExist:
-    return JsonResponse({ "error": "User is does not have a Twitch account linked." }, status = 401)
-  
-  if not (overlay.owner.id == request.user.id):
-    try:
-      editormatch = overlay.owner.editor_set.all().get(identifier = twitchaccount.uid)
-    except Editor.DoesNotExist:
-      return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
+  if not owner_or_editor(overlay, request.user):
+    return JsonResponse({ "error": "User is not an editor for the owner of this overlay." }, status = 401)
     
   for item in items:
     item_type = item.get("item_type", "")

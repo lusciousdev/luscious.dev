@@ -10,7 +10,7 @@ const editOverlayItemUrl = data.edititemurl;
 const editOverlayItemsUrl = data.edititemsurl;
 const deleteOverlayItemUrl = data.deleteitemurl;
 const overlayOwner = data.overlayowner;
-const twitchUser = data.twitchuser;
+const overlayUserId = data.overlayuid;
 
 var scaledOverlayWidth = -1;
 var scaledOverlayHeight = -1;
@@ -281,7 +281,7 @@ function checkMousePosition()
 
 function userPresent(data) 
 {
-  if (data["uid"] == twitchUser)
+  if (data["uid"] == overlayUserId)
     return;
 
   if (!(data["uid"] in editorList))
@@ -304,7 +304,7 @@ function userPresent(data)
 
 function repositionMouse(data)
 {
-  if (data["uid"] == twitchUser)
+  if (data["uid"] == overlayUserId)
     return;
 
   if ($("#{0}".format(data["uid"])).length == 0)

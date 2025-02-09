@@ -154,37 +154,43 @@ class EditOverlayView(generic.DetailView):
   
   @method_decorator(login_required)
   def dispatch(self, *args, **kwargs):
+    permission_granted = False
+    
     overlay = self.get_object()
-    if (overlay.owner.id == self.request.user.id):    
-      return super(EditOverlayView, self).dispatch(*args, **kwargs)
+    if (overlay.owner.id == self.request.user.id):
+      permission_granted = True
     else:
       try:
+        twitchaccount = self.request.user.socialaccount_set.get(provider="twitch")
         editormatch = overlay.owner.editor_set.get(id_type = 0, identifier = twitchaccount.uid)
-        return super(EditOverlayView, self).dispatch(*args, **kwargs)
-      except:
+        permission_granted = True
+      except Exception as e:
         pass
       
       for email_address in self.request.user.emailaddress_set.filter(verified = True).all():
         try:
           editormatch = overlay.owner.editor_set.get(id_type = 1, identifier = email_address.email)
-          return super(EditOverlayView, self).dispatch(*args, **kwargs)
+          permission_granted = True
         except:
           pass
       
       try:
         editormatch = overlay.owner.editor_set.get(id_type = 2, identifier = OverlayUser.objects.get(id = self.request.user.id).overlay.identifier)
-        return super(EditOverlayView, self).dispatch(*args, **kwargs)
+        permission_granted = True
       except:
         pass
     
+    if not permission_granted:
       return HttpResponseRedirect(reverse("overlay:home"))
+    else:
+      return super(EditOverlayView, self).dispatch(*args, **kwargs)
   
   def get_context_data(self, **kwargs):
     context = super(EditOverlayView, self).get_context_data(**kwargs)
     
     context['item_types'] = ITEM_TYPES
     context['forms'] = FORMS_MAP
-    context['twitchuserid'] = self.request.user.socialaccount_set.all().get(provider="twitch").uid
+    context['overlayuid'] = OverlayUser.objects.get(id = self.request.user.id).overlay.identifier
     
     return context
 
