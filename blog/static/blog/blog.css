@@ -1,0 +1,23 @@
+#blog-title {
+  display: flex;
+  flex-direction: row;
+
+  width: 100%;
+
+  margin-bottom: 0.67em;
+
+  justify-content: space-between;
+  align-items: end;
+}
+
+#blog-title h1 {
+  margin: 0.67em 0 0 0;
+}
+
+#blog-content h1 {
+  font-size: 1.67em;
+}
+
+#blog-content h2 {
+  font-size: 1.33em;
+}

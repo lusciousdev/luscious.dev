@@ -16,7 +16,7 @@ logger = logging.getLogger("overlay")
 
 User : models.Model = settings.AUTH_USER_MODEL
   
-def owner_or_editor(overlay : CollaborativeOverlay, user : User):
+def owner_or_editor(overlay : CollaborativeOverlay, user):
   if user.is_anonymous:
     return False
   
@@ -40,7 +40,7 @@ def owner_or_editor(overlay : CollaborativeOverlay, user : User):
       pass
     
   try:
-    editormatch = overlay.owner.editor_set.get(id_type = 2, identifier = self.overlay_user_id)
+    editormatch = overlay.owner.editor_set.get(id_type = 2, identifier = overlay_user_id)
     return True
   except:
     pass

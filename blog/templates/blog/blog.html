@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load blogutil %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'blog/blog.css' %}">
+{% endblock %}
+
+{% block title %}{{ blog.title }} - luscious.dev{% endblock %}
+
+{% block content %}
+<div id="blog-title">
+  <h1>{{blog.title}}</h1>
+</div>
+<div id="blog-content">
+  {{ blog.content|md2html|safe }}
+</div>
+{% endblock %}
