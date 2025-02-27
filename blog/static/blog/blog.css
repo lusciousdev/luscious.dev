@@ -10,7 +10,11 @@
   align-items: end;
 }
 
-#blog-title h1 {
+#blog-content {
+  width: 100%;
+}
+
+#blog-content h1 {
   margin: 0.67em 0 0 0;
 }
 
@@ -20,4 +24,8 @@
 
 #blog-content h2 {
   font-size: 1.33em;
+}
+
+#blog-content img {
+  max-width: 75%;
 }
