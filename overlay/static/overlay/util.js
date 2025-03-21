@@ -48,7 +48,7 @@ function handleWebsocketCommand(command, data)
     case "overlay_item_added":
       break;
     case "overlay_item_edited":
-      updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == twitchUser));
+      updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == overlayUserId));
       break;
     case "overlay_item_deleted":
       deleteItem(data.item_id);
@@ -57,7 +57,7 @@ function handleWebsocketCommand(command, data)
       handleItemEvent(data.item_id, data.event);
       break;
     case "canvas_updated":
-      handleCanvasUpdate(data.item_id, data.history, (editor == twitchUser));
+      handleCanvasUpdate(data.item_id, data.history, (editor == overlayUserId));
       break;
     case "user_present":
       userPresent(data);
