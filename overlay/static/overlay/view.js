@@ -127,15 +127,19 @@ function handleCanvasUpdate(itemId, history)
     var actionType = action["action"];
     var actionData = action["action_data"];
 
-    if (actionType == "draw")
+    if (actionType == 0)
     {
       context.globalCompositeOperation = "source-over";
       context.strokeStyle = actionData["strokeStyle"];
     }
-    else if (actionType == "erase")
+    else if (actionType == 1)
     {
       context.globalCompositeOperation = "destination-out";
       context.strokeStyle = "rgba(0, 0, 0, 1)";
+    }
+    else if (actionType == 2)
+    {
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
     }
 
     context.lineWidth = actionData["lineWidth"];
