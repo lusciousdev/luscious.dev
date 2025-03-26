@@ -161,12 +161,21 @@ class ImageItem(AbstractItem):
     return True
   
 class CanvasItem(AbstractItem):
-  def to_data_dict(self):
+  def to_data_dict(self, since : datetime.datetime = None):
     d = super().to_data_dict()
     d['history'] = []
     canvasaction : CanvasAction
-    for canvasaction in self.canvasaction_set.order_by("timestamp").all():
-      d['history'].append(canvasaction.action)
+    
+    canvasaction_set = self.canvasaction_set.order_by("timestamp")
+    if since is not None:
+      canvasaction_set = canvasaction_set.filter(timestamp__gte = since)
+      
+    last_clear = canvasaction_set.filter(action = CanvasActionEnum.CLEAR).last()
+    if last_clear:
+      canvasaction_set = canvasaction_set.filter(timestamp__gt = last_clear.timestamp)
+    
+    for canvasaction in canvasaction_set.all():
+      d['history'].append({ "action": canvasaction.action, "action_data": canvasaction.action_data })
     return d
   
   @staticmethod
@@ -181,12 +190,30 @@ class CanvasItem(AbstractItem):
   def is_displayed():
     return True
   
+class CanvasActionEnum:
+  NONE = -1
+  DRAW = 0
+  ERASE = 1
+  CLEAR = 2
+  
+  @staticmethod
+  def FromString(actionName : str) -> int:
+    if actionName.lower() == "draw":
+      return CanvasActionEnum.DRAW
+    elif actionName.lower() == "erase":
+      return CanvasActionEnum.ERASE
+    elif actionName.lower() == "clear":
+      return CanvasActionEnum.CLEAR
+    else:
+      return CanvasActionEnum.NONE
+  
 class CanvasAction(models.Model):
   canvas = models.ForeignKey(CanvasItem, on_delete = models.CASCADE)
   user = models.ForeignKey(settings.AUTH_USER_MODEL, null = True, on_delete = models.SET_NULL)
   
   timestamp = models.DateTimeField(auto_now_add = True)
-  action = models.JSONField(default = dict)
+  action = models.IntegerField(default = CanvasActionEnum.NONE)
+  action_data = models.JSONField(default = dict)
   
   class Meta:
     ordering = ('-timestamp', )

@@ -17,6 +17,8 @@ class OverlayConsumer(WebsocketConsumer):
   response_list = []
   broadcast_list = []
   
+  overlay_user_id = None
+  
   def owner_or_editor(self):
     self.user : UserLazyObject = self.scope["user"]
     if self.user.is_anonymous:
@@ -408,16 +410,21 @@ class OverlayConsumer(WebsocketConsumer):
       return
     
     if data["event"] == "start_action":
-      action : dict = data["action"]
-      action = CanvasAction.objects.create(canvas = item_instance, user = self.user, action = action)
+      actionStr : str = data["action"]
+      action : int = CanvasActionEnum.FromString(actionStr)
+      
+      action_data : dict = data["action_data"]
+      actionObj = CanvasAction.objects.create(canvas = item_instance, user = self.user, action = action, action_data = action_data)
     elif data["event"] == "add_points":
       action : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance).order_by("-timestamp").first()
-      action.action['points'].extend(data["points"])
+      action.action_data['points'].extend(data["points"])
       action.save()
     if data["event"] == "undo":
-      action : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance).order_by("-timestamp").first()
+      action : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance, user = self.user).order_by("-timestamp").first()
       if action: 
         action.delete()
+    if data["event"] == "clear":
+      actionObj = CanvasAction.objects.create(canvas = item_instance, user = self.user, action = CanvasActionEnum.CLEAR, action_data = {})
     
     self.queue_broadcast({ 
       "command": "canvas_updated", 

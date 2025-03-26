@@ -746,7 +746,7 @@ function handleItemLeftClick(e, elem)
 
     var relMousePos = editToViewPoint(Point.sub2(dragData.pageP0, getItemOffset(elemId)));
 
-    websocketEventQueue.push({ "command": "record_canvas_event", "data": { "item_id": selectedItem, "item_type": itemDict[selectedItem]["item_type"], "event": "start_action", "action": { "type": drawMode, "strokeStyle": strokeStyle, "lineWidth": lineWidth, "points": [[relMousePos.x, relMousePos.y]] } } });
+    websocketEventQueue.push({ "command": "record_canvas_event", "data": { "item_id": selectedItem, "item_type": itemDict[selectedItem]["item_type"], "event": "start_action", "action": drawMode, "action_data": { "strokeStyle": strokeStyle, "lineWidth": lineWidth, "points": [[relMousePos.x, relMousePos.y]] } } });
 
     itemDict[elemId]["drawing"] = true;
 
@@ -1492,7 +1492,7 @@ function submitAddForm(form)
   $("#close-add-item").click();
 }
 
-function deleteSelectedItem(e)
+function deleteItem(e)
 {
   if (selectedItem === undefined)
   {
@@ -1507,7 +1507,7 @@ function deleteSelectedItem(e)
   }
 }
 
-function resetSelectedItem(e)
+function resetItem(e)
 {
   if (selectedItem === undefined)
   {
@@ -1540,7 +1540,7 @@ function resetSelectedItem(e)
   itemDict[selectedItem]["local_changes"] = true;
 }
 
-function playSelectedItem(e)
+function playItem(e)
 {
   if (selectedItem === undefined)
   {
@@ -1559,7 +1559,7 @@ function playSelectedItem(e)
   }
 }
 
-function pauseSelectedItem(e)
+function pauseItem(e)
 {
   if (selectedItem === undefined)
   {
@@ -1603,7 +1603,7 @@ function pauseSelectedItem(e)
   }
 }
 
-function undoSelectedItem(e)
+function undoItem(e)
 {
   if (selectedItem === undefined)
   {
@@ -1625,6 +1625,30 @@ function undoSelectedItem(e)
       break;
   }
 }
+
+function clearItem(e)
+{
+  if (selectedItem === undefined)
+  {
+    return;
+  }
+
+  var itemType = itemDict[selectedItem]['item_type'];
+  
+  switch (itemType)
+  {
+    case "canvas":
+      sendWebsocketMessage("record_canvas_event", {
+        "item_id": selectedItem,
+        "item_type": itemType,
+        "event": "clear"
+      });
+      break;
+    default:
+      break;
+  }
+}
+
 function openAddItemTab(event, tabId)
 {
   for (var i = 0; i < $(".tabcontent").length; i++)
@@ -1682,29 +1706,36 @@ function handleCanvasUpdate(itemId, history, selfEdit)
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
   history.forEach((action, i) => {
-    if (action["type"] == "draw")
+    var actionType = action["action"];
+    var actionData = action["action_data"];
+
+    if (actionType == 0)
     {
       context.globalCompositeOperation = "source-over";
-      context.strokeStyle = action["strokeStyle"];
+      context.strokeStyle = actionData["strokeStyle"];
     }
-    else if (action["type"] == "erase")
+    else if (actionType == 1)
     {
       context.globalCompositeOperation = "destination-out";
       context.strokeStyle = "rgba(0, 0, 0, 1)";
     }
+    else if (actionType == 2)
+    {
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    }
 
-    context.lineWidth = viewToEditLength(action["lineWidth"]);
+    context.lineWidth = viewToEditLength(actionData["lineWidth"]);
     context.lineCap = 'round';
 
-    var p0 = viewToEditPoint(new Point(action["points"][0][0], action["points"][0][1]))
+    var p0 = viewToEditPoint(new Point(actionData["points"][0][0], actionData["points"][0][1]))
 
     context.beginPath();
     context.moveTo(p0.x, p0.y);
     context.lineTo(p0.x, p0.y);
 
-    for (var i = 1; i < action["points"].length; i++)
+    for (var i = 1; i < actionData["points"].length; i++)
     {
-      var p_i = viewToEditPoint(new Point(action["points"][i][0], action["points"][i][1]))
+      var p_i = viewToEditPoint(new Point(actionData["points"][i][0], actionData["points"][i][1]))
       context.lineTo(p_i.x, p_i.y);
     }
     
@@ -1837,7 +1868,8 @@ $(window).on('load', function() {
 
   connectWebsocket(overlayId);
 
-  var getInterval = setInterval(function() { getOverlayItems(); }, 2500);
+  getOverlayItems();
+  var getInterval = setInterval(function() { getOverlayItems(); }, 30000);
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   
@@ -1897,22 +1929,23 @@ $(window).on('load', function() {
   });
 
   $(".delete-item").click((e) => {
-    deleteSelectedItem(e);
+    deleteItem(e);
   });
 
   $(".reset-item").click((e) => {
-    resetSelectedItem(e);
+    resetItem(e);
   });
 
   $(".pause-item").click((e) => {
-    pauseSelectedItem(e);
+    pauseItem(e);
   });
 
   $(".play-item").click((e) => {
-    playSelectedItem(e);
+    playItem(e);
   });
 
-  $(".undo-item").click((e) => { undoSelectedItem(e); });
+  $(".undo-item").click((e) => { undoItem(e); });
+  $(".clear-item").click((e) => { clearItem(e); });
 
   $(".edit-container input[id=id_visibility]").each((i, visibleCheckbox) => {
     $(visibleCheckbox).change((e) => selectedVisibilityChange(e));
