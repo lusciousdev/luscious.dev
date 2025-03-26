@@ -124,27 +124,30 @@ function handleCanvasUpdate(itemId, history)
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
   history.forEach((action, i) => {
-    if (action["type"] == "draw")
+    var actionType = action["action"];
+    var actionData = action["action_data"];
+
+    if (actionType == "draw")
     {
       context.globalCompositeOperation = "source-over";
-      context.strokeStyle = action["strokeStyle"];
+      context.strokeStyle = actionData["strokeStyle"];
     }
-    else if (action["type"] == "erase")
+    else if (actionType == "erase")
     {
       context.globalCompositeOperation = "destination-out";
       context.strokeStyle = "rgba(0, 0, 0, 1)";
     }
 
-    context.lineWidth = action["lineWidth"];
+    context.lineWidth = actionData["lineWidth"];
     context.lineCap = 'round';
 
     context.beginPath();
-    context.moveTo(action["points"][0][0], action["points"][0][1]);
-    context.lineTo(action["points"][0][0], action["points"][0][1]);
+    context.moveTo(actionData["points"][0][0], actionData["points"][0][1]);
+    context.lineTo(actionData["points"][0][0], actionData["points"][0][1]);
 
-    for (var i = 1; i < action["points"].length; i++)
+    for (var i = 1; i < actionData["points"].length; i++)
     {
-      context.lineTo(action["points"][i][0], action["points"][i][1]);
+      context.lineTo(actionData["points"][i][0], actionData["points"][i][1]);
     }
     
     context.stroke();
