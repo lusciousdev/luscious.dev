@@ -35,7 +35,7 @@ var sendCanvasPoints = {};
 
 const MOUSE_MOVE_COOLDOWN = 16;
 
-const WEBSOCKET_SEND_COOLDOWN = 100; // ms
+const WEBSOCKET_SEND_COOLDOWN = 25; // ms
 var websocketEventQueue = []
 
 var streamEmbed;
