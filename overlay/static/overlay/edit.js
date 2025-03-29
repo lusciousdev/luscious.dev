@@ -12,33 +12,35 @@ const deleteOverlayItemUrl = data.deleteitemurl;
 const overlayOwner = data.overlayowner;
 const overlayUserId = data.overlayuid;
 
-var scaledOverlayWidth = -1;
-var scaledOverlayHeight = -1;
-const overlayWidth = parseInt(data.overlaywidth, 10);
-const overlayHeight = parseInt(data.overlayheight, 10);
+const EDIT_VIEW = true;
 
-const defaultSizePercent = 0.667;
+var g_ScaledOverlayWidth = -1;
+var g_ScaledOverlayHeight = -1;
+const OVERLAY_WIDTH = parseInt(data.overlaywidth, 10);
+const OVERLAY_HEIGHT = parseInt(data.overlayheight, 10);
 
-var currentScale = 1.0;
-var overlayOffset = new Point(0, 0);
+const DEFAULT_SIZE_PERCENT = 0.667;
 
-const scaleChange = 0.05;
-const minimumScale = 0.05;
-const maximumScale = 5.0;
-const scrollAmount = 50.0;
+var g_CurrentScale = 1.0;
+var g_OverlayOffset = new Point(0, 0);
 
-var selectedItem = undefined;
-var otherSelectedItems = [];
+const SCALE_CHANGE = 0.05;
+const MIN_SCALE = 0.05;
+const MAX_SCALE = 5.0;
+const SCROLL_AMOUNT = 50.0;
 
-var sendEditChanges = {};
-var sendCanvasPoints = {};
+var g_SelectedItem = undefined;
+var g_OtherSelectedItems = [];
 
-const MOUSE_MOVE_COOLDOWN = 16;
+var g_SendEditChanges = {};
+var g_SendCanvasPoints = {};
 
-const WEBSOCKET_SEND_COOLDOWN = 25; // ms
-var websocketEventQueue = []
+const MOUSE_MOVE_COOLDOWN = 2;
 
-var streamEmbed;
+const WEBSOCKET_SEND_COOLDOWN = 50; // ms
+var g_WebsocketEventQueue = []
+
+var g_StreamEmbed;
 
 const GrabTypes = {
   Move: 0,
@@ -47,32 +49,36 @@ const GrabTypes = {
   BottomLeft: 3,
   BottomRight: 4,
 };
-var grabType = GrabTypes.Move;
+var g_GrabType = GrabTypes.Move;
 
-var mousePosition = { "x": 0, "y": 0 };
-var lastMousePosition = Object.assign({}, mousePosition);
+var g_SendMousePosition = false;
+var g_MousePosition = { "x": 0, "y": 0 };
+var g_LastMousePosition = Object.assign({}, g_MousePosition);
 
-var editorList = {};
-var cursorDict = {};
+var g_EditorList = {};
+var g_CursorDict = {};
+
+var g_ChatOpen = false;
+var g_FirstHistory = true;
 
 function editToViewX(xCoord)
 {
-  return (xCoord - overlayOffset.x) / currentScale;
+  return (xCoord - g_OverlayOffset.x) / g_CurrentScale;
 }
 
 function editToViewY(yCoord)
 {
-  return (yCoord - overlayOffset.y) / currentScale;
+  return (yCoord - g_OverlayOffset.y) / g_CurrentScale;
 }
 
 function viewToEditX(xCoord)
 {
-  return (xCoord * currentScale) + overlayOffset.x;
+  return (xCoord * g_CurrentScale) + g_OverlayOffset.x;
 }
 
 function viewToEditY(yCoord)
 {
-  return (yCoord * currentScale) + overlayOffset.y;
+  return (yCoord * g_CurrentScale) + g_OverlayOffset.y;
 }
 
 function editToViewCoords(p)
@@ -87,22 +93,22 @@ function viewToEditCoords(p)
 
 function editToViewPoint(p)
 {
-  return p.div(currentScale);
+  return p.div(g_CurrentScale);
 }
 
 function viewToEditPoint(p)
 {
-  return p.mult(currentScale);
+  return p.mult(g_CurrentScale);
 }
 
 function editToViewLength(distance)
 {
-  return distance / currentScale;
+  return distance / g_CurrentScale;
 }
 
 function viewToEditLength(distance)
 {
-  return currentScale * distance;
+  return g_CurrentScale * distance;
 }
 
 function addGrabbers(itemId)
@@ -112,16 +118,16 @@ function addGrabbers(itemId)
   getItemDiv(itemId).append("<div class='grabber bottomleft'></div>");
   getItemDiv(itemId).append("<div class='grabber bottomright'></div>");
 
-  $('#item-{0} .topleft'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.TopLeft; });
-  $('#item-{0} .topright'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.TopRight; });
-  $('#item-{0} .bottomleft'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.BottomLeft; });
-  $('#item-{0} .bottomright'.format(itemId)).on("mousedown touchstart", (event) => { grabType = GrabTypes.BottomRight; });
+  $('#item-{0} .topleft'.format(itemId)).on("mousedown touchstart", (event) => { g_GrabType = GrabTypes.TopLeft; });
+  $('#item-{0} .topright'.format(itemId)).on("mousedown touchstart", (event) => { g_GrabType = GrabTypes.TopRight; });
+  $('#item-{0} .bottomleft'.format(itemId)).on("mousedown touchstart", (event) => { g_GrabType = GrabTypes.BottomLeft; });
+  $('#item-{0} .bottomright'.format(itemId)).on("mousedown touchstart", (event) => { g_GrabType = GrabTypes.BottomRight; });
 }
 
 function updateItems(data, fullItemList = true, selfEdit = false)
 {
   var itemSeen = {};
-  for (itemId in itemDict)
+  for (itemId in g_ItemDict)
   {
     itemSeen[itemId] = false;
   }
@@ -134,33 +140,35 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var itemData = item["item_data"];
     var itemId = itemData['id'];
 
-    if (itemId in itemDict)
+    var prevItemData = null;
+    if (itemId in g_ItemDict)
     {
       itemSeen[itemId] = true;
   
-      if (!itemDict[itemId]['moving'])
+      if (!g_ItemDict[itemId]['moving'])
       {
-        itemDict[itemId]['item_data'] = itemData;
+        prevItemData = g_ItemDict[itemId]['item_data'];
+        g_ItemDict[itemId]['item_data'] = itemData;
       }
     }
     else
     {
-      itemDict[itemId] = {
+      g_ItemDict[itemId] = {
         "item_type": itemType,
         "item_data": itemData,
         "moving": false,
       };
     }
 
-    var left   = viewToEditLength(itemDict[itemId]['item_data']['x']);
-    var top    = viewToEditLength(itemDict[itemId]['item_data']['y']);
-    var width  = viewToEditLength(itemDict[itemId]['item_data']['width']);
-    var height = viewToEditLength(itemDict[itemId]['item_data']['height']);
+    var left   = viewToEditLength(g_ItemDict[itemId]['item_data']['x']);
+    var top    = viewToEditLength(g_ItemDict[itemId]['item_data']['y']);
+    var width  = viewToEditLength(g_ItemDict[itemId]['item_data']['width']);
+    var height = viewToEditLength(g_ItemDict[itemId]['item_data']['height']);
 
     var z = itemData['z'];
     var rotation = itemData['rotation'];
 
-    addOrUpdateItem(true, selfEdit, "#overlay", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, 
+    addOrUpdateItem(selfEdit, "#overlay", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, prevItemData,
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }
@@ -212,7 +220,7 @@ function addItemCallback(itemId, itemType)
   getItemDiv(itemId).on("mousedown touchstart", onMousedownItem);
   addGrabbers(itemId);
 
-  var item = itemDict[itemId]
+  var item = g_ItemDict[itemId]
 
   $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}" itemType="{3}">
     <span class="material-symbols-outlined">{1}</span>&nbsp;{2}
@@ -234,7 +242,7 @@ function addItemCallback(itemId, itemType)
 
 function updateItemCallback(itemId, itemType)
 {
-  var item = itemDict[itemId]
+  var item = g_ItemDict[itemId]
 
   var itemListEntry = $("#item-{0}-list-entry".format(itemId));
 
@@ -242,9 +250,9 @@ function updateItemCallback(itemId, itemType)
 
   itemListEntry.html(`<span class="material-symbols-outlined">{0}</span><span>&nbsp;{1}</span>`.format(getItemIconName(itemType), item["item_data"]["name"]));
 
-  if (selectedItem != undefined) 
+  if (g_SelectedItem != undefined) 
   {
-    setEditFormInputs(selectedItem);
+    setEditFormInputs(g_SelectedItem);
   }
 
   if (item["item_data"]["position_lock"])
@@ -268,14 +276,15 @@ function handleEditItemsSuccess(data) {}
 
 function sendPing()
 {
-  websocketEventQueue.push({ "command": "ping", "data": {} });
+  g_WebsocketEventQueue.push({ "command": "ping", "data": {} });
 }
 
 function checkMousePosition()
 {
-  if ((mousePosition["x"] != lastMousePosition["x"]) || (mousePosition["y"] != lastMousePosition["y"]))
+  if ((g_MousePosition["x"] != g_LastMousePosition["x"]) || (g_MousePosition["y"] != g_LastMousePosition["y"]))
   {
-    lastMousePosition = Object.assign({}, mousePosition);
+    g_SendMousePosition = true;
+    g_LastMousePosition = Object.assign({}, g_MousePosition);
   }
 }
 
@@ -284,12 +293,12 @@ function userPresent(data)
   if (data["uid"] == overlayUserId)
     return;
 
-  if (!(data["uid"] in editorList))
-    editorList[data["uid"]] = {};
+  if (!(data["uid"] in g_EditorList))
+    g_EditorList[data["uid"]] = {};
 
-  if (!editorList.hasOwnProperty(data["uid"]))
+  if (!g_EditorList.hasOwnProperty(data["uid"]))
   {
-    editorList[data["uid"]] = {
+    g_EditorList[data["uid"]] = {
       "login": data["username"],
       "last_seen": Date.now(),
       "last_mouse": Date.now(),
@@ -297,8 +306,8 @@ function userPresent(data)
   }
   else
   {
-    editorList[data["uid"]]["login"] = data["username"];
-    editorList[data["uid"]]["last_seen"] = Date.now();
+    g_EditorList[data["uid"]]["login"] = data["username"];
+    g_EditorList[data["uid"]]["last_seen"] = Date.now();
   }
 }
 
@@ -322,21 +331,21 @@ function repositionMouse(data)
     "left": "{0}px".format(left),
   });
 
-  if (!(data["uid"] in editorList))
-    editorList[data["uid"]] = {};
+  if (!(data["uid"] in g_EditorList))
+    g_EditorList[data["uid"]] = {};
 
-  editorList[data["uid"]]["last_mouse"] = Date.now();
+  g_EditorList[data["uid"]]["last_mouse"] = Date.now();
 }
 
 function removeInactiveUsers()
 {
   var timeNow = Date.now();
 
-  Object.keys(editorList).forEach(function(key) {
-    if ((timeNow - editorList[key]["last_seen"]) > 60000.0) // 60s
+  Object.keys(g_EditorList).forEach(function(key) {
+    if ((timeNow - g_EditorList[key]["last_seen"]) > 60000.0) // 60s
     {
       $("#{0}".format(key)).remove();
-      delete editorList[key];
+      delete g_EditorList[key];
     }
   });
 }
@@ -345,8 +354,8 @@ function removeInactiveCursors()
 {
   var timeNow = Date.now();
 
-  Object.keys(editorList).forEach(function(key) {
-    if ((timeNow - editorList[key]["last_mouse"]) > 20000.0) // 20s
+  Object.keys(g_EditorList).forEach(function(key) {
+    if ((timeNow - g_EditorList[key]["last_mouse"]) > 20000.0) // 20s
     {
       $("#{0}".format(key)).remove();
     }
@@ -362,10 +371,10 @@ function handleWebsocketOpen(e)
 {
   getOverlayItems();
 
-  setInterval(sendPing, 5000);
-  setInterval(checkMousePosition, 50);
-  setInterval(removeInactiveUsers, 500);
-  setInterval(removeInactiveCursors, 500);
+  setInterval(sendPing, WEBSOCKET_SEND_COOLDOWN * 100);
+  setInterval(checkMousePosition, WEBSOCKET_SEND_COOLDOWN);
+  setInterval(removeInactiveUsers, WEBSOCKET_SEND_COOLDOWN * 10);
+  setInterval(removeInactiveCursors, WEBSOCKET_SEND_COOLDOWN * 10);
   setInterval(sendAllMessages, WEBSOCKET_SEND_COOLDOWN);
 }
 
@@ -377,44 +386,108 @@ function handleAjaxError(data)
 
 function sendAllMessages()
 {
-  msgList = Array.from(websocketEventQueue);
-  websocketEventQueue = [];
+  msgList = Array.from(g_WebsocketEventQueue);
+  g_WebsocketEventQueue = [];
   
-  for (const itemId in itemDict)
+  for (const itemId in g_ItemDict)
   {
-    if (itemDict[itemId]['moving'])
+    if (g_ItemDict[itemId]['moving'])
     {
       var itemData = {};
-      itemData['x']      = itemDict[itemId].item_data.x;
-      itemData['y']      = itemDict[itemId].item_data.y;
-      itemData['width']  = itemDict[itemId].item_data.width;
-      itemData['height'] = itemDict[itemId].item_data.height;
+      itemData['x']      = g_ItemDict[itemId].item_data.x;
+      itemData['y']      = g_ItemDict[itemId].item_data.y;
 
-      var itemType = itemDict[itemId]["item_type"];
+      var itemType = g_ItemDict[itemId]["item_type"];
 
-      msgList.push({ "command": "edit_overlay_item", "data": { "item_type": itemType, "item_id": itemId, "item_data": itemData } });
+      msgList.push({ "command": "move_overlay_item", "data": { "item_type": itemType, "item_id": itemId, "item_data": itemData } });
+    }
+    
+    if (g_ItemDict[itemId]["resizing"])
+    {
+      var itemData = {};
+      itemData['x']      = g_ItemDict[itemId].item_data.x;
+      itemData['y']      = g_ItemDict[itemId].item_data.y;
+      itemData['width']  = g_ItemDict[itemId].item_data.width;
+      itemData['height'] = g_ItemDict[itemId].item_data.height;
+
+      var itemType = g_ItemDict[itemId]["item_type"];
+
+      msgList.push({ "command": "resize_overlay_item", "data": { "item_type": itemType, "item_id": itemId, "item_data": itemData } });
     }
   }
 
-  for (const itemId in sendEditChanges)
+  for (const itemId in g_SendEditChanges)
   {
-    var itemType = itemDict[itemId]["item_type"];
-    msgList.push({ "command": "edit_overlay_item", "data": { "item_type": itemType, "item_id": itemId, "item_data": sendEditChanges[itemId] } });
+    var itemType = g_ItemDict[itemId]["item_type"];
+    msgList.push({ "command": "edit_overlay_item", "data": { "item_type": itemType, "item_id": itemId, "item_data": g_SendEditChanges[itemId] } });
 
-    delete sendEditChanges[itemId];
+    delete g_SendEditChanges[itemId];
   }
 
-  for (const itemId in sendCanvasPoints)
+  for (const itemId in g_SendCanvasPoints)
   {
-    var itemType = itemDict[itemId]["item_type"];
-    msgList.push({ "command": "record_canvas_event", "data": { "item_type": itemType, "item_id": itemId, "event": "add_points", "points": sendCanvasPoints[itemId] } });
+    var itemType = g_ItemDict[itemId]["item_type"];
+    msgList.push({ "command": "record_canvas_event", "data": { "item_type": itemType, "item_id": itemId, "event": "add_points", "points": g_SendCanvasPoints[itemId] } });
 
-    delete sendCanvasPoints[itemId];
+    delete g_SendCanvasPoints[itemId];
   }
   
-  msgList.push({ "command": "mouse_position", "data": mousePosition });
+  if (g_SendMousePosition)
+  {
+    msgList.push({ "command": "mouse_position", "data": g_MousePosition });
+    g_SendMousePosition = false;
+  }
 
   sendWebsocketMessages(msgList);
+}
+
+function getChatHistory()
+{
+  sendWebsocketMessage("get_chat_history", {});
+}
+
+function sendChatMessage()
+{
+  var messageContent = $("#chat-input").val();
+
+  sendWebsocketMessage("send_chat_message", { "message": messageContent });
+
+  $("#chat-input").val("");
+}
+
+function repopulateChatHistory(messageArray)
+{
+  var historyElem = $("#chat-history");
+  var atBottom = (historyElem[0].scrollHeight - historyElem.scrollTop() - historyElem.outerHeight()) < 1;
+
+  historyElem.html("");
+
+  messageArray.forEach((msg, i) => {
+    historyElem.append("<div class=\"chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(msg["time"], msg["username"], msg["message"]));
+  });
+  
+  if (atBottom)
+  {
+    historyElem.scrollTop(historyElem[0].scrollHeight);
+  }
+}
+
+function addChatMessages(msg)
+{
+  var historyElem = $("#chat-history");
+  var atBottom = (historyElem[0].scrollHeight - historyElem.scrollTop() - historyElem.outerHeight()) < 1;
+
+  historyElem.append("<div class=\"chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(msg["time"], msg["username"], msg["message"]));
+  
+  if (atBottom)
+  {
+    historyElem.scrollTop(historyElem[0].scrollHeight);
+  }
+
+  if (!g_ChatOpen)
+  {
+    $("#chat-message-indicator").css({ "display": "flex" });
+  }
 }
 
 function initialResize(event)
@@ -422,26 +495,26 @@ function initialResize(event)
   var mcWidth = $("#main-container").width();
   var mcHeight = $("#main-container").height();
 
-  scaledOverlayWidth = defaultSizePercent * mcWidth;
-  scaledOverlayHeight = 9.0 / 16.0 * scaledOverlayWidth;
+  g_ScaledOverlayWidth = DEFAULT_SIZE_PERCENT * mcWidth;
+  g_ScaledOverlayHeight = 9.0 / 16.0 * g_ScaledOverlayWidth;
 
-  if (scaledOverlayHeight > (defaultSizePercent * mcHeight))
+  if (g_ScaledOverlayHeight > (DEFAULT_SIZE_PERCENT * mcHeight))
   {
-    scaledOverlayHeight = 0.667 * mcHeight;
-    scaledOverlayWidth = 16.0 / 9.0 * scaledOverlayHeight;
+    g_ScaledOverlayHeight = 0.667 * mcHeight;
+    g_ScaledOverlayWidth = 16.0 / 9.0 * g_ScaledOverlayHeight;
   }
 
-  currentScale = scaledOverlayWidth / overlayWidth;
+  g_CurrentScale = g_ScaledOverlayWidth / OVERLAY_WIDTH;
 
-  $("#overlay").width(scaledOverlayWidth);
-  $("#overlay").height(scaledOverlayHeight);
+  $("#overlay").width(g_ScaledOverlayWidth);
+  $("#overlay").height(g_ScaledOverlayHeight);
 
-  $("#twitch-embed").width(scaledOverlayWidth);
-  $("#twitch-embed").height(scaledOverlayHeight);
+  $("#twitch-embed").width(g_ScaledOverlayWidth);
+  $("#twitch-embed").height(g_ScaledOverlayHeight);
 
-  for (const prop in itemDict)
+  for (const prop in g_ItemDict)
   {
-    var itemData = itemDict[prop]['item_data'];
+    var itemData = g_ItemDict[prop]['item_data'];
     var itemId = itemData['id'];
 
     var left   = viewToEditLength(itemData['x']);
@@ -449,7 +522,7 @@ function initialResize(event)
     var width  = viewToEditLength(itemData['width']);
     var height = viewToEditLength(itemData['height']);
     
-    if (itemDict[prop]['item_type'] == "image")
+    if (g_ItemDict[prop]['item_type'] == "image")
     {
       var imgTag = $("#item-{0}-img".format(itemId));
       imgTag.attr('width', "{0}px".format(width));
@@ -483,16 +556,16 @@ function onScroll(event)
   {
     if (event.ctrlKey)
     {
-      changeScale(currentScale + scaleChange);
+      changeScale(g_CurrentScale + SCALE_CHANGE);
     }
     else if (event.shiftKey)
     {
-      overlayOffset.addX(scrollAmount);
+      g_OverlayOffset.addX(SCROLL_AMOUNT);
       repositionOverlay();
     }
     else
     {
-      overlayOffset.addY(scrollAmount);
+      g_OverlayOffset.addY(SCROLL_AMOUNT);
       repositionOverlay();
     }
   }
@@ -500,16 +573,16 @@ function onScroll(event)
   {
     if (event.ctrlKey)
     {
-      changeScale(currentScale - scaleChange);
+      changeScale(g_CurrentScale - SCALE_CHANGE);
     }
     else if (event.shiftKey)
     {
-      overlayOffset.addX(-scrollAmount);
+      g_OverlayOffset.addX(-SCROLL_AMOUNT);
       repositionOverlay();
     }
     else
     {
-      overlayOffset.addY(-scrollAmount);
+      g_OverlayOffset.addY(-SCROLL_AMOUNT);
       repositionOverlay();
     }
   }
@@ -517,37 +590,37 @@ function onScroll(event)
 
 function changeScale(newScale)
 {
-  var oldScale = currentScale;
-  currentScale = newScale;
-  if (currentScale < minimumScale)
+  var oldScale = g_CurrentScale;
+  g_CurrentScale = newScale;
+  if (g_CurrentScale < MIN_SCALE)
   {
-    currentScale = minimumScale;
+    g_CurrentScale = MIN_SCALE;
   }
-  else if (currentScale > maximumScale)
+  else if (g_CurrentScale > MAX_SCALE)
   {
-    currentScale = maximumScale;
+    g_CurrentScale = MAX_SCALE;
   }
 
-  if (oldScale == currentScale)
+  if (oldScale == g_CurrentScale)
     return;
 
-  scaledOverlayWidth = currentScale * overlayWidth;
-  scaledOverlayHeight = currentScale * overlayHeight;
+  g_ScaledOverlayWidth = g_CurrentScale * OVERLAY_WIDTH;
+  g_ScaledOverlayHeight = g_CurrentScale * OVERLAY_HEIGHT;
 
-  $("#overlay").width(scaledOverlayWidth);
-  $("#overlay").height(scaledOverlayHeight);
+  $("#overlay").width(g_ScaledOverlayWidth);
+  $("#overlay").height(g_ScaledOverlayHeight);
 
-  $("#twitch-embed").width(scaledOverlayWidth);
-  $("#twitch-embed").height(scaledOverlayHeight);
+  $("#twitch-embed").width(g_ScaledOverlayWidth);
+  $("#twitch-embed").height(g_ScaledOverlayHeight);
 
   setAllItemPositions();
 }
 
 function setAllItemPositions()
 {
-  for (const prop in itemDict)
+  for (const prop in g_ItemDict)
   {
-    var itemData = itemDict[prop]['item_data'];
+    var itemData = g_ItemDict[prop]['item_data'];
     var itemId = itemData['id'];
 
     var left   = viewToEditLength(itemData['x']);
@@ -555,23 +628,23 @@ function setAllItemPositions()
     var width  = viewToEditLength(itemData['width']);
     var height = viewToEditLength(itemData['height']);
     
-    if (itemDict[prop]['item_type'] == "image")
+    if (g_ItemDict[prop]['item_type'] == "image")
     {
       var imgTag = $("#item-{0}-img".format(itemId));
       imgTag.attr('width', "{0}px".format(width));
       imgTag.attr('height', "{0}px".format(height));
     }
 
-    if (itemDict[prop]['item_type'] == "canvas")
+    if (g_ItemDict[prop]['item_type'] == "canvas")
     {
-      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"], false);
+      handleCanvasUpdate(prop, g_ItemDict[prop]["item_data"]["history"]);
     }
 
-    if (itemDict[prop]['item_type'] == "text" ||
-        itemDict[prop]['item_type'] == "counter" ||
-        itemDict[prop]['item_type'] == "stopwatch")
+    if (g_ItemDict[prop]['item_type'] == "text" ||
+        g_ItemDict[prop]['item_type'] == "counter" ||
+        g_ItemDict[prop]['item_type'] == "stopwatch")
     {
-      setTextItemContent(true, $("#overlay"), prop, itemDict[prop]["item_data"]["text"], itemDict[prop]["item_data"])
+      setTextItemContent($("#overlay"), prop, g_ItemDict[prop]["item_data"]["text"], g_ItemDict[prop]["item_data"])
     }
 
     setItemPosition(itemId, top, left, width, height, itemData["z"], itemData['rotation']);
@@ -581,15 +654,15 @@ function setAllItemPositions()
 function repositionOverlay()
 {
   $("#overlay").css({
-    "left": viewToEditLength(overlayOffset.x),
-    "top": viewToEditLength(overlayOffset.y),
+    "left": viewToEditLength(g_OverlayOffset.x),
+    "top": viewToEditLength(g_OverlayOffset.y),
   });
 
-  for (const prop in itemDict)
+  for (const prop in g_ItemDict)
   {
-    if (itemDict[prop]['item_type'] == "canvas")
+    if (g_ItemDict[prop]['item_type'] == "canvas")
     {
-      handleCanvasUpdate(prop, itemDict[prop]["item_data"]["history"], false);
+      handleCanvasUpdate(prop, g_ItemDict[prop]["item_data"]["history"]);
     }
   }
 }
@@ -709,18 +782,18 @@ function handleItemLeftClick(e, elem)
     }
   }
 
-  var oldSelectedItem = selectedItem;
+  var oldSelectedItem = g_SelectedItem;
   selectItem(elemId);
 
-  if (selectedItem == undefined)
+  if (g_SelectedItem == undefined)
   {
     return;
   }
 
-  var isCanvas = (itemDict[selectedItem]["item_type"] == "canvas");
+  var isCanvas = (g_ItemDict[g_SelectedItem]["item_type"] == "canvas");
   var canvasDraw = isCanvas && !($("#edit-canvas-form #id_drawing_mode").val() == "move");
 
-  if (selectedItem != oldSelectedItem && isCanvas)
+  if (g_SelectedItem != oldSelectedItem && isCanvas)
   {
     canvasDraw = false;
   }
@@ -729,11 +802,11 @@ function handleItemLeftClick(e, elem)
   dragData.distP0 = Point.sub2(dragData.furthestCorner.point, new Point(pageX, pageY));
 
   dragData.selectedElem = {
-    point0: getItemPos(selectedItem)
+    point0: getItemPos(g_SelectedItem)
   }
 
   dragData.otherElems = {}
-  otherSelectedItems.forEach((itemId) => {
+  g_OtherSelectedItems.forEach((itemId) => {
     dragData.otherElems[itemId] = {};
     dragData.otherElems[itemId]["point0"] = getItemPos(itemId);
   });
@@ -746,20 +819,26 @@ function handleItemLeftClick(e, elem)
 
     var relMousePos = editToViewPoint(Point.sub2(dragData.pageP0, getItemOffset(elemId)));
 
-    websocketEventQueue.push({ "command": "record_canvas_event", "data": { "item_id": selectedItem, "item_type": itemDict[selectedItem]["item_type"], "event": "start_action", "action": drawMode, "action_data": { "strokeStyle": strokeStyle, "lineWidth": lineWidth, "points": [[relMousePos.x, relMousePos.y]] } } });
+    g_WebsocketEventQueue.push({ "command": "record_canvas_event", "data": { "item_id": g_SelectedItem, "item_type": g_ItemDict[g_SelectedItem]["item_type"], "event": "start_action", "action": drawMode, "action_data": { "strokeStyle": strokeStyle, "lineWidth": lineWidth, "points": [[relMousePos.x, relMousePos.y]] } } });
 
-    itemDict[elemId]["drawing"] = true;
+    g_ItemDict[elemId]["drawing"] = true;
 
     $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDrawing);
   }
-  else if (!itemDict[selectedItem]["item_data"]["position_lock"])
+  else if (!g_ItemDict[g_SelectedItem]["item_data"]["position_lock"])
   {
     $('#main-container').on('mouseup touchend mouseleave touchcancel', handleMouseUp).on('mousemove touchmove', handleDragging);
 
-    itemDict[selectedItem]['moving'] = true;
+    if (g_GrabType == GrabTypes.Move)
+      g_ItemDict[g_SelectedItem]['moving'] = true;
+    else
+      g_ItemDict[g_SelectedItem]['resizing'] = true;
 
-    otherSelectedItems.forEach((itemId) => {
-      itemDict[itemId]['moving'] = true;
+    g_OtherSelectedItems.forEach((itemId) => {
+      if (g_GrabType == GrabTypes.Move)
+        g_ItemDict[itemId]['moving'] = true;
+      else
+        g_ItemDict[itemId]['resizing'] = true;
     });
   }
 
@@ -796,14 +875,14 @@ function handleItemLeftClick(e, elem)
     var overlayLoc = new Point($("#overlay").offset().left, $("#overlay").offset().top);
     var borderWidth = parseFloat($(dragData.elem).css("border-left-width"));
 
-    if (grabType == GrabTypes.Move)
+    if (g_GrabType == GrabTypes.Move)
     {
       var offsetPosition = Point.sub2(dragData.pagePn, dragData.pageP0);
 
       if (!window.shiftheld)
       {
-        var lowestXOffset = scaledOverlayWidth;
-        var lowestYOffset = scaledOverlayHeight;
+        var lowestXOffset = g_ScaledOverlayWidth;
+        var lowestYOffset = g_ScaledOverlayHeight;
 
         dragData.initialGrabberCoords.forEach((grabberObj) => {
           var movedGrabberPos = Point.add2(grabberObj.point, offsetPosition);
@@ -812,10 +891,10 @@ function handleItemLeftClick(e, elem)
           var grabberY = (movedGrabberPos.y - overlayLoc.y);
 
           var distXLeft = grabberX;
-          var distXRight = grabberX - scaledOverlayWidth;
+          var distXRight = grabberX - g_ScaledOverlayWidth;
 
           var distYTop = grabberY;
-          var distYBottom = grabberY - scaledOverlayHeight;
+          var distYBottom = grabberY - g_ScaledOverlayHeight;
 
           if (Math.abs(lowestXOffset) > Math.abs(distXLeft))
             lowestXOffset = distXLeft;
@@ -828,14 +907,14 @@ function handleItemLeftClick(e, elem)
             lowestYOffset = distYBottom;
         });
 
-        var itemRotRad = itemDict[elemId].item_data.rotation * Math.PI / 180.0;
+        var itemRotRad = g_ItemDict[elemId].item_data.rotation * Math.PI / 180.0;
 
-        if (Math.abs(lowestXOffset) < (0.01 * scaledOverlayWidth))
+        if (Math.abs(lowestXOffset) < (0.01 * g_ScaledOverlayWidth))
         {
           offsetPosition.subX(lowestXOffset);
         }
 
-        if (Math.abs(lowestYOffset) < (0.01 * scaledOverlayHeight))
+        if (Math.abs(lowestYOffset) < (0.01 * g_ScaledOverlayHeight))
         {
           offsetPosition.subY(lowestYOffset);
         }
@@ -843,7 +922,7 @@ function handleItemLeftClick(e, elem)
   
       var newPos = Point.add2(dragData.selectedElem.point0, offsetPosition);
       
-      getItemDiv(selectedItem).css({
+      getItemDiv(g_SelectedItem).css({
         top: "{0}px".format(newPos.y), 
         left: "{0}px".format(newPos.x),
       });
@@ -851,10 +930,10 @@ function handleItemLeftClick(e, elem)
       var itemTop  = editToViewLength(newPos.y + borderWidth);
       var itemLeft = editToViewLength(newPos.x + borderWidth);
       
-      itemDict[selectedItem]['item_data']['x'] = Math.round(itemLeft);
-      itemDict[selectedItem]['item_data']['y'] = Math.round(itemTop);
+      g_ItemDict[g_SelectedItem]['item_data']['x'] = Math.round(itemLeft);
+      g_ItemDict[g_SelectedItem]['item_data']['y'] = Math.round(itemTop);
 
-      otherSelectedItems.forEach((itemId) => {
+      g_OtherSelectedItems.forEach((itemId) => {
         newPos = Point.add2(dragData.otherElems[itemId].point0, offsetPosition);
         getItemDiv(itemId).css({
           top: "{0}px".format(newPos.y), 
@@ -863,8 +942,8 @@ function handleItemLeftClick(e, elem)
 
         var itemTop  = editToViewLength(newPos.y);
         var itemLeft = editToViewLength(newPos.x);
-        itemDict[itemId]['item_data']['x'] = Math.round(itemLeft);
-        itemDict[itemId]['item_data']['y'] = Math.round(itemTop);
+        g_ItemDict[itemId]['item_data']['x'] = Math.round(itemLeft);
+        g_ItemDict[itemId]['item_data']['y'] = Math.round(itemTop);
       });
     }
     else
@@ -875,37 +954,37 @@ function handleItemLeftClick(e, elem)
       if (!window.shiftheld)
       {
         var distXLeft = mouseLoc.x;
-        var distXRight = mouseLoc.x - scaledOverlayWidth;
+        var distXRight = mouseLoc.x - g_ScaledOverlayWidth;
 
         var distYTop = mouseLoc.y;
-        var distYBottom = mouseLoc.y - scaledOverlayHeight;
+        var distYBottom = mouseLoc.y - g_ScaledOverlayHeight;
 
         if (Math.abs(distXLeft) <= Math.abs(distXRight))
         {
-          if (Math.abs(distXLeft) < (0.01 * scaledOverlayWidth))
+          if (Math.abs(distXLeft) < (0.01 * g_ScaledOverlayWidth))
             mouseOffset.subX(distXLeft);
         }
         else
         {
-          if (Math.abs(distXRight) < (0.01 * scaledOverlayWidth))
+          if (Math.abs(distXRight) < (0.01 * g_ScaledOverlayWidth))
             mouseOffset.subX(distXRight);
         }
 
         if (Math.abs(distYTop) <= Math.abs(distYBottom))
         {
-          if (Math.abs(distYTop) < (0.01 * scaledOverlayHeight))
+          if (Math.abs(distYTop) < (0.01 * g_ScaledOverlayHeight))
             mouseOffset.subY(distYTop);
         }
         else
         {
-          if (Math.abs(distYBottom) < (0.01 * scaledOverlayHeight))
+          if (Math.abs(distYBottom) < (0.01 * g_ScaledOverlayHeight))
             mouseOffset.subY(distYBottom);
         }
       }
 
       var relativePos = Point.sub2(dragData.furthestCorner.point, Point.add2(dragData.pagePn, mouseOffset));
 
-      var itemRotRad = itemDict[elemId].item_data.rotation * Math.PI / 180.0;
+      var itemRotRad = g_ItemDict[elemId].item_data.rotation * Math.PI / 180.0;
       
       relativePos.rotate(-1 * itemRotRad);
 
@@ -915,11 +994,11 @@ function handleItemLeftClick(e, elem)
       newWidth = Math.max(viewToEditLength(25), newWidth);
       newHeight = Math.max(viewToEditLength(25), newHeight);
 
-      if (itemDict[elemId].item_type == "image")
+      if (g_ItemDict[elemId].item_type == "image")
       {
         if (window.shiftheld)
         {
-          var imgTag = $("#item-{0}-img".format(selectedItem));
+          var imgTag = $("#item-{0}-img".format(g_SelectedItem));
           var imgNaturalWidth = imgTag.get(0).naturalWidth;
           var imgNaturalHeight = imgTag.get(0).naturalHeight;
 
@@ -959,9 +1038,9 @@ function handleItemLeftClick(e, elem)
         left: "{0}px".format(newPos.x),
       });
 
-      if (itemDict[elemId].item_type == "image")
+      if (g_ItemDict[elemId].item_type == "image")
       {
-        var imgTag = $("#item-{0}-img".format(selectedItem));
+        var imgTag = $("#item-{0}-img".format(g_SelectedItem));
         imgTag.attr("width", "{0}px".format(newWidth));
         imgTag.attr("height", "{0}px".format(newHeight));
       }
@@ -971,13 +1050,13 @@ function handleItemLeftClick(e, elem)
       var itemWidth  = editToViewLength(newWidth);
       var itemHeight = editToViewLength(newHeight);
   
-      itemDict[elemId]['item_data']['x']      = Math.round(itemLeft);
-      itemDict[elemId]['item_data']['y']      = Math.round(itemTop);
-      itemDict[elemId]['item_data']['width']  = Math.round(itemWidth);
-      itemDict[elemId]['item_data']['height'] = Math.round(itemHeight);
+      g_ItemDict[elemId]['item_data']['x']      = Math.round(itemLeft);
+      g_ItemDict[elemId]['item_data']['y']      = Math.round(itemTop);
+      g_ItemDict[elemId]['item_data']['width']  = Math.round(itemWidth);
+      g_ItemDict[elemId]['item_data']['height'] = Math.round(itemHeight);
     }
   
-    setEditFormInputs(selectedItem);
+    setEditFormInputs(g_SelectedItem);
 
     dragData.pagePn_m1 = new Point(pageX, pageY);
   }
@@ -1010,10 +1089,10 @@ function handleItemLeftClick(e, elem)
     var lastMousePos = editToViewPoint(Point.sub2(dragData.pagePn_m1, getItemOffset(elemId)));
     var relMousePos = editToViewPoint(Point.sub2(dragData.pagePn, getItemOffset(elemId)));
 
-    if (!(elemId in sendCanvasPoints))
-      sendCanvasPoints[elemId] = [];
+    if (!(elemId in g_SendCanvasPoints))
+      g_SendCanvasPoints[elemId] = [];
 
-    sendCanvasPoints[elemId].push([relMousePos.x, relMousePos.y])
+    g_SendCanvasPoints[elemId].push([relMousePos.x, relMousePos.y])
 
     drawLine(elemId, lastMousePos, relMousePos);
 
@@ -1032,14 +1111,16 @@ function handleItemLeftClick(e, elem)
       handleDragging(e);
     }
 
-    itemDict[selectedItem]['moving'] = false;
-    itemDict[elemId]["drawing"] = false;
+    g_ItemDict[g_SelectedItem]['moving'] = false;
+    g_ItemDict[g_SelectedItem]['resizing'] = false;
+    g_ItemDict[g_SelectedItem]["drawing"] = false;
   
-    otherSelectedItems.forEach((itemId) => {
-      itemDict[itemId]['moving'] = false;
+    g_OtherSelectedItems.forEach((itemId) => {
+      g_ItemDict[itemId]['moving'] = false;
+      g_ItemDict[itemId]['resizing'] = false;
     });
 
-    grabType = GrabTypes.Move;
+    g_GrabType = GrabTypes.Move;
     $('#main-container').off('mousemove touchmove', handleDragging).off('mousemove touchmove', handleDrawing).off('mouseup touchend mouseleave touchcancel', handleMouseUp);
   }
 }
@@ -1057,8 +1138,8 @@ function onMouseMove(e)
   var ox = editToViewLength(relx);
   var oy = editToViewLength(rely);
 
-  mousePosition['x'] = ox;
-  mousePosition['y'] = oy;
+  g_MousePosition['x'] = ox;
+  g_MousePosition['y'] = oy;
 }
 
 function handleBodyMiddleClick(e)
@@ -1074,8 +1155,8 @@ function handleBodyMiddleClick(e)
 
     var offsetPosition = Point.sub2(dragData.pagePn, dragData.pagePn_m1);
 
-    overlayOffset.addX(editToViewLength(offsetPosition.x));
-    overlayOffset.addY(editToViewLength(offsetPosition.y));
+    g_OverlayOffset.addX(editToViewLength(offsetPosition.x));
+    g_OverlayOffset.addY(editToViewLength(offsetPosition.y));
 
     dragData.pagePn_m1 = dragData.pagePn;
 
@@ -1105,7 +1186,7 @@ function onMouseDownBody(e)
     case 1:
       // Left click
     default:
-      if (selectedItem !== undefined)
+      if (g_SelectedItem !== undefined)
       {
         clearSelectedItem();
       }
@@ -1120,7 +1201,7 @@ function onMouseDownBody(e)
 
 function selectItem(itemId)
 {
-  if (otherSelectedItems.includes(itemId) || itemId == selectedItem)
+  if (g_OtherSelectedItems.includes(itemId) || itemId == g_SelectedItem)
   {
     if (window.ctrlheld)
     {
@@ -1129,20 +1210,20 @@ function selectItem(itemId)
     return;
   }
 
-  if (selectedItem !== undefined && !window.ctrlheld)
+  if (g_SelectedItem !== undefined && !window.ctrlheld)
   {
     clearSelectedItem(true);
   }
   
   var addingItem = false;
   
-  if (selectedItem == undefined)
+  if (g_SelectedItem == undefined)
   {
-    selectedItem = itemId;
+    g_SelectedItem = itemId;
   }
   else
   {
-    otherSelectedItems.push(itemId);
+    g_OtherSelectedItems.push(itemId);
     addingItem = true;
   }
 
@@ -1155,26 +1236,26 @@ function selectItem(itemId)
 
   if (!addingItem)
   {
-    openEditForm(selectedItem);
-    setEditFormInputs(selectedItem, true);
+    openEditForm(g_SelectedItem);
+    setEditFormInputs(g_SelectedItem, true);
   }
 }
 
 function unselectItem(itemId)
 {
-  if (itemId != selectedItem && !otherSelectedItems.includes(itemId))
+  if (itemId != g_SelectedItem && !g_OtherSelectedItems.includes(itemId))
   {
     return
   }
 
-  if (itemId == selectedItem)
+  if (itemId == g_SelectedItem)
   {
-    if (otherSelectedItems.length > 0)
+    if (g_OtherSelectedItems.length > 0)
     {
-      selectedItem = otherSelectedItems.splice(0, 1)[0];
+      g_SelectedItem = g_OtherSelectedItems.splice(0, 1)[0];
       
-      openEditForm(selectedItem);
-      setEditFormInputs(selectedItem, true);
+      openEditForm(g_SelectedItem);
+      setEditFormInputs(g_SelectedItem, true);
     }
     else
     {
@@ -1182,9 +1263,9 @@ function unselectItem(itemId)
       return;
     }
   }
-  else if (otherSelectedItems.includes(itemId))
+  else if (g_OtherSelectedItems.includes(itemId))
   {
-    otherSelectedItems.splice(otherSelectedItems.indexOf(itemId), 1);
+    g_OtherSelectedItems.splice(g_OtherSelectedItems.indexOf(itemId), 1);
   }
 
   getItemDiv(itemId).removeClass("selected").addClass("unselected");
@@ -1193,20 +1274,20 @@ function unselectItem(itemId)
 
 function clearSelectedItem(swapping = false)
 {
-  if (selectedItem !== undefined)
+  if (g_SelectedItem !== undefined)
   {
-    getItemDiv(selectedItem).removeClass("selected").addClass("unselected");
-    $("#item-{0}-list-entry".format(selectedItem)).removeClass("selected-list-entry");
+    getItemDiv(g_SelectedItem).removeClass("selected").addClass("unselected");
+    $("#item-{0}-list-entry".format(g_SelectedItem)).removeClass("selected-list-entry");
 
-    selectedItem = undefined;
+    g_SelectedItem = undefined;
   }
 
-  otherSelectedItems.forEach((itemId) => {
+  g_OtherSelectedItems.forEach((itemId) => {
     getItemDiv(itemId).removeClass("selected").addClass("unselected");
     $("#item-{0}-list-entry".format(itemId)).removeClass("selected-list-entry");
   });
 
-  otherSelectedItems = [];
+  g_OtherSelectedItems = [];
   
   for (var i = 0; i < $(".edit-container").length; i++)
   {
@@ -1245,7 +1326,7 @@ function clearSelectedItem(swapping = false)
 
 function openEditForm(itemId)
 {
-  var itemType = itemDict[selectedItem]['item_type'];
+  var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   var editContainerId = "#edit-{0}-container".format(itemType);
 
   $("#item-select-list").css({ "max-height": "15em" });
@@ -1259,19 +1340,19 @@ function openEditForm(itemId)
   
     $(editContainerId).removeClass("hidden");
   
-    if ("paused" in itemDict[selectedItem]["item_data"])
+    if ("paused" in g_ItemDict[g_SelectedItem]["item_data"])
     {
-      $("{0} .pause-item".format(editContainerId)).text(itemDict[selectedItem]["item_data"]["paused"] ? "Unpause" : "Pause");
+      $("{0} .pause-item".format(editContainerId)).text(g_ItemDict[g_SelectedItem]["item_data"]["paused"] ? "Unpause" : "Pause");
     }
   }
 }
 
 function setEditFormInputs(itemId, ignoreFocus = false)
 {
-  var itemType = itemDict[selectedItem]['item_type'];
+  var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   var formId = "#edit-{0}-form".format(itemType);
 
-  var itemData = itemDict[selectedItem]['item_data'];
+  var itemData = g_ItemDict[g_SelectedItem]['item_data'];
 
   $(formId).find("#id_overlay_id").prop('value', overlayId);
   $(formId).find("#id_item_id").prop('value', itemId);
@@ -1378,7 +1459,7 @@ function onInputChange(inputEvent)
   var inputType = targetedInput.attr('type');
 
   var itemId = targetedForm.find("#id_item_id").val();
-  var itemType = itemDict[itemId]["item_type"];
+  var itemType = g_ItemDict[itemId]["item_type"];
 
   var inputField = targetedInput.attr('name');
 
@@ -1395,9 +1476,9 @@ function onInputChange(inputEvent)
     default:
       var inputVal = inputToValue(targetedInput);
 
-      if (!(itemId in sendEditChanges))
-        sendEditChanges[itemId] = {};
-      sendEditChanges[itemId][inputField] = inputVal;
+      if (!(itemId in g_SendEditChanges))
+        g_SendEditChanges[itemId] = {};
+      g_SendEditChanges[itemId][inputField] = inputVal;
 
       switch (inputField)
       {
@@ -1408,10 +1489,10 @@ function onInputChange(inputEvent)
         case "opacity":
         case "view_lock":
         case "position_lock":
-          otherSelectedItems.forEach((otherSelectedItemId, i) => {
-            if (!(otherSelectedItemId in sendEditChanges))
-              sendEditChanges[otherSelectedItemId] = {};
-            sendEditChanges[otherSelectedItemId][inputField] = inputVal;
+          g_OtherSelectedItems.forEach((otherSelectedItemId, i) => {
+            if (!(otherSelectedItemId in g_SendEditChanges))
+              g_SendEditChanges[otherSelectedItemId] = {};
+            g_SendEditChanges[otherSelectedItemId][inputField] = inputVal;
           });
           break;
         default:
@@ -1494,27 +1575,27 @@ function submitAddForm(form)
 
 function deleteItem(e)
 {
-  if (selectedItem === undefined)
+  if (g_SelectedItem === undefined)
   {
     return;
   }
 
-  if (confirm("Delete {0}?".format(itemDict[selectedItem]['item_data']['name'])))
+  if (confirm("Delete {0}?".format(g_ItemDict[g_SelectedItem]['item_data']['name'])))
   {
-    var itemType = itemDict[selectedItem]['item_type'];
+    var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   
-    websocketEventQueue.push({ "command": "delete_overlay_item", "data": { "item_type": itemType, "item_id": selectedItem } });
+    g_WebsocketEventQueue.push({ "command": "delete_overlay_item", "data": { "item_type": itemType, "item_id": g_SelectedItem } });
   }
 }
 
 function resetItem(e)
 {
-  if (selectedItem === undefined)
+  if (g_SelectedItem === undefined)
   {
     return;
   }
 
-  var itemType = itemDict[selectedItem]['item_type'];
+  var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   
   switch (itemType)
   {
@@ -1525,34 +1606,34 @@ function resetItem(e)
       editData["timer_start"] = timeNow;
       editData["pause_time"]  = timeNow;
 
-      websocketEventQueue.push({"command": "edit_overlay_item", "data": { "item_id": selectedItem, "item_type": itemType, "item_data": editData }});
+      g_WebsocketEventQueue.push({"command": "edit_overlay_item", "data": { "item_id": g_SelectedItem, "item_type": itemType, "item_data": editData }});
       break;
     case "youtube_video":
     case "twitch_stream":
     case "twitch_video":
     case "audio":
-      websocketEventQueue.push({"command": "trigger_item_event", "data": { "item_id": selectedItem, "item_type": itemType, "event": "reset_item" }});
+      g_WebsocketEventQueue.push({"command": "trigger_item_event", "data": { "item_id": g_SelectedItem, "item_type": itemType, "event": "reset_item" }});
       break;
     default:
       break;
   }
 
-  itemDict[selectedItem]["local_changes"] = true;
+  g_ItemDict[g_SelectedItem]["local_changes"] = true;
 }
 
 function playItem(e)
 {
-  if (selectedItem === undefined)
+  if (g_SelectedItem === undefined)
   {
     return;
   }
 
-  var itemType = itemDict[selectedItem]['item_type'];
+  var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   
   switch (itemType)
   {
     case "audio":
-      websocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": selectedItem, "item_type": itemType, "event": "play_item" }});
+      g_WebsocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": g_SelectedItem, "item_type": itemType, "event": "play_item" }});
       break;
     default:
       break;
@@ -1561,26 +1642,26 @@ function playItem(e)
 
 function pauseItem(e)
 {
-  if (selectedItem === undefined)
+  if (g_SelectedItem === undefined)
   {
     return;
   }
 
-  var itemType = itemDict[selectedItem]['item_type'];
+  var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   
   switch (itemType)
   {
     case "stopwatch":
-      var wasPaused = itemDict[selectedItem]["item_data"]["paused"];
+      var wasPaused = g_ItemDict[g_SelectedItem]["item_data"]["paused"];
       var timeNow = Math.round(Date.now() / 1000);
 
-      var prevTimerStart = itemDict[selectedItem]["item_data"]["timer_start"];
+      var prevTimerStart = g_ItemDict[g_SelectedItem]["item_data"]["timer_start"];
 
       var editData = {};
 
       if (wasPaused)
       {
-        var timeSincePause = timeNow - itemDict[selectedItem]["item_data"]["pause_time"];
+        var timeSincePause = timeNow - g_ItemDict[g_SelectedItem]["item_data"]["pause_time"];
         editData["timer_start"] = prevTimerStart + timeSincePause;
 
         $(e.currentTarget).text("Pause");
@@ -1593,10 +1674,10 @@ function pauseItem(e)
 
       editData["paused"] = !wasPaused;
 
-      websocketEventQueue.push({ "command": "edit_overlay_item", "data": { "item_id": selectedItem, "item_type": itemType, "item_data": editData } });
+      g_WebsocketEventQueue.push({ "command": "edit_overlay_item", "data": { "item_id": g_SelectedItem, "item_type": itemType, "item_data": editData } });
       break;
     case "audio":
-      websocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": selectedItem, "item_type": itemType, "event": "pause_item" } });
+      g_WebsocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": g_SelectedItem, "item_type": itemType, "event": "pause_item" } });
       break;
     default:
       break;
@@ -1605,18 +1686,18 @@ function pauseItem(e)
 
 function undoItem(e)
 {
-  if (selectedItem === undefined)
+  if (g_SelectedItem === undefined)
   {
     return;
   }
 
-  var itemType = itemDict[selectedItem]['item_type'];
+  var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   
   switch (itemType)
   {
     case "canvas":
       sendWebsocketMessage("record_canvas_event", {
-        "item_id": selectedItem,
+        "item_id": g_SelectedItem,
         "item_type": itemType,
         "event": "undo"
       });
@@ -1628,18 +1709,19 @@ function undoItem(e)
 
 function clearItem(e)
 {
-  if (selectedItem === undefined)
+  if (g_SelectedItem === undefined)
   {
     return;
   }
 
-  var itemType = itemDict[selectedItem]['item_type'];
+  var itemType = g_ItemDict[g_SelectedItem]['item_type'];
   
   switch (itemType)
   {
     case "canvas":
+      handleCanvasClear(g_SelectedItem);
       sendWebsocketMessage("record_canvas_event", {
-        "item_id": selectedItem,
+        "item_id": g_SelectedItem,
         "item_type": itemType,
         "event": "clear"
       });
@@ -1672,75 +1754,18 @@ function toggleEmbeddedTwitchStream(e)
 
   if (checked)
   {
-    streamEmbed = createTwitchStreamPlayer("twitch-embed", overlayOwner);
+    g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", overlayOwner);
     
     if (!interactable)
     {
-      $("#twitch-embed iframe").addClass("noselect");
+      $("#twitch-embed iframe").addClass("noselect nopointer");
     }
   }
   else
   {
     $("#twitch-embed").html("");
-    streamEmbed = null;
+    g_StreamEmbed = null;
   }
-}
-
-///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-///           CANVAS
-///
-///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-function handleCanvasUpdate(itemId, history, selfEdit)
-{
-  if (selfEdit)
-  {
-    return;
-  }
-  if (itemDict[itemId]["drawing"])
-  {
-    return;
-  }
-
-  const context = $("#item-{0}-canvas".format(itemId)).get(0).getContext('2d');
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-
-  history.forEach((action, i) => {
-    var actionType = action["action"];
-    var actionData = action["action_data"];
-
-    if (actionType == 0)
-    {
-      context.globalCompositeOperation = "source-over";
-      context.strokeStyle = actionData["strokeStyle"];
-    }
-    else if (actionType == 1)
-    {
-      context.globalCompositeOperation = "destination-out";
-      context.strokeStyle = "rgba(0, 0, 0, 1)";
-    }
-    else if (actionType == 2)
-    {
-      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-    }
-
-    context.lineWidth = viewToEditLength(actionData["lineWidth"]);
-    context.lineCap = 'round';
-
-    var p0 = viewToEditPoint(new Point(actionData["points"][0][0], actionData["points"][0][1]))
-
-    context.beginPath();
-    context.moveTo(p0.x, p0.y);
-    context.lineTo(p0.x, p0.y);
-
-    for (var i = 1; i < actionData["points"].length; i++)
-    {
-      var p_i = viewToEditPoint(new Point(actionData["points"][i][0], actionData["points"][i][1]))
-      context.lineTo(p_i.x, p_i.y);
-    }
-    
-    context.stroke();
-  });
 }
 
 function drawLine(itemId, p0, p1)
@@ -1795,45 +1820,45 @@ function toggleEmbeddedStreamInteraction(e)
 
   if (checked)
   {
-    $("#twitch-embed").removeClass("noselect");
-    $("#twitch-embed iframe").removeClass("noselect");
+    $("#twitch-embed").removeClass("noselect nopointer");
+    $("#twitch-embed iframe").removeClass("noselect nopointer");
   }
   else
   {
-    $("#twitch-embed").addClass("noselect");
-    $("#twitch-embed iframe").addClass("noselect");
+    $("#twitch-embed").addClass("noselect nopointer");
+    $("#twitch-embed iframe").addClass("noselect nopointer");
   }
 }
 
 function selectedVisibilityChange(e)
 {
-  otherSelectedItems.forEach((itemId) => {
-    itemDict[itemId]["item_data"]["visibility"] = $(e.target).is(":checked");
-    itemDict[itemId]["local_changes"] = true;
+  g_OtherSelectedItems.forEach((itemId) => {
+    g_ItemDict[itemId]["item_data"]["visibility"] = $(e.target).is(":checked");
+    g_ItemDict[itemId]["local_changes"] = true;
   });
 }
 
 function selectedMinimizedChange(e)
 {
-  otherSelectedItems.forEach((itemId) => {
-    itemDict[itemId]["item_data"]["minimized"] = $(e.target).is(":checked");
-    itemDict[itemId]["local_changes"] = true;
+  g_OtherSelectedItems.forEach((itemId) => {
+    g_ItemDict[itemId]["item_data"]["minimized"] = $(e.target).is(":checked");
+    g_ItemDict[itemId]["local_changes"] = true;
   });
 }
 
 function createYouTubePlayer(itemId)
 {
-  itemDict[itemId]['player_init'] = true;
-  itemDict[itemId]["player"] = new YT.Player('item-{0}-player'.format(itemId), {
+  g_ItemDict[itemId]['player_init'] = true;
+  g_ItemDict[itemId]["player"] = new YT.Player('item-{0}-player'.format(itemId), {
     height: '100%',
     width: '100%',
-    videoId: itemDict[itemId]['item_data']['video_id'],
+    videoId: g_ItemDict[itemId]['item_data']['video_id'],
     playerVars: {
       'controls': 1,
       'disablekb': 0,
       'autoplay': 0,
       'playsinline': 1,
-      'start': itemDict[itemId].item_data.start_time,
+      'start': g_ItemDict[itemId].item_data.start_time,
     },
     events: {
       'onReady': onPlayerReady,
@@ -1869,7 +1894,10 @@ $(window).on('load', function() {
   connectWebsocket(overlayId);
 
   getOverlayItems();
-  var getInterval = setInterval(function() { getOverlayItems(); }, 30000);
+  var getInterval = setInterval(function() { getOverlayItems(); }, 2500);
+
+  getChatHistory();
+  var historyInterval = setInterval(function() { getChatHistory(); }, 2500);
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   
@@ -1880,6 +1908,12 @@ $(window).on('load', function() {
   
   $(".edit-form").submit((e) => {
     e.preventDefault();
+  });
+
+  $("#chat-form").submit((e) => {
+    e.preventDefault();
+
+    sendChatMessage();
   });
 
   $(".edit-form input, .edit-form textarea, .edit-form select, .edit-form file").on("input", (e) => {
@@ -1910,6 +1944,17 @@ $(window).on('load', function() {
   
   $("#open-add-item").click((e) => { $("#add-item-modal").css({ "display": "flex" }); });
   $("#close-add-item").click((e) => { $("#add-item-modal").css({ "display": "none" }); });
+
+  $("#open-chat-button").click((e) => { 
+    g_ChatOpen = true; 
+    $("#chat-box").css({ "display": "block" }); 
+    $("#chat-message-indicator").css({ "display": "none" }); 
+  });
+
+  $("#close-chat-button").click((e) => { 
+    g_ChatOpen = false;
+    $("#chat-box").css({ "display": "none" });
+  });
 
   $(".tablink").first().click();
 

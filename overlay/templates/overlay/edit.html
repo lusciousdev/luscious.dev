@@ -16,8 +16,6 @@
 <script src="{% static 'ajaxhelpers.js' %}"></script>
 <script src="{% static 'jquery-3.7.1.min.js' %}"></script>
 
-<script src="{% static 'overlay/mathutil.js' %}"></script>
-<script src="{% static 'overlay/util.js' %}"></script>
 <script src="{% static 'overlay/edit.js' %}"
         defer
         data-overlayid="{{ collaborativeoverlay.id }}"
@@ -133,7 +131,7 @@
         <div id="cursor-container">
         </div>
         <div id="overlay" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};">
-          <div id="twitch-embed" class="noselect" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};" />
+          <div id="twitch-embed" class="noselect nopointer" style="aspect-ratio: {{ collaborativeoverlay.width }}/{{ collaborativeoverlay.height }};" />
         </div>
       </div>
     </div>
@@ -177,6 +175,22 @@
             {% endfor %}
           </div>
         </div>
+      </div>
+    </div>
+    <div class="noselect" id="open-chat-button">
+      <span class="indicator" id="chat-message-indicator"><span class="indicator-center"></span></span>
+      chat
+    </div>
+    <div class="popup" id="chat-box">
+      <span class="close" id="close-chat-button">&times;</span>
+      <div id="chat-box-container">
+        <div id="chat-history"></div>
+        <form id="chat-form">
+          <div id="chat-input-container">
+            <input id="chat-input" type="text" placeholder="Type message..." name="message" autocomplete="off" required></input>
+            <button type="submit" id="chat-submit">Send</button>
+          </div>
+        </form>
       </div>
     </div>
   </body>

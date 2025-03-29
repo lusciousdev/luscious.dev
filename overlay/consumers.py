@@ -5,7 +5,7 @@ from channels.generic.websocket import WebsocketConsumer
 from channels.auth import UserLazyObject
 from allauth.socialaccount.models import SocialAccount
 from django.core.exceptions import FieldDoesNotExist
-import time
+from django.urls import reverse
 import logging
 
 from .models import *
@@ -132,6 +132,10 @@ class OverlayConsumer(WebsocketConsumer):
       self.get_overlay_items()
     elif command == "add_overlay_item":
       self.add_overlay_item(data)
+    elif command == "move_overlay_item":
+      self.move_overlay_item(data)
+    elif command == "resize_overlay_item":
+      self.resize_overlay_item(data)
     elif command == "edit_overlay_item":
       self.edit_overlay_item(data)
     elif command == "delete_overlay_item":
@@ -144,6 +148,10 @@ class OverlayConsumer(WebsocketConsumer):
       self.ping(data)
     elif command == "mouse_position":
       self.send_mouse_position(data)
+    elif command == "get_chat_history":
+      self.get_chat_history()
+    elif command == "send_chat_message":
+      self.send_chat_message(data)
     
   def get_overlay_items(self):
     overlay_items = []
@@ -200,9 +208,10 @@ class OverlayConsumer(WebsocketConsumer):
     item_instance.save()
     
     self.queue_broadcast({ 
-      "command": "overlay_item_added", 
+      "command": "overlay_item_added",
+      "loopback": True,
       "data": {
-        "editor": self.overlay_user_id,
+        "uid": self.overlay_user_id,
         "item_type": item_instance.item_type,
         "is_displayed": item_instance.is_displayed(),
         "item_data": item_instance.to_data_dict(),
@@ -245,12 +254,12 @@ class OverlayConsumer(WebsocketConsumer):
     self.queue_broadcast({ 
       "command": "overlay_item_deleted", 
       "data": {
-        "editor": self.overlay_user_id,
+        "uid": self.overlay_user_id,
         "item_id": item_id, 
       } 
     })
     
-  def edit_overlay_item(self, data : dict):
+  def update_overlay_item(self, data : dict):
     if not self.owner_or_editor():
       self.queue_command("error", "Invalid user.")
       return
@@ -290,10 +299,45 @@ class OverlayConsumer(WebsocketConsumer):
     
     item_instance.save()
     
+    return item_instance
+    
+    
+  def move_overlay_item(self, data : dict):
+    item_instance = self.update_overlay_item(data)
+    
     self.queue_broadcast({ 
-      "command": "overlay_item_edited", 
+      "command": "overlay_item_moved", 
       "data": {
-        "editor": self.overlay_user_id,
+        "uid": self.overlay_user_id,
+        "item_id": item_instance.id,
+        "x": item_instance.x,
+        "y": item_instance.y, 
+      } 
+    })
+    
+  def resize_overlay_item(self, data : dict):
+    item_instance = self.update_overlay_item(data)
+    
+    self.queue_broadcast({
+      "command": "overlay_item_resized",
+      "data": {
+        "uid": self.overlay_user_id,
+        "item_id": item_instance.id,
+        "x": item_instance.x,
+        "y": item_instance.y,
+        "width": item_instance.width,
+        "height": item_instance.height,
+      }
+    })
+    
+  def edit_overlay_item(self, data : dict):
+    item_instance = self.update_overlay_item(data)
+    
+    self.queue_broadcast({ 
+      "command": "overlay_item_edited",
+      "loopback": True,
+      "data": {
+        "uid": self.overlay_user_id,
         "item_type": item_instance.get_simple_type(),
         "is_displayed": item_instance.is_displayed(),
         "item_data": item_instance.to_data_dict(), 
@@ -302,6 +346,7 @@ class OverlayConsumer(WebsocketConsumer):
     
   def ping(self, data):
     if self.owner_or_editor():
+      self.queue_command("pong", {})
       self.queue_broadcast({ 
         "command": "user_present", 
         "data": {
@@ -309,6 +354,8 @@ class OverlayConsumer(WebsocketConsumer):
           "uid": self.overlay_user_id,
         } 
       })
+    else:
+      self.queue_command("redirect", { "url": reverse("overlay:home") })
       
   def send_mouse_position(self, data):
     if "x" not in data or "y" not in data:
@@ -325,6 +372,41 @@ class OverlayConsumer(WebsocketConsumer):
           "y": data["y"],
         } 
       })
+      
+  def send_chat_message(self, data):
+    if not self.owner_or_editor():
+      self.queue_command("error", "Invalid user.")
+      return
+    
+    messageObj = ChatMessage.objects.create(overlay = self.overlay, user = self.user, message = data["message"])
+    
+    self.queue_broadcast({
+      "command": "chat_message_sent",
+      "loopback": True,
+      "data": {
+        "username": self.user.username,
+        "uid": self.overlay_user_id,
+        "date": messageObj.timestamp.strftime("%Y-%m-%d"),
+        "time": messageObj.timestamp.strftime("%H:%M:%S"),
+        "message": messageObj.message,
+      }
+    })
+    
+  def get_chat_history(self):
+    response = { "messages": [] }
+    chat_message : ChatMessage
+    for chat_message in self.overlay.chatmessage_set.order_by("-timestamp").all()[:250]:
+      message_dict = {
+        "username": chat_message.user.username,
+        "uid": OverlayUser.objects.get(id = chat_message.user.id).overlay.identifier,
+        "date": chat_message.timestamp.strftime("%Y-%m-%d"),
+        "time": chat_message.timestamp.strftime("%H:%M:%S"),
+        "message": chat_message.message,
+      }
+      
+      response["messages"].insert(0, message_dict)
+      
+    self.queue_command("chat_history", response)
       
   def trigger_item_event(self, data):
     if "event" not in data:
@@ -363,7 +445,6 @@ class OverlayConsumer(WebsocketConsumer):
     self.queue_broadcast({ 
       "command": "item_event_triggered", 
       "data": {
-        "username": self.user.username,
         "uid": self.overlay_user_id,
         "item_id": item_instance.id,
         "item_type": item_instance.get_simple_type(),
@@ -412,28 +493,50 @@ class OverlayConsumer(WebsocketConsumer):
     if data["event"] == "start_action":
       actionStr : str = data["action"]
       action : int = CanvasActionEnum.FromString(actionStr)
+      action_continued = False
       
       action_data : dict = data["action_data"]
       actionObj = CanvasAction.objects.create(canvas = item_instance, user = self.user, action = action, action_data = action_data)
     elif data["event"] == "add_points":
-      action : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance).order_by("-timestamp").first()
-      action.action_data['points'].extend(data["points"])
-      action.save()
-    if data["event"] == "undo":
-      action : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance, user = self.user).order_by("-timestamp").first()
-      if action: 
-        action.delete()
-    if data["event"] == "clear":
-      actionObj = CanvasAction.objects.create(canvas = item_instance, user = self.user, action = CanvasActionEnum.CLEAR, action_data = {})
-    
+      actionObj : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance, user = self.user).order_by("-timestamp").first()
+      actionObj.action_data['points'].extend(data["points"])
+      actionObj.save()
+      
+      action = actionObj.action
+      action_continued = True
+      action_data = actionObj.action_data
+      action_data["points"] = data["points"]
+    elif data["event"] == "undo":
+      actionObj : CanvasAction = self.user.canvasaction_set.filter(canvas = item_instance, user = self.user).order_by("-timestamp").first()
+      if actionObj: 
+        actionObj.delete()
+        
+      item_instance.refresh_from_db()
+      self.queue_broadcast({
+        "command": "canvas_undo",
+        "loopback": True,
+        "data": {
+          "uid": self.overlay_user_id,
+          "item_id": item_instance.id,
+          "history": item_instance.to_data_dict()["history"],
+        }
+      })
+      return
+    elif data["event"] == "clear":
+      action = CanvasActionEnum.CLEAR
+      action_continued = False
+      action_data = {}
+      
+      actionObj = CanvasAction.objects.create(canvas = item_instance, user = self.user, action = action, action_data = action_data)
+      
     self.queue_broadcast({ 
-      "command": "canvas_updated", 
+      "command": "canvas_action", 
       "data": {
-        "username": self.user.username,
         "uid": self.overlay_user_id,
         "item_id": item_instance.id,
-        "item_type": item_instance.get_simple_type(),
-        "history": item_instance.to_data_dict()['history'], 
+        "action": action,
+        "continue": action_continued,
+        "action_data": action_data
       } 
     })
     
@@ -448,6 +551,9 @@ class OverlayConsumer(WebsocketConsumer):
   def broadcast_events(self, event):
     event_list = event.get("event_list", [])
     
-    self.send(text_data = json.dumps({ "commands": event_list }))
+    event_list = list(filter(lambda command : command.get("loopback", False) or (command.get("data", {}).get("uid", "") != self.overlay_user_id), event_list))
+    
+    if (len(event_list) > 0):
+      self.send(text_data = json.dumps({ "commands": event_list }))
     
     

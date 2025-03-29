@@ -1,8 +1,8 @@
-var WEBSOCKET = undefined;
-var RECONNECT_INTERVAL = undefined;
-var YOUTUBE_PLAYER_API_LOADED = false;
+var g_Websocket = undefined;
+var g_ReconnectInterval = undefined;
+var g_YouTubePlayerAPILoaded = false;
 
-var itemDict = {};
+var g_ItemDict = {};
 
 const TRANSPARENT = "#00000000"
 
@@ -29,7 +29,7 @@ function handleWebsocketMessage(e)
   {
     var command = eventData.command;
     var data = eventData.data;
-
+  
     handleWebsocketCommand(command, data);
   }
 }
@@ -37,8 +37,8 @@ function handleWebsocketMessage(e)
 function handleWebsocketCommand(command, data)
 {
   var editor = "";
-  if ("editor" in data)
-    editor = data.editor;
+  if ("uid" in data)
+    editor = data.uid;
 
   switch (command)
   {
@@ -46,6 +46,12 @@ function handleWebsocketCommand(command, data)
       updateItems(data);
       break;
     case "overlay_item_added":
+      break;
+    case "overlay_item_moved":
+      moveItem(data.item_id, data.x, data.y);
+      break;
+    case "overlay_item_resized":
+      resizeItem(data.item_id, data.x, data.y, data.width, data.height);
       break;
     case "overlay_item_edited":
       updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == overlayUserId));
@@ -56,14 +62,28 @@ function handleWebsocketCommand(command, data)
     case "item_event_triggered":
       handleItemEvent(data.item_id, data.event);
       break;
-    case "canvas_updated":
-      handleCanvasUpdate(data.item_id, data.history, (editor == overlayUserId));
+    case "canvas_action":
+      handleCanvasAction(data.item_id, data.action, data.action_data, data.continue);
+      break;
+    case "canvas_undo":
+      handleCanvasUpdate(data.item_id, data.history);
       break;
     case "user_present":
       userPresent(data);
       break;
     case "mouse_position":
       repositionMouse(data);
+      break;
+    case "chat_history":
+      repopulateChatHistory(data["messages"]);
+      break;
+    case "chat_message_sent":
+      addChatMessages(data);
+      break;
+    case "pong":
+      break;
+    case "redirect":
+      window.location.replace(data.url);
       break;
     case "error":
       console.warn(data);
@@ -79,18 +99,18 @@ function connectWebsocket(overlayId)
   var protocol = "ws:"
   if (window.location.protocol == "https:")
     protocol = "wss:"
-  WEBSOCKET = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, overlayId));
+  g_Websocket = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, overlayId));
 
-  WEBSOCKET.onopen = (e) => { handleWebsocketOpen(e); };
-  WEBSOCKET.onmessage = (e) => { handleWebsocketMessage(e); };
-  WEBSOCKET.onclose = (e) => { attemptReconnect(e, overlayId); };
+  g_Websocket.onopen = (e) => { handleWebsocketOpen(e); };
+  g_Websocket.onmessage = (e) => { handleWebsocketMessage(e); };
+  g_Websocket.onclose = (e) => { attemptReconnect(e, overlayId); };
 }
 
 function sendWebsocketMessage(cmd, objData)
 {
-  if (WEBSOCKET != undefined && WEBSOCKET.readyState == WebSocket.OPEN)
+  if (g_Websocket != undefined && g_Websocket.readyState == WebSocket.OPEN)
   {
-    WEBSOCKET.send(JSON.stringify({
+    g_Websocket.send(JSON.stringify({
       "command": cmd,
       "data": objData,
     }));
@@ -99,17 +119,17 @@ function sendWebsocketMessage(cmd, objData)
 
 function sendWebsocketMessages(msgList)
 {
-  if (WEBSOCKET != undefined && WEBSOCKET.readyState == WebSocket.OPEN)
+  if (g_Websocket != undefined && g_Websocket.readyState == WebSocket.OPEN && msgList.length > 0)
   {
-    WEBSOCKET.send(JSON.stringify({ "commands": msgList }));
+    g_Websocket.send(JSON.stringify({ "commands": msgList }));
   }
 }
 
-function getDefaultCSS(editView, idata)
+function getDefaultCSS(idata)
 {
   var visible = "hidden";
 
-  if ((idata['visibility'] == 1 && editView) || (idata["visibility"] == 2))
+  if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
   {
     visible = "inherit";
   }
@@ -168,11 +188,11 @@ function getDefaultCSS(editView, idata)
   return cssObj;
 }
 
-function getDefaultContainerCSS(editView, idata)
+function getDefaultContainerCSS(idata)
 {
   var visible = false;
 
-  if ((idata['visibility'] == 1 && editView) || (idata["visibility"] == 2))
+  if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
   {
     visible = true;
   }
@@ -186,14 +206,14 @@ function getDefaultContainerCSS(editView, idata)
 
 function attemptReconnect(e, overlayId)
 {
-  if (RECONNECT_INTERVAL == undefined)
+  if (g_ReconnectInterval == undefined)
   {
-    RECONNECT_INTERVAL = setInterval(() => { 
-      if (WEBSOCKET.readyState == WebSocket.OPEN)
+    g_ReconnectInterval = setInterval(() => { 
+      if (g_Websocket.readyState == WebSocket.OPEN)
       {
         console.log("Reconnected websocket.");
-        clearInterval(RECONNECT_INTERVAL);
-        RECONNECT_INTERVAL = undefined;
+        clearInterval(g_ReconnectInterval);
+        g_ReconnectInterval = undefined;
         return;
       }
   
@@ -220,12 +240,12 @@ function getItemDiv(itemId)
 
 function deleteItem(itemId)
 {
-  delete itemDict[itemId];
+  delete g_ItemDict[itemId];
 
   getItemDiv(itemId).remove();
   $("#item-{0}-list-entry".format(itemId)).remove();
 
-  if (itemId == selectedItem)
+  if (itemId == g_SelectedItem)
   {
     clearSelectedItem();
   }
@@ -252,7 +272,7 @@ function handleItemEvent(itemId, event)
 
 function resetItem(itemId)
 {
-  var itemType = itemDict[itemId]['item_type'];
+  var itemType = g_ItemDict[itemId]['item_type'];
   
   switch (itemType)
   {
@@ -275,7 +295,7 @@ function resetItem(itemId)
 
 function playItem(itemId)
 {
-  var itemType = itemDict[itemId]['item_type'];
+  var itemType = g_ItemDict[itemId]['item_type'];
   
   switch (itemType)
   {
@@ -289,7 +309,7 @@ function playItem(itemId)
 
 function pauseItem(itemId)
 {
-  var itemType = itemDict[itemId]['item_type'];
+  var itemType = g_ItemDict[itemId]['item_type'];
   
   switch (itemType)
   {
@@ -350,15 +370,15 @@ function secondsToTimeFormat(totalSeconds)
   return "{0}:{1}:{2}".format(hours.pad(), minutes.pad(), seconds.pad());
 }
 
-function setTextItemContent(editView, overlayElement, itemId, itemText, itemData)
+function setTextItemContent(overlayElement, itemId, itemText, itemData)
 {
   var overlayElemWidth = $(overlayElement).width();
   var textElemId = "#item-{0}-text".format(itemId);
-  var fontSize = (overlayElemWidth * itemData['font_size']) / overlayWidth;
+  var fontSize = (overlayElemWidth * itemData['font_size']) / OVERLAY_WIDTH;
 
   $(textElemId).text(itemText);
 
-  var itemCSS = getDefaultCSS(editView, itemData);
+  var itemCSS = getDefaultCSS(itemData);
   itemCSS["font-size"] = "{0}pt".format(fontSize);
   itemCSS["font-family"] = "{0}, sans-serif".format(itemData["font"]);
   itemCSS["font-weight"] = itemData["font_weight"];
@@ -371,12 +391,100 @@ function setTextItemContent(editView, overlayElement, itemId, itemText, itemData
   $(textElemId).css(itemCSS);
 }
 
-function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, afterAdditionCallback, afterEditCallback)
+function moveItem(itemId, x, y)
+{
+  if (!(itemId in g_ItemDict))
+  {
+    console.error("Tried to move item that doesn't exist yet.");
+    return;
+  }
+
+  if (!EDIT_VIEW || !g_ItemDict[itemId]['moving'])
+  {
+    g_ItemDict[itemId]['item_data']['x'] = x;
+    g_ItemDict[itemId]['item_data']['y'] = y;
+  }
+
+  var top = g_ItemDict[itemId]['item_data']['y'];
+  var left = g_ItemDict[itemId]['item_data']['x'];
+  var width = g_ItemDict[itemId]['item_data']['width'];
+  var height = g_ItemDict[itemId]['item_data']['height'];
+  if (EDIT_VIEW)
+  {
+    top    = viewToEditLength(top);
+    left   = viewToEditLength(left);
+    width  = viewToEditLength(width);
+    height = viewToEditLength(height);
+  }
+
+  var z = g_ItemDict[itemId]['item_data']['z'];
+  var rotation = g_ItemDict[itemId]['item_data']['rotation'];
+
+  setItemPosition(itemId, top, left, width, height, z, rotation);
+}
+
+function resizeItem(itemId, x, y, width, height)
+{
+  if (!(itemId in g_ItemDict))
+  {
+    console.error("Tried to resize item that doesn't exist yet.");
+    return;
+  }
+
+  if (!EDIT_VIEW || !g_ItemDict[itemId]['moving'])
+  {
+    g_ItemDict[itemId]['item_data']['x'] = x;
+    g_ItemDict[itemId]['item_data']['y'] = y;
+    g_ItemDict[itemId]['item_data']['width'] = width;
+    g_ItemDict[itemId]['item_data']['height'] = height;
+  }
+
+  var top = g_ItemDict[itemId]['item_data']['y'];
+  var left = g_ItemDict[itemId]['item_data']['x'];
+  var width = g_ItemDict[itemId]['item_data']['width'];
+  var height = g_ItemDict[itemId]['item_data']['height'];
+  if (EDIT_VIEW)
+  {
+    top    = viewToEditLength(top);
+    left   = viewToEditLength(left);
+    width  = viewToEditLength(width);
+    height = viewToEditLength(height);
+  }
+
+  var z = g_ItemDict[itemId]['item_data']['z'];
+  var rotation = g_ItemDict[itemId]['item_data']['rotation'];
+
+  setItemPosition(itemId, top, left, width, height, z, rotation);
+
+  var itemType = g_ItemDict[itemId]['item_type'];
+
+  switch (itemType)
+  {
+    case "image":
+      var imgTag = $("#item-{0}-img".format(itemId));
+      imgTag.attr('width', "{0}px".format(width));
+      imgTag.attr('height', "{0}px".format(height));
+      break;
+    case "canvas":
+      var canvasId = "#item-{0}-canvas".format(itemId);
+      var canvasTag = $(canvasId);
+      if (!g_ItemDict[itemId]["drawing"])
+      {
+        if (Math.abs(width - canvasTag.width()) > 1) canvasTag.attr('width', "{0}px".format(width));
+        if (Math.abs(height - canvasTag.height()) > 1) canvasTag.attr('height', "{0}px".format(height));
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, prevItemData, afterAdditionCallback, afterEditCallback)
 {
   var itemElemId = '#item-{0}'.format(itemId);
   var itemContainerId = '#item-{0}-container'.format(itemId);
 
-  if(!editView && itemData["view_lock"])
+  if(!EDIT_VIEW && itemData["view_lock"])
   {
     return;
   }
@@ -386,7 +494,7 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
     $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item {1}-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId, itemType))
   
     setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemContainerId).css(getDefaultContainerCSS(editView, itemData));
+    $(itemContainerId).css(getDefaultContainerCSS(itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
@@ -409,20 +517,20 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
         
         $(imgElemId).on('dragstart', (event) => { event.preventDefault(); });
 
-        $(imgElemId).css(getDefaultCSS(editView, itemData));
+        $(imgElemId).css(getDefaultCSS(itemData));
         break;
       case "canvas":
         $(itemContainerId).append("<canvas id='item-{0}-canvas' width='{1}px' height='{2}px' />".format(itemId, width, height));
 
-        $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(editView, itemData));
-        handleCanvasUpdate(itemId, itemData["history"], (selfEdit && editView));
+        $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(itemData));
+        handleCanvasUpdate(itemId, itemData["history"]);
         break;
       case "audio":
         audioUrl = itemData['audio_url'];
 
-        itemDict[itemId]['audio'] = new Audio(audioUrl);
-        itemDict[itemId]['audio'].load();
-        itemDict[itemId]['audio'].volume = (itemData['volume'] / 100.0);
+        g_ItemDict[itemId]['audio'] = new Audio(audioUrl);
+        g_ItemDict[itemId]['audio'].load();
+        g_ItemDict[itemId]['audio'].volume = (itemData['volume'] / 100.0);
         break;
       case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
@@ -440,57 +548,57 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
 
         $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
-        itemDict[itemId]['player_ready'] = false;
-        itemDict[itemId]['player'] = undefined;
+        g_ItemDict[itemId]['player_ready'] = false;
+        g_ItemDict[itemId]['player'] = undefined;
 
-        if (YOUTUBE_PLAYER_API_LOADED)
+        if (g_YouTubePlayerAPILoaded)
         {
           createYouTubePlayer(itemId);
         }
 
-        $(playerId).css(getDefaultCSS(editView, itemData));
+        $(playerId).css(getDefaultCSS(itemData));
         break;
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId)
 
         $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
-        if (itemDict[itemId].item_data.channel != "")
+        if (g_ItemDict[itemId].item_data.channel != "")
         {
-          itemDict[itemId]['player'] = createTwitchStreamPlayer("item-{0}-player".format(itemId), itemDict[itemId].item_data.channel);
+          g_ItemDict[itemId]['player'] = createTwitchStreamPlayer("item-{0}-player".format(itemId), g_ItemDict[itemId].item_data.channel);
   
           updateTwitchStreamPlayer(itemId);
         }
         else
         {
-          itemDict[itemId]['player'] = null;
+          g_ItemDict[itemId]['player'] = null;
         }
 
-        $(playerId).css(getDefaultCSS(editView, itemData));
+        $(playerId).css(getDefaultCSS(itemData));
         break;
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
         $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
 
-        if (itemDict[itemId].item_data.video_id != "")
+        if (g_ItemDict[itemId].item_data.video_id != "")
         {
-          itemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
-                                                               itemDict[itemId].item_data.video_id, 
-                                                               startTimeToTwitchVideoTime(itemDict[itemId].item_data.start_timeh));
+          g_ItemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
+                                                               g_ItemDict[itemId].item_data.video_id, 
+                                                               startTimeToTwitchVideoTime(g_ItemDict[itemId].item_data.start_timeh));
   
           updateTwitchVideoPlayer(itemId);
         }
         else
         {
-          itemDict[itemId]['player'] = null;
+          g_ItemDict[itemId]['player'] = null;
         }
 
-        $(playerId).css(getDefaultCSS(editView, itemData));
+        $(playerId).css(getDefaultCSS(itemData));
         break;
       case "text":
         $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
-        setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
+        setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
         break;
       case "stopwatch":
         $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
@@ -502,13 +610,13 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
         }
         var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
         
-        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
       case "counter":
         $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
-        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
       default:
         break;
@@ -519,7 +627,7 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
   else
   {
     setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemContainerId).css(getDefaultContainerCSS(editView, itemData));
+    $(itemContainerId).css(getDefaultContainerCSS(itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
@@ -544,31 +652,32 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
         imgTag.attr('width', "{0}px".format(width));
         imgTag.attr('height', "{0}px".format(height));
 
-        imgTag.css(getDefaultCSS(editView, itemData));
+        imgTag.css(getDefaultCSS(itemData));
         break;
       case "canvas":
         var canvasId = "#item-{0}-canvas".format(itemId);
         var canvasTag = $(canvasId);
 
-        canvasTag.css(getDefaultCSS(editView, itemData));
+        canvasTag.css(getDefaultCSS(itemData));
         
-        if (!itemDict[itemId]["drawing"])
+        if (!g_ItemDict[itemId]["drawing"])
         {
           if (Math.abs(width - canvasTag.width()) > 1) canvasTag.attr('width', "{0}px".format(width));
           if (Math.abs(height - canvasTag.height()) > 1) canvasTag.attr('height', "{0}px".format(height));
         }
-        handleCanvasUpdate(itemId, itemData["history"], (selfEdit && editView));
+
+        handleCanvasUpdate(itemId, itemData["history"]);
         break;
       case "audio":
         audioUrl = itemData['audio_url'];
 
-        if (itemDict[itemId]['audio'].src != new URL(audioUrl, window.location.origin))
+        if (g_ItemDict[itemId]['audio'].src != new URL(audioUrl, window.location.origin))
         {
-          itemDict[itemId]['audio'].src = audioUrl;
-          itemDict[itemId]['audio'].load();
+          g_ItemDict[itemId]['audio'].src = audioUrl;
+          g_ItemDict[itemId]['audio'].load();
         }
 
-        itemDict[itemId]['audio'].volume = (itemData['volume'] / 100.0);
+        g_ItemDict[itemId]['audio'].volume = (itemData['volume'] / 100.0);
         break;
       case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
@@ -578,60 +687,60 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
           $(iframeId).attr('src', itemData['embed_url']);
         }
 
-        $(iframeId).css(getDefaultCSS(editView, itemData));
+        $(iframeId).css(getDefaultCSS(itemData));
         break;
       case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
 
-        if (YOUTUBE_PLAYER_API_LOADED)
+        if (g_YouTubePlayerAPILoaded)
         {
-          if (itemDict[itemId]['player'] == undefined)
+          if (g_ItemDict[itemId]['player'] == undefined)
           {
             createYouTubePlayer(itemId);
           }
           
-          if (itemDict[itemId]['player_ready'])
+          if (g_ItemDict[itemId]['player_ready'])
           {
             updateYouTubePlayer(itemId);
           }
         }
 
-        $(playerId).css(getDefaultCSS(editView, itemData));
+        $(playerId).css(getDefaultCSS(itemData));
         break;
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId);
 
-        if (itemDict[itemId].item_data.channel != "")
+        if (g_ItemDict[itemId].item_data.channel != "")
         {
-          if (itemDict[itemId]['player'] == null)
+          if (g_ItemDict[itemId]['player'] == null)
           {
-            itemDict[itemId]['player'] = createTwitchStreamPlayer("item-{0}-player".format(itemId), itemDict[itemId].item_data.channel);
+            g_ItemDict[itemId]['player'] = createTwitchStreamPlayer("item-{0}-player".format(itemId), g_ItemDict[itemId].item_data.channel);
           }
 
           updateTwitchStreamPlayer(itemId);
         }
 
-        $(playerId).css(getDefaultCSS(editView, itemData));
+        $(playerId).css(getDefaultCSS(itemData));
         break;
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
-        if (itemDict[itemId].item_data.video_id != "")
+        if (g_ItemDict[itemId].item_data.video_id != "")
         {
-          if (itemDict[itemId]['player'] == null)
+          if (g_ItemDict[itemId]['player'] == null)
           {
-            itemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
-                                                                 itemDict[itemId].item_data.video_id, 
-                                                                 startTimeToTwitchVideoTime(itemDict[itemId].item_data.start_timeh));
+            g_ItemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
+                                                                 g_ItemDict[itemId].item_data.video_id, 
+                                                                 startTimeToTwitchVideoTime(g_ItemDict[itemId].item_data.start_timeh));
           }
   
           updateTwitchVideoPlayer(itemId);
         }
 
-        $(playerId).css(getDefaultCSS(editView, itemData));
+        $(playerId).css(getDefaultCSS(itemData));
         break;
       case "text":
-        setTextItemContent(editView, overlayElement, itemId, itemData['text'], itemData);
+        setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
         break;
       case "stopwatch":
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
@@ -641,11 +750,11 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
         }
         var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
         
-        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemData);
         break
       case "counter":
         var textContent = itemData['counter_format'].format(itemData['count'])
-        setTextItemContent(editView, overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
       default:
         break;
@@ -655,9 +764,178 @@ function addOrUpdateItem(editView, selfEdit, overlayElement, itemId, itemType, i
   }
 }
 
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           CANVAS
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function createShader(gl, type, source) {
+  var shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+  if (success) {
+    return shader;
+  }
+
+  console.log(gl.getShaderInfoLog(shader));
+  gl.deleteShader(shader);
+}
+
+function createProgram(gl, vertexShader, fragmentShader) {
+  var program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+  if (success) {
+    return program;
+  }
+
+  console.log(gl.getProgramInfoLog(program));
+  gl.deleteProgram(program);
+}
+
+function handleCanvasUpdate(itemId, history)
+{
+  if (EDIT_VIEW && g_ItemDict[itemId]["drawing"])
+  {
+    return;
+  }
+
+  const canvas = $("#item-{0}-canvas".format(itemId)).get(0);
+  const context = canvas.getContext('2d');
+
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+
+  history.forEach((action, i) => {
+    var actionType = action["action"];
+    var actionData = action["action_data"];
+
+    handleCanvasActionWithContext(context, itemId, actionType, actionData);
+  });
+}
+
+function handleCanvasClear(itemId)
+{
+  if (EDIT_VIEW && g_ItemDict[itemId]["drawing"])
+  {
+    return;
+  }
+
+  const canvas = $("#item-{0}-canvas".format(itemId)).get(0);
+  const context = canvas.getContext('2d');
+
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+}
+
+function handleCanvasAction(itemId, action, actionData, actionContinued = false)
+{
+  const canvas = $("#item-{0}-canvas".format(itemId)).get(0);
+  const context = canvas.getContext('2d');
+
+  handleCanvasActionWithContext(context, itemId, action, actionData, actionContinued)
+}
+
+function handleCanvasActionWithContext(context, itemId, action, actionData, actionContinued = false)
+{
+  if (action == 0)
+  {
+    context.globalCompositeOperation = "source-over";
+    context.strokeStyle = actionData["strokeStyle"];
+  }
+  else if (action == 1)
+  {
+    context.globalCompositeOperation = "destination-out";
+    context.strokeStyle = "rgba(0, 0, 0, 1)";
+  }
+  else if (action == 2)
+  {
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+    return 
+  }
+
+  context.lineWidth = EDIT_VIEW ? viewToEditLength(actionData["lineWidth"]) : actionData["lineWidth"];
+  context.lineCap = 'round';
+
+
+  context.beginPath()
+
+  var p0 = new Point(actionData["points"][0][0], actionData["points"][0][1]);
+  if (EDIT_VIEW)
+    p0 = viewToEditPoint(p0)
+  
+  if (actionContinued)
+  {
+    p0 = g_ItemDict[itemId]["last_point"];
+    if (EDIT_VIEW)
+      p0 = viewToEditPoint(p0);
+  }
+
+  context.moveTo(p0.x, p0.y);
+
+  for (var i = 0; i < actionData["points"].length; i++)
+  {
+    var p_i = new Point(actionData["points"][i][0], actionData["points"][i][1]);
+    if (EDIT_VIEW)
+      p_i = viewToEditPoint(p_i);
+    context.lineTo(p_i.x, p_i.y);
+  }
+    
+  context.stroke();
+
+  g_ItemDict[itemId]['last_point'] = new Point(actionData.points[actionData.points.length - 1][0], actionData.points[actionData.points.length - 1][1]);
+}
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           YOUTUBE
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 function onYouTubeIframeAPIReady()
 {
-  YOUTUBE_PLAYER_API_LOADED = true;
+  g_YouTubePlayerAPILoaded = true;
+}
+
+function updateYouTubePlayer(itemId)
+{
+  if (g_ItemDict[itemId]["player"] == undefined)
+    return;
+
+  var videoData = g_ItemDict[itemId]["player"].getVideoData();
+
+  g_ItemDict[itemId].player.setVolume(g_ItemDict[itemId].item_data.volume);
+
+  if (videoData.video_id != g_ItemDict[itemId].item_data.video_id)
+  {
+    g_ItemDict[itemId].player.loadVideoById(g_ItemDict[itemId].item_data.video_id);
+  }
+
+  if (g_ItemDict[itemId]['item_data']['muted'])
+  {
+    g_ItemDict[itemId].player.mute();
+  }
+  else
+  {
+    g_ItemDict[itemId].player.unMute();
+  }
+
+  if (g_ItemDict[itemId]['item_data']['paused'])
+  {
+    g_ItemDict[itemId].player.pauseVideo();
+  }
+  else
+  {
+    g_ItemDict[itemId].player.playVideo();
+  }
+}
+
+function resetYouTubePlayer(itemId)
+{
+  if (g_YouTubePlayerAPILoaded) 
+  {
+    g_ItemDict[itemId].player.cueVideoById(g_ItemDict[itemId].item_data.video_id, g_ItemDict[itemId].item_data.start_time);
+  }
 }
 
 function onPlayerReady(event) {
@@ -665,8 +943,13 @@ function onPlayerReady(event) {
   event.target.pauseVideo();
 
   var itemElem = $(event.target.g).closest(".overlay-item");
-  itemDict[itemElem.attr("itemid")]["player_ready"] = true;
+  g_ItemDict[itemElem.attr("itemid")]["player_ready"] = true;
 }
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           TWITCH
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 function createTwitchStreamPlayer(divId, channel)
 {
@@ -680,14 +963,14 @@ function createTwitchStreamPlayer(divId, channel)
 
 function updateTwitchStreamPlayer(itemId)
 {
-  if (itemDict[itemId].player == null)
+  if (g_ItemDict[itemId].player == null)
   {
     return
   }
 
-  if (itemDict[itemId].player.getChannel() != itemDict[itemId].item_data.channel)
+  if (g_ItemDict[itemId].player.getChannel() != g_ItemDict[itemId].item_data.channel)
   {
-    itemDict[itemId].player.setChannel(itemDict[itemId].item_data.channel);
+    g_ItemDict[itemId].player.setChannel(g_ItemDict[itemId].item_data.channel);
   }
 
   updateTwitchEmbed(itemId);
@@ -695,7 +978,7 @@ function updateTwitchStreamPlayer(itemId)
 
 function resetTwitchStreamEmbed(itemId)
 {
-  itemDict[itemId].player.setChannel(itemDict[itemId].item_data.channel);
+  g_ItemDict[itemId].player.setChannel(g_ItemDict[itemId].item_data.channel);
 }
 
 function createTwitchVideoPlayer(divId, video, time)
@@ -711,14 +994,14 @@ function createTwitchVideoPlayer(divId, video, time)
 
 function updateTwitchVideoPlayer(itemId)
 {
-  if (itemDict[itemId].player == null)
+  if (g_ItemDict[itemId].player == null)
   {
     return
   }
 
-  if (itemDict[itemId].player.getVideo() != itemDict[itemId].item_data.video_id)
+  if (g_ItemDict[itemId].player.getVideo() != g_ItemDict[itemId].item_data.video_id)
   {
-    itemDict[itemId].player.setVideo(itemDict[itemId].item_data.video_id, itemDict[itemId].item_data.start_time);
+    g_ItemDict[itemId].player.setVideo(g_ItemDict[itemId].item_data.video_id, g_ItemDict[itemId].item_data.start_time);
   }
 
   updateTwitchEmbed(itemId);
@@ -726,78 +1009,42 @@ function updateTwitchVideoPlayer(itemId)
 
 function resetTwitchVideoEmbed(itemId)
 {
-  itemDict[itemId].player.seek(itemDict[itemId].item_data.start_time);
+  g_ItemDict[itemId].player.seek(g_ItemDict[itemId].item_data.start_time);
 }
 
 function updateTwitchEmbed(itemId)
 {
-  if (itemDict[itemId].item_data.paused)
+  if (g_ItemDict[itemId].item_data.paused)
   {
-    itemDict[itemId].player.pause();
+    g_ItemDict[itemId].player.pause();
   }
   else
   {
-    itemDict[itemId].player.play();
+    g_ItemDict[itemId].player.play();
   }
 
-  itemDict[itemId].player.setMuted(itemDict[itemId].item_data.muted);
-  itemDict[itemId].player.setVolume(itemDict[itemId].item_data.volume / 100.0);
+  g_ItemDict[itemId].player.setMuted(g_ItemDict[itemId].item_data.muted);
+  g_ItemDict[itemId].player.setVolume(g_ItemDict[itemId].item_data.volume / 100.0);
 }
 
-function updateYouTubePlayer(itemId)
-{
-  if (itemDict[itemId]["player"] == undefined)
-    return;
-
-  var videoData = itemDict[itemId]["player"].getVideoData();
-
-  itemDict[itemId].player.setVolume(itemDict[itemId].item_data.volume);
-
-  if (videoData.video_id != itemDict[itemId].item_data.video_id)
-  {
-    itemDict[itemId].player.loadVideoById(itemDict[itemId].item_data.video_id);
-  }
-
-  if (itemDict[itemId]['item_data']['muted'])
-  {
-    itemDict[itemId].player.mute();
-  }
-  else
-  {
-    itemDict[itemId].player.unMute();
-  }
-
-  if (itemDict[itemId]['item_data']['paused'])
-  {
-    itemDict[itemId].player.pauseVideo();
-  }
-  else
-  {
-    itemDict[itemId].player.playVideo();
-  }
-}
-
-function resetYouTubePlayer(itemId)
-{
-  if (YOUTUBE_PLAYER_API_LOADED) 
-  {
-    itemDict[itemId].player.cueVideoById(itemDict[itemId].item_data.video_id, itemDict[itemId].item_data.start_time);
-  }
-}
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           AUDIO
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 function resetAudioItem(itemId)
 {
-  itemDict[itemId]['audio'].currentTime = 0;
+  g_ItemDict[itemId]['audio'].currentTime = 0;
 }
 
 function playAudioItem(itemId)
 {
-  itemDict[itemId]['audio'].play();
+  g_ItemDict[itemId]['audio'].play();
 }
 
 function pauseAudioItem(itemId)
 {
-  itemDict[itemId]['audio'].pause();
+  g_ItemDict[itemId]['audio'].pause();
 }
 
 function getItemIconName(itemType)

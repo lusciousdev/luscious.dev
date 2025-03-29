@@ -36,14 +36,6 @@ body {
   z-index: 0;
 }
 
-.material-symbols-outlined {
-  font-variation-settings:
-  'FILL' 0,
-  'wght' 400,
-  'GRAD' 0,
-  'opsz' 24
-}
-
 .site-title-container {
   display: flex;
   flex-direction: column;
@@ -277,7 +269,9 @@ body {
         -ms-user-select: none; /* Internet Explorer/Edge */
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome, Edge, Opera and Firefox */
+}
 
+.nopointer {
   pointer-events: none;
 }
 
@@ -361,7 +355,8 @@ body {
   float: right;
   font-size: 3em;
   font-weight: bold;
-  margin: 0px 0px 0px 25px;;
+  margin: 0px 5px 0px 5px;
+  line-height: 65%;
 }
 
 .close:hover,
@@ -417,6 +412,94 @@ body {
 
 .indented-label {
   text-indent: 1em;
+}
+
+.indicator {
+  display: none;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  z-index: 10;
+
+  height: 20px;
+  width: 20px;
+  line-height: 5px;
+
+  background-color: rgb(169, 14, 14);
+  border-radius: 50%;
+}
+
+.indicator-center {
+  height: 30%;
+  width: 30%;
+  
+  background-color: white;
+  border-radius: 50%;
+}
+
+#open-chat-button {
+  font-family: 'Material Symbols Outlined';
+
+  background-color: var(--logo);
+  cursor: pointer;
+
+  position: fixed;
+  bottom: 23px;
+  right: 28px;
+
+  font-size: 3.25em;
+  padding: 3px 10px;
+  border-radius: 10%;
+}
+
+.popup {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 15px;
+  z-index: 999999;
+
+  padding: 15px 0px 15px 15px;
+  background-color: light-dark(var(--light-foreground), var(--dark-foreground));
+}
+
+#chat-box {
+  font-size: 1.125em;
+}
+
+#chat-box-container {
+  width: 32em;
+  float: right;
+}
+
+#chat-input-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+#chat-history {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 8em;
+  max-height: 16em;
+  overflow-y: scroll;
+  margin-bottom: 10px;
+  background-color: light-dark(var(--light-lighter), var(--dark-lighter));
+}
+
+#chat-input, #chat-submit {
+  font-size: inherit;
+}
+
+.chat-message {
+  margin-left: 2em;
+  text-indent: -2em;
 }
 
 @media screen and (max-width: 300px)

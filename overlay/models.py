@@ -448,6 +448,16 @@ class CounterItem(AbstractTextItem):
   @staticmethod
   def is_displayed():
     return True
+  
+class ChatMessage(models.Model):
+  overlay = models.ForeignKey(CollaborativeOverlay, null = True, on_delete = models.CASCADE)
+  user = models.ForeignKey(settings.AUTH_USER_MODEL, null = True, on_delete = models.SET_NULL)
+  
+  timestamp = models.DateTimeField(auto_now_add = True)
+  message = models.TextField(default = "", blank = False, null = False)
+  
+  class Meta:
+    ordering = ('timestamp', )
 
 ITEM_TYPES = [
   ImageItem,

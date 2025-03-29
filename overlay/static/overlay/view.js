@@ -2,15 +2,18 @@ const data = document.currentScript.dataset;
 
 const overlayId = data.overlayid;
 const getOverlayItemsUrl = data.getitemsurl;
-const overlayWidth = parseInt(data.overlaywidth, 10)
-const overlayHeight = parseInt(data.overlayheight, 10)
 
-const twitchUser = undefined;
+const OVERLAY_WIDTH = parseInt(data.overlaywidth, 10)
+const OVERLAY_HEIGHT = parseInt(data.overlayheight, 10)
+
+const EDIT_VIEW = false;
+
+const overlayUserId = undefined;
 
 function updateItems(data, fullItemList = true, selfEdit = false)
 {
   var itemSeen = {};
-  for (itemId in itemDict)
+  for (itemId in g_ItemDict)
   {
     itemSeen[itemId] = false;
   }
@@ -23,14 +26,16 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var itemData = item["item_data"];
     var itemId = itemData['id'];
     
-    if (itemId in itemDict)
+    var prevItemData = null;
+    if (itemId in g_ItemDict)
     {
       itemSeen[itemId] = true;
-      itemDict[itemData['id']]['item_data'] = itemData;
+      prevItemData = g_ItemDict[itemData['id']]['item_data'];
+      g_ItemDict[itemData['id']]['item_data'] = itemData;
     }
     else
     {
-      itemDict[itemData['id']] = {
+      g_ItemDict[itemData['id']] = {
         "item_type": itemType,
         "item_data": itemData,
       };
@@ -43,7 +48,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var z = itemData['z'];
     var rotation = itemData['rotation'];
     
-    addOrUpdateItem(false, false, "body", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData,
+    addOrUpdateItem(false, "body", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, prevItemData,
       () => { addItemCallback(itemId, itemType); },
       () => { updateItemCallback(itemId, itemType); });
   }
@@ -100,17 +105,17 @@ function handleGetItemsError(data)
 
 function createYouTubePlayer(itemId)
 {
-  itemDict[itemId]['player_init'] = true;
-  itemDict[itemId]['player'] = new YT.Player('item-{0}-player'.format(itemId), {
+  g_ItemDict[itemId]['player_init'] = true;
+  g_ItemDict[itemId]['player'] = new YT.Player('item-{0}-player'.format(itemId), {
     height: '100%',
     width: '100%',
-    videoId: itemDict[itemId]['item_data']['video_id'],
+    videoId: g_ItemDict[itemId]['item_data']['video_id'],
     playerVars: {
       'controls': 0,
       'disablekb': 1,
       'autoplay': 0,
       'playsinline': 1,
-      'start': itemDict[itemId].item_data.start_time,
+      'start': g_ItemDict[itemId].item_data.start_time,
     },
     events: {
       'onReady': onPlayerReady,
@@ -118,48 +123,10 @@ function createYouTubePlayer(itemId)
   });
 }
 
-function handleCanvasUpdate(itemId, history)
-{
-  const context = $("#item-{0}-canvas".format(itemId)).get(0).getContext('2d');
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-
-  history.forEach((action, i) => {
-    var actionType = action["action"];
-    var actionData = action["action_data"];
-
-    if (actionType == 0)
-    {
-      context.globalCompositeOperation = "source-over";
-      context.strokeStyle = actionData["strokeStyle"];
-    }
-    else if (actionType == 1)
-    {
-      context.globalCompositeOperation = "destination-out";
-      context.strokeStyle = "rgba(0, 0, 0, 1)";
-    }
-    else if (actionType == 2)
-    {
-      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-    }
-
-    context.lineWidth = actionData["lineWidth"];
-    context.lineCap = 'round';
-
-    context.beginPath();
-    context.moveTo(actionData["points"][0][0], actionData["points"][0][1]);
-    context.lineTo(actionData["points"][0][0], actionData["points"][0][1]);
-
-    for (var i = 1; i < actionData["points"].length; i++)
-    {
-      context.lineTo(actionData["points"][i][0], actionData["points"][i][1]);
-    }
-    
-    context.stroke();
-  });
-}
-
 function userPresent(data) { }
 function repositionMouse(data) { }
+function repopulateChatHistory() { }
+function addChatMessages(messageArray) { }
 
 function handleWebsocketOpen(e)
 {
