@@ -459,6 +459,10 @@ body {
 
 .popup {
   display: none;
+  flex-direction: row;
+  justify-content: start;
+  align-items: start;
+
   position: fixed;
   bottom: 10px;
   right: 15px;
@@ -470,10 +474,13 @@ body {
 
 #chat-box {
   font-size: 1.125em;
+  width: 35em;
+  max-width: 90%;
 }
 
 #chat-box-container {
-  width: 32em;
+  flex-grow: 1;
+  box-sizing: border-box;
   float: right;
 }
 

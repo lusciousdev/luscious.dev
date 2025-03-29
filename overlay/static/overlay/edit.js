@@ -1954,7 +1954,7 @@ $(window).on('load', function() {
 
   $("#open-chat-button").click((e) => { 
     g_ChatOpen = true; 
-    $("#chat-box").css({ "display": "block" }); 
+    $("#chat-box").css({ "display": "flex" }); 
     $("#chat-message-indicator").css({ "display": "none" }); 
   });
 
