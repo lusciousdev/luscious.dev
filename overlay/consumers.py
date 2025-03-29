@@ -147,6 +147,8 @@ class OverlayConsumer(WebsocketConsumer):
       self.record_canvas_event(data)
     elif command == "ping":
       self.ping(data)
+    elif command == "request_refresh":
+      self.request_refresh(data)
     elif command == "mouse_position":
       self.send_mouse_position(data)
     elif command == "get_chat_history":
@@ -357,6 +359,15 @@ class OverlayConsumer(WebsocketConsumer):
       })
     else:
       self.queue_command("redirect", { "url": reverse("overlay:home") })
+      
+  def request_refresh(self, data):
+    if self.owner_or_editor():
+      self.queue_broadcast({
+        "command": "refresh",
+        "loopback": True,
+        "data": {}
+      })
+    
       
   def send_mouse_position(self, data):
     if "x" not in data or "y" not in data:

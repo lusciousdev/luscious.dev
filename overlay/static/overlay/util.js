@@ -85,6 +85,9 @@ function handleWebsocketCommand(command, data)
     case "redirect":
       window.location.replace(data.url);
       break;
+    case "refresh":
+      window.location.reload();
+      break;
     case "error":
       console.warn(data);
       break;
@@ -123,6 +126,11 @@ function sendWebsocketMessages(msgList)
   {
     g_Websocket.send(JSON.stringify({ "commands": msgList }));
   }
+}
+
+function requestRefresh()
+{
+  sendWebsocketMessage("request_refresh", {});
 }
 
 function getDefaultCSS(idata)
