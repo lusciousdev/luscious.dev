@@ -463,7 +463,11 @@ function repopulateChatHistory(messageArray)
   historyElem.html("");
 
   messageArray.forEach((msg, i) => {
-    historyElem.append("<div class=\"chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(msg["time"], msg["username"], msg["message"]));
+    var msgDT = new Date(msg['epoch'] * 1000);
+
+    var timeStr = "{0}:{1}:{2}".format(String(msgDT.getHours()).padStart(2, "0"), String(msgDT.getMinutes()).padStart(2, "0"), String(msgDT.getSeconds()).padStart(2, "0"));
+
+    historyElem.append("<div class=\"chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(timeStr, msg["username"], msg["message"]));
   });
   
   if (atBottom)
@@ -477,7 +481,10 @@ function addChatMessages(msg)
   var historyElem = $("#chat-history");
   var atBottom = (historyElem[0].scrollHeight - historyElem.scrollTop() - historyElem.outerHeight()) < 1;
 
-  historyElem.append("<div class=\"chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(msg["time"], msg["username"], msg["message"]));
+  var msgDT = new Date(msg['epoch'] * 1000);
+  var timeStr = "{0}:{1}:{2}".format(String(msgDT.getHours()).padStart(2, "0"), String(msgDT.getMinutes()).padStart(2, "0"), String(msgDT.getSeconds()).padStart(2, "0"));
+
+  historyElem.append("<div class=\"chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(timeStr, msg["username"], msg["message"]));
   
   if (atBottom)
   {

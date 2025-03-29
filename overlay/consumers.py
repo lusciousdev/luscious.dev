@@ -6,6 +6,7 @@ from channels.auth import UserLazyObject
 from allauth.socialaccount.models import SocialAccount
 from django.core.exceptions import FieldDoesNotExist
 from django.urls import reverse
+from django.utils import timezone
 import logging
 
 from .models import *
@@ -386,8 +387,7 @@ class OverlayConsumer(WebsocketConsumer):
       "data": {
         "username": self.user.username,
         "uid": self.overlay_user_id,
-        "date": messageObj.timestamp.strftime("%Y-%m-%d"),
-        "time": messageObj.timestamp.strftime("%H:%M:%S"),
+        "epoch": int(messageObj.timestamp.timestamp()),
         "message": messageObj.message,
       }
     })
@@ -399,8 +399,7 @@ class OverlayConsumer(WebsocketConsumer):
       message_dict = {
         "username": chat_message.user.username,
         "uid": OverlayUser.objects.get(id = chat_message.user.id).overlay.identifier,
-        "date": chat_message.timestamp.strftime("%Y-%m-%d"),
-        "time": chat_message.timestamp.strftime("%H:%M:%S"),
+        "epoch": int(chat_message.timestamp.timestamp()),
         "message": chat_message.message,
       }
       
