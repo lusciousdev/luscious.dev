@@ -380,9 +380,10 @@ function secondsToTimeFormat(totalSeconds)
 
 function setTextItemContent(overlayElement, itemId, itemText, itemData)
 {
-  var overlayElemWidth = $(overlayElement).width();
   var textElemId = "#item-{0}-text".format(itemId);
-  var fontSize = (overlayElemWidth * itemData['font_size']) / OVERLAY_WIDTH;
+  var fontSize = EDIT_VIEW ? viewToEditLength(itemData["font_size"]) : itemData["font_size"];
+
+  console.log(itemData, fontSize);
 
   $(textElemId).text(itemText);
 
