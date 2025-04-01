@@ -86,7 +86,7 @@ function handleWebsocketCommand(command, data)
       window.location.replace(data.url);
       break;
     case "refresh":
-      window.location.reload();
+      window.location.reload(true);
       break;
     case "error":
       console.warn(data);
@@ -518,7 +518,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           imageUrl = itemData['image_url'];
         }
 
-        $(itemContainerId).append("<img id='item-{0}-img' class='noselect' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
+        $(itemContainerId).append("<img id='item-{0}-img' class='noselect nopointer' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
         // $(itemElemId).data('id', itemData['id']);
         // $(itemElemId).data('item_type', itemType);
 
@@ -544,7 +544,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
 
-        $(itemContainerId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
+        $(itemContainerId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect nopointer" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
 
         $(iframeId).css({
           "opacity": itemData['opacity'],
@@ -555,7 +555,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
 
-        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect nopointer" />`.format(itemId));
 
         g_ItemDict[itemId]['player_ready'] = false;
         g_ItemDict[itemId]['player'] = undefined;
@@ -570,7 +570,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect nopointer" />`.format(itemId));
 
         if (g_ItemDict[itemId].item_data.channel != "")
         {
@@ -588,7 +588,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect" />`.format(itemId));
+        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect nopointer" />`.format(itemId));
 
         if (g_ItemDict[itemId].item_data.video_id != "")
         {
@@ -606,11 +606,11 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         $(playerId).css(getDefaultCSS(itemData));
         break;
       case "text":
-        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect nopointer' />".format(itemId));
         setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
         break;
       case "stopwatch":
-        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect nopointer' />".format(itemId));
 
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
         if (itemData['paused'])
@@ -622,7 +622,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
       case "counter":
-        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect' />".format(itemId));
+        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect nopointer' />".format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(overlayElement, itemId, textContent, itemData);

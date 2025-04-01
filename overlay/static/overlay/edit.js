@@ -1580,7 +1580,7 @@ function submitAddForm(form)
   $("#close-add-item").click();
 }
 
-function deleteItem(e)
+function onDeleteItem(e)
 {
   if (g_SelectedItem === undefined)
   {
@@ -1595,7 +1595,7 @@ function deleteItem(e)
   }
 }
 
-function resetItem(e)
+function onResetItem(e)
 {
   if (g_SelectedItem === undefined)
   {
@@ -1628,7 +1628,7 @@ function resetItem(e)
   g_ItemDict[g_SelectedItem]["local_changes"] = true;
 }
 
-function playItem(e)
+function onPlayItem(e)
 {
   if (g_SelectedItem === undefined)
   {
@@ -1647,7 +1647,7 @@ function playItem(e)
   }
 }
 
-function pauseItem(e)
+function onPauseItem(e)
 {
   if (g_SelectedItem === undefined)
   {
@@ -1691,7 +1691,7 @@ function pauseItem(e)
   }
 }
 
-function undoItem(e)
+function onUndoItem(e)
 {
   if (g_SelectedItem === undefined)
   {
@@ -1714,7 +1714,7 @@ function undoItem(e)
   }
 }
 
-function clearItem(e)
+function onClearItem(e)
 {
   if (g_SelectedItem === undefined)
   {
@@ -1981,23 +1981,23 @@ $(window).on('load', function() {
   });
 
   $(".delete-item").click((e) => {
-    deleteItem(e);
+    onDeleteItem(e);
   });
 
   $(".reset-item").click((e) => {
-    resetItem(e);
+    onResetItem(e);
   });
 
   $(".pause-item").click((e) => {
-    pauseItem(e);
+    onPauseItem(e);
   });
 
   $(".play-item").click((e) => {
-    playItem(e);
+    onPlayItem(e);
   });
 
-  $(".undo-item").click((e) => { undoItem(e); });
-  $(".clear-item").click((e) => { clearItem(e); });
+  $(".undo-item").click((e) => { onUndoItem(e); });
+  $(".clear-item").click((e) => { onClearItem(e); });
 
   $(".edit-container input[id=id_visibility]").each((i, visibleCheckbox) => {
     $(visibleCheckbox).change((e) => selectedVisibilityChange(e));
