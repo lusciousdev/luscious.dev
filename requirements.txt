@@ -1,0 +1,13 @@
+asgiref
+channels
+django
+django-allauth
+django-cleanup
+daphne
+django_channels
+channels_redis
+google_api_python_client
+luscioustwitch
+markdown
+pillow
+requests
