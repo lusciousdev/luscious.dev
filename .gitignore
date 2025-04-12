@@ -138,6 +138,7 @@ GitHub.sublime-settings
 .history
 
 # Credentials
+.env
 secrets.py
 
 # Collected static

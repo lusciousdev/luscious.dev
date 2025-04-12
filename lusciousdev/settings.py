@@ -11,8 +11,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
-from .secrets import *
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = SECRET_SECRET_KEY
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -109,8 +111,8 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.fastmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = FASTMAIL_USER
-EMAIL_HOST_PASSWORD = FASTMAIL_PASSWORD
+EMAIL_HOST_USER = os.getenv("FASTMAIL_USER")
+EMAIL_HOST_PASSWORD = os.getenv("FASTMAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = "noreply@luscious.dev"
 SERVER_EMAIL = "django@luscious.dev"
 ADMINS = [ ("luscious", "admin@luscious.dev"), ]
@@ -125,11 +127,13 @@ LOGIN_REDIRECT_URL = "/"
 WSGI_APPLICATION = 'lusciousdev.wsgi.application'
 ASGI_APPLICATION = "lusciousdev.asgi.application"
 
+REDIS_BASE_URL = f"redis://:{os.getenv("REDIS_PASSWORD", "")}@{os.getenv("REDIS_HOST", "127.0.0.1")}:{os.getenv("REDIS_PORT", 6379)}"
+
 CHANNEL_LAYERS = {
   "default": {
     "BACKEND": "channels_redis.core.RedisChannelLayer",
     "CONFIG": {
-      "hosts": [ f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CHANNELS_DATABASE}" ],
+      "hosts": [ f"{REDIS_BASE_URL}/{os.getenv("CHANNELS_DATABASE", 2)}" ],
       "symmetric_encryption_keys": [ SECRET_KEY ],
     }
   }
@@ -146,8 +150,8 @@ SOCIALACCOUNT_PROVIDERS = {
       "channel:manage:predictions",
     ],
     "APP": {
-      "client_id": TWITCH_API_CLIENT_ID,
-      "secret": TWITCH_API_CLIENT_SECRET,
+      "client_id": os.getenv("TWITCH_API_CLIENT_ID"),
+      "secret": os.getenv("TWITCH_API_CLIENT_SECRET"),
     },
     "AUTH_PARAMS": {
       "access_type": "offline",
@@ -163,11 +167,11 @@ SOCIALACCOUNT_STORE_TOKENS = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': MARIADB_DATABASE,
-        'USER': MARIADB_USER,
-        'PASSWORD': MARIADB_PASSWORD,
-        'HOST': MARIADB_HOST,
-        'PORT': MARIADB_PORT,
+        'NAME': os.getenv("MARIADB_DATABASE", "test_luscious-dev"),
+        'USER': os.getenv("MARIADB_USER", "admin"),
+        'PASSWORD': os.getenv("MARIADB_PASSWORD", "admin"),
+        'HOST': os.getenv("MARIADB_HOST", "127.0.0.1"),
+        'PORT': os.getenv("MARIADB_PORT", 3306),
         'OPTIONS': {
           'charset': 'utf8mb4',
           'use_unicode': True
@@ -211,11 +215,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]  #new 
-STATIC_ROOT = BASE_DIR / "staticfiles"  #new
+STATICFILES_DIRS = [BASE_DIR / "static"]  #new
+
+STATIC_ROOT = os.getenv("STATIC_ROOT", BASE_DIR / "staticfiles")
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / "mediafiles"
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / "mediafiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -277,8 +282,8 @@ CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev",
                          "https://test.luscious.dev" ]
 
 # Celery
-CELERY_BROKER_URL     = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_DATABASE}"
-CELERY_RESULT_BACKEND = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{CELERY_DATABASE}"
+CELERY_BROKER_URL     = f"{REDIS_BASE_URL}/{os.getenv("CELERY_DATABASE", 0)}"
+CELERY_RESULT_BACKEND = f"{REDIS_BASE_URL}/{os.getenv("CELERY_DATABASE", 0)}"
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"
