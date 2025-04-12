@@ -127,13 +127,17 @@ LOGIN_REDIRECT_URL = "/"
 WSGI_APPLICATION = 'lusciousdev.wsgi.application'
 ASGI_APPLICATION = "lusciousdev.asgi.application"
 
-REDIS_BASE_URL = f"redis://:{os.getenv("REDIS_PASSWORD", "")}@{os.getenv("REDIS_HOST", "127.0.0.1")}:{os.getenv("REDIS_PORT", 6379)}"
+REDIS_PWD = os.getenv("REDIS_PASSWORD", "")
+REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
+REDIS_PORT = os.getenv("REDIS_PORT", 6379)
+REDIS_BASE_URL = f"redis://:{REDIS_PWD}@{REDIS_HOST}:{REDIS_PORT}"
 
+CHANNELS_DB = os.getenv("CHANNELS_DATABASE", 2)
 CHANNEL_LAYERS = {
   "default": {
     "BACKEND": "channels_redis.core.RedisChannelLayer",
     "CONFIG": {
-      "hosts": [ f"{REDIS_BASE_URL}/{os.getenv("CHANNELS_DATABASE", 2)}" ],
+      "hosts": [ f"{REDIS_BASE_URL}/{CHANNELS_DB}" ],
       "symmetric_encryption_keys": [ SECRET_KEY ],
     }
   }
@@ -282,8 +286,9 @@ CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev",
                          "https://test.luscious.dev" ]
 
 # Celery
-CELERY_BROKER_URL     = f"{REDIS_BASE_URL}/{os.getenv("CELERY_DATABASE", 0)}"
-CELERY_RESULT_BACKEND = f"{REDIS_BASE_URL}/{os.getenv("CELERY_DATABASE", 0)}"
+CELERY_DB = os.getenv("CELERY_DATABASE", 0)
+CELERY_BROKER_URL     = f"{REDIS_BASE_URL}/{CELERY_DB}"
+CELERY_RESULT_BACKEND = f"{REDIS_BASE_URL}/{CELERY_DB}"
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"
