@@ -1,10 +1,12 @@
 asgiref
-channels
+mysql-connector-python
+celery
+channels[daphne]
 django
 django-allauth
 django-cleanup
-daphne
 django_channels
+websocket
 channels_redis
 google_api_python_client
 luscioustwitch
