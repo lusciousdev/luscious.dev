@@ -143,6 +143,9 @@ CHANNEL_LAYERS = {
   }
 }
 
+TWITCH_API_CLIENT_ID = os.getenv("TWITCH_API_CLIENT_ID")
+TWITCH_API_CLIENT_SECRET = os.getenv("TWITCH_API_CLIENT_SECRET")
+
 SOCIALACCOUNT_PROVIDERS = {
   "twitch": {
     "SCOPE": [
@@ -154,8 +157,8 @@ SOCIALACCOUNT_PROVIDERS = {
       "channel:manage:predictions",
     ],
     "APP": {
-      "client_id": os.getenv("TWITCH_API_CLIENT_ID"),
-      "secret": os.getenv("TWITCH_API_CLIENT_SECRET"),
+      "client_id": TWITCH_API_CLIENT_ID,
+      "secret": TWITCH_API_CLIENT_ID,
     },
     "AUTH_PARAMS": {
       "access_type": "offline",
@@ -292,3 +295,7 @@ CELERY_RESULT_BACKEND = f"{REDIS_BASE_URL}/{CELERY_DB}"
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"
+LASTFM_API_KEY = os.getenv("LASTFM_API_KEY")
+
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+

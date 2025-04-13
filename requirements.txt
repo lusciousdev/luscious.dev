@@ -1,3 +1,4 @@
+dotenv
 asgiref
 mysql-connector-python
 celery
