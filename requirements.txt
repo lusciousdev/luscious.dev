@@ -1,6 +1,6 @@
 dotenv
 asgiref
-mysql-connector-python
+mysqlclient
 celery
 channels[daphne]
 django

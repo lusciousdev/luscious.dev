@@ -158,7 +158,7 @@ SOCIALACCOUNT_PROVIDERS = {
     ],
     "APP": {
       "client_id": TWITCH_API_CLIENT_ID,
-      "secret": TWITCH_API_CLIENT_ID,
+      "secret": TWITCH_API_CLIENT_SECRET,
     },
     "AUTH_PARAMS": {
       "access_type": "offline",
