@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load socialaccount %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'quiz/quiz.css' %}">
+{% endblock %}
+
+{% block title %}Profile - Quiz{% endblock %}
+
+{% block content %}
+<div id="header">
+  <h1 id="page-title">Profile</h1>
+
+  <div id="account-button-container">
+    <a class="button-link" href="{% url "quiz:home" %}"><span class="material-symbols-outlined inline-symbol">home</span> Home</a>
+    <a class="button-link" href="{% url "account_email" %}?previousRoute={% url "quiz:profile" %}"><span class="material-symbols-outlined inline-symbol">manage_accounts</span> Manage account</a>
+    <form action="{% url 'account_logout' %}?next={% url 'quiz:home' %}" method="post" style="display: inline-block">
+      {% csrf_token %}
+      <button class="small-button" id="logout-button" type="submit">
+        <span class="material-symbols-outlined inline-symbol">logout</span> Log out
+      </button>
+    </form>
+  </div>
+</div>
+
+<p>
+  Logged in as: <i>{{ user.username }}</i> <br>
+</p>
+{% endblock %}

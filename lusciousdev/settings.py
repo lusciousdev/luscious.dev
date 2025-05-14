@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'overlay',
     'youtubeapi',
     'blog',
+    'quiz',
     
     'django_cleanup.apps.CleanupConfig',
 ]

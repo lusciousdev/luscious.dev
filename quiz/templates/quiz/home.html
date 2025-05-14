@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load socialaccount %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'quiz/quiz.css' %}">
+{% endblock %}
+
+{% block title %}Quiz{% endblock %}
+
+{% block content %}
+<div id="header">
+  <h1 id="page-title">Quiz</h1>
+
+  <div id="account-button-container">
+    <a class="button-link" href="{% url "account_login" %}?next={% url "quiz:home" %}"><span class="material-symbols-outlined inline-symbol">login</span> Log in</a>
+    <a class="button-link" href="{% url "account_signup" %}?next={% url "quiz:home" %}">Sign up</a>
+  </div>
+</div>
+
+{% endblock %}

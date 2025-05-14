@@ -1,0 +1,104 @@
+.small-button {
+  font-size: 1.0em;
+  font-family: inherit;
+
+  color: light-dark(var(--light-text), var(--dark-text));
+  background-color: var(--logo);
+  
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  margin: 0 3px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+}
+
+#header {
+  display: flex;
+  flex-direction: row;
+
+  width: 100%;
+
+  margin-bottom: 0.67em;
+
+  justify-content: space-between;
+  align-items: end;
+}
+
+#page-title {
+  margin: 0.67em 0 0 0;
+}
+
+#login-button {
+  background-color: #6441a5!important;
+}
+
+#account-button-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.section {
+  margin-bottom: 1.25em;
+}
+
+.page-title {
+  font-size: 2em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;
+}
+
+.section-title {
+  font-size: 1.25em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;
+}
+
+.section-form {
+  margin-bottom: 0;
+}
+
+.section-list {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.small-text {
+  font-size: 0.8em;
+}
+
+.no-decor {
+  text-decoration: none;
+}
+
+.text-button {
+  background: none!important;
+  border: none;
+  padding: 0!important;
+  font-family: inherit;
+  color: var(--logo);
+  cursor: pointer;
+  display: inline;
+}
+
+.inline-form {
+  display: inline;
+}
+
+.editor-form td {
+  vertical-align: top;
+}
+
+#add-editor-form {
+  margin-top: 0.67em;
+}
+
+.form-errors {
+  color: #c93737;
+}

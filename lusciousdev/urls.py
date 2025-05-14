@@ -27,4 +27,5 @@ urlpatterns = [
   path('yt/', include('youtubeapi.urls')),
   path('accounts/', include('allauth.urls')),
   path('blog/', include('blog.urls')),
+  path('quiz/', include('quiz.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

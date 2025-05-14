@@ -1,0 +1,94 @@
+html, body, .container {
+  min-height: 100vh !important;
+}
+
+a {
+  color: var(--logo);
+}
+
+a:visited {
+  color: var(--logo);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  box-sizing: border-box;
+  box-shadow: 0px 0px 25px 0px light-dark(var(--light-darker), var(--dark-darker));
+
+  background: light-dark(var(--light-foreground), var(--dark-foreground));
+}
+
+.field-error {
+  font-size: 0.8em;
+  font-weight: bold;
+  color: #f74040;
+}
+
+.button-link {
+  padding: 5px 10px;
+  margin: 0 3px;
+
+  background-color: var(--logo);
+  color: light-dark(var(--light-text), var(--dark-text)) !important;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+
+  text-decoration: none;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24;
+}
+
+.inline-symbol {
+  font-size: 1.25em;
+  line-height: 1;
+  margin-right: 0.25em;
+}
+
+@media (max-width: 500px) {
+  .container {
+    padding: 25px;
+    width: 100%;
+  }
+}
+@media (min-width: 500px) and (max-width: 1000px) {
+  .container {
+    padding: 35px;
+  
+    min-width: 500px;
+    width: 80%;
+  }
+}
+@media (min-width: 1000px) {
+  .container {
+    padding: 50px;
+  
+    width: 800px;
+  }
+}

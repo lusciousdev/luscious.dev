@@ -1,0 +1,59 @@
+{% extends "bare_base.html" %}
+
+{% load static %}
+{% load socialaccount %}
+{% load quizutil %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'quiz/quiz.css' %}">
+<link rel="stylesheet" href="{% static 'quiz/take_quiz.css' %}">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{% static 'util.js' %}"></script>
+<script src="{% static 'quiz/take_quiz.js' %}" defer></script>
+{{ quiz_data|json_script }}
+{% endblock %}
+
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{{ quiz_data }}
+
+{% block body %}
+<div class="slide">
+  <div id="page-title-container">
+    <div id="page-title">{{ quiz.title }}</div>
+  </div>
+
+  <div class="slide-controls">
+    <div class="next-slide slide-control">begin &raquo;</div>
+  </div>
+</div>
+
+{% for question in quiz_data.questions %}
+<div class="slide question" question="{{ forloop.counter0 }}">
+  <div class="quiz-record">0/0</div>
+  <div class="slide-title">Q{{ forloop.counter }}: {{ question.question }}</div>
+  <div class="option-container optcount-{{ question.options|length }}">
+    {% for opt in question.options %}
+    <div class="question-option" option="{{ forloop.counter0 }}">{{ opt.0 }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="slide-controls">
+    <div class="prev-slide slide-control">&laquo; prev</div>
+    <div class="next-slide slide-control" blocked>next &raquo;</div>
+  </div>
+</div>
+{% endfor %}
+
+<div class="slide">
+  <div class="slide-title">Results:</div>
+  <div id="results-container">
+    <div class="results-count">0/0</div>
+    <div class="results-percent">0%</div>
+  </div>
+</div>
+
+{% endblock %}

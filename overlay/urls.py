@@ -3,7 +3,7 @@ from django.urls import path
 from . import views
 from . import api
 
-from asgiref.sync import sync_to_async, async_to_sync, markcoroutinefunction, iscoroutinefunction
+from asgiref.sync import sync_to_async
 
 app_name = 'overlay'
 urlpatterns = [

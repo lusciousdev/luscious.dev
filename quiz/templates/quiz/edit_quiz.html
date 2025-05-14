@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load socialaccount %}
+{% load quizutil %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'quiz/quiz.css' %}">
+<link rel="stylesheet" href="{% static 'quiz/edit_quiz.css' %}">
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{% static 'util.js' %}"></script>
+<script src="{% static 'ajaxhelpers.js' %}"></script>
+<script src="{% static 'quiz/edit_quiz.js' %}"
+        defer
+        data-quizid="{{ quiz.id }}"
+        data-posturl="{% url "quiz:update_quiz" %}"></script>
+{% endblock %}
+
+{% block title %}Edit Quiz - "{{ quiz.title }}"{% endblock %}
+
+{% block content %}
+<div id="header">
+  <h1 id="page-title">Edit Quiz - "{{ quiz.title }}"</h1>
+
+  <div id="account-button-container">
+    <a class="button-link" href="{% url "quiz:home" %}"><span class="material-symbols-outlined inline-symbol">home</span> Home</a>
+  </div>
+</div>
+
+<div class="section" id="form-section">
+  <form id="edit-form" action="" method="post" enctype="application/x-www-form-urlencoded">
+    {% csrf_token %}
+
+    <div>
+      <span class="section-title"><label for="title">Title:</label><input type="text" id="id_title" name="title" value="{{ quiz_data.title }}"></span>
+      <button type="button" onclick="addQuestionGroup();">Add question group</button>
+    </div>
+    
+    <div class="qg-container">
+      {% if quiz_data.question_groups|length > 0 %}
+      {% for qg in quiz_data.question_groups %}
+      <div class="question-group" id="qg_{{ forloop.counter0 }}">
+        <div class="qg-header">
+          <h2>Question Group</h2>
+          <button type="button" onclick="addQuestion({{ forloop.counter0 }});">Add question</button>
+          <button type="button" onclick="deleteQuestionGroup({{ forloop.counter0 }});">Delete question group</button>
+        </div>
+        <ul class="question-list">
+          {% if qg.questions|length > 0 %}
+          {% for q in qg.questions %}
+          <li id="question_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}">
+            <table class="question">
+              <tr>
+                <td><label for="question">Question:</label></td>
+                <td ><input type="text" id="id_question" name="question" value="{{ q.question }}"></td>
+              </tr>
+              <tr>
+                <td><label for="a_text">Option A:</label></td>
+                <td><input type="text" id="id_a_text" name="a_text" value="{{ q.a_text }}"></td>
+                <td><label for="a_correct">Correct?</label></td>
+                <td><input type="checkbox" id="id_a_correct" name="a_correct"  {% if q.a_correct %}checked{% endif %}></td>
+              </tr>
+              <tr>
+                <td><label for="b_text">Option B:</label></td>
+                <td><input type="text" id="id_b_text" name="b_text" value="{{ q.b_text }}"></td>
+                <td><label for="b_correct">Correct?</label></td>
+                <td><input type="checkbox" id="id_b_correct" name="b_correct"  {% if q.b_correct %}checked{% endif %}></td>
+              </tr>
+              <tr>
+                <td><label for="c_text">Option C:</label></td>
+                <td><input type="text" id="id_c_text" name="c_text" value="{{ q.c_text }}"></td>
+                <td><label for="c_correct">Correct?</label></td>
+                <td><input type="checkbox" id="id_c_correct" name="c_correct"  {% if q.c_correct %}checked{% endif %}></td>
+              </tr>
+              <tr>
+                <td><label for="d_text">Option D:</label></td>
+                <td><input type="text" id="id_d_text" name="d_text" value="{{ q.d_text }}"></td>
+                <td><label for="d_correct">Correct?</label></td>
+                <td><input type="checkbox" id="id_d_correct" name="d_correct" {% if q.d_correct %}checked{% endif %}></td>
+              </tr>
+              <tr>
+                <td><label for="randomize_order">Random order?</label></td>
+                <td><input type="checkbox" id="id_randomize_order" name="randomize_order" {% if q.randomize_order %}checked{% endif %}></td>
+              </tr>
+              <tr>
+                <td><button type="button" onclick="deleteQuestion({{ forloop.parentloop.counter0 }}, {{ forloop.counter0 }});">Delete question</button></td>
+              </tr>
+            </table>
+            <hr>
+          </li>
+          {% endfor %}
+          {% else %}
+          <li>No questions</li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div id="no-qg">
+        No question groups.
+      </div>
+      {% endif %}
+    </div>
+    <button type="button" onclick="formToObj();">Update quiz</button>&nbsp;&nbsp;<a href="{% url "quiz:home" %}">Cancel</a>
+  </form>
+</div>
+
+{% endblock %}

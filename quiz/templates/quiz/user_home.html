@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load socialaccount %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'quiz/quiz.css' %}">
+{% endblock %}
+
+{% block title %}Quiz{% endblock %}
+
+{% block content %}
+<div id="header">
+  <h1 id="page-title">Quiz</h1>
+
+  <div id="account-button-container">
+    <a class="button-link" href="{% url "quiz:profile" %}"><span class="material-symbols-outlined inline-symbol">person</span> Profile</a>
+    <form action="{% url 'account_logout' %}?next={% url 'quiz:home' %}" method="post" style="display: inline-block">
+      {% csrf_token %}
+      <button class="small-button" id="logout-button" type="submit">
+        <span class="material-symbols-outlined inline-symbol">logout</span> Log out
+      </button>
+    </form>
+  </div>
+</div>
+
+<p>Logged in as: <i>{{ user.username }}</i></p>
+
+<div class="section" id="quizzes">
+  <div>
+    <span class="section-title">Your Quizes</span>
+    <a href="{% url 'quiz:create_quiz' %}" class="no-decor">[create]</a>
+  </div>
+  <form action="{% url 'quiz:home' %}" method="post" class="section-form" onsubmit="return confirm('Delete forever?');">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete_quiz" />
+    <ul class="section-list">
+    {% if user.quiz_set.all %}
+      {% for quiz in user.quiz_set.all %}
+      <li>
+        {{ quiz.title }} 
+        <button type="submit" name="quiz_id" value="{{quiz.id}}" class="text-button small-text no-decor" >[delete]</button> 
+        <a href="{% url 'quiz:edit_quiz' quiz.slug %}" class="small-text no-decor">[edit]</a> 
+        <a href="{% url 'quiz:take_quiz' quiz.slug %}" class="small-text no-decor">[take]</a> 
+      </li>
+      {% endfor %}
+    {% else %}
+      <li>No quizzes</li>
+    {% endif %}
+    </ul>
+  </form>
+</div>
+
+{% endblock %}
