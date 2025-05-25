@@ -11,8 +11,3 @@ import twitchio
 
 from django.conf import settings
   
-@shared_task
-def broadcast_chat_message(broadcaster : dict, chatter : dict, message : str):
-  print(f"[{broadcaster["display_name"]}] {chatter["display_name"]}: {message}")
-  
-  

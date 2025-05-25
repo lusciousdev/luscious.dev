@@ -79,7 +79,8 @@ body {
 
 .optcount-2 .question-option, .optcount-4 .question-option {
   padding: 0.5em 0.25em;
-  min-width: min-content;
+  min-width: 40%;
+  width: min-content;
   margin-right: 0.2em;
   margin-bottom: 0.2em;
 }
