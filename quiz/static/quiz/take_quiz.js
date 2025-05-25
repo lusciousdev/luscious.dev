@@ -254,7 +254,7 @@ function handlePollEnd(data)
 
 function handleChatMessage(data)
 {
-  if (data.chatter.login.toLowerCase() == g_PhoneAFriendLogin.toLowerCase())
+  if (g_PhoneAFriendLogin !== undefined && data.chatter.login.toLowerCase() == g_PhoneAFriendLogin.toLowerCase())
   {
     $("#paf-chat-history").append(`<div class='chat-message'><b>{0}:</b> {1}</div>`.format(data.chatter.display_name, data.message));
 
