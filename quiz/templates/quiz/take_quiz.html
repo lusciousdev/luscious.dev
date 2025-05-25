@@ -12,13 +12,11 @@
 {% block scripts %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="{% static 'util.js' %}"></script>
-<script src="{% static 'quiz/take_quiz.js' %}" defer></script>
+<script src="{% static 'quiz/take_quiz.js' %}" defer {% if twitch_user_id %}data-userid="{{ twitch_user_id }}"{% endif %}></script>
 {{ quiz_data|json_script }}
 {% endblock %}
 
 {% block title %}{{ quiz.title }}{% endblock %}
-
-{{ quiz_data }}
 
 {% block body %}
 <div class="slide">
@@ -53,6 +51,76 @@
   <div id="results-container">
     <div class="results-count">0/0</div>
     <div class="results-percent">0%</div>
+  </div>
+  
+  <div class="slide-controls">
+    <div class="prev-slide slide-control">&laquo; prev</div>
+  </div>
+</div>
+
+<div id="ui-container">
+  <div class="ui" id="lifelines">
+    <div id="lifelines-title">Lifelines:</div>
+
+    <div class="lifeline-button noselect" id="fifty-fifty" data-tooltip="50/50">
+      <span class="material-symbols-outlined">
+      delete
+      </span>
+      <span id="ff-count">x1</span>
+    </div>
+    <div class="lifeline-button noselect" id="ask-the-audience" data-tooltip="Ask the audience">
+      <span class="material-symbols-outlined">
+      groups_2
+      </span>
+      <span id="ata-count">x1</span>
+    </div>
+    <div class="lifeline-button noselect" id="phone-a-friend" data-tooltip="Phone a friend">
+      <span class="material-symbols-outlined">
+      phone_in_talk
+      </span>
+      <span id="paf-count">x1</span>
+    </div>
+  </div>
+
+  <div class="ui lifeline-container" id="ata-container">
+    <div class="ui-minimize noselect" ui-tag="ata">_</div>
+    <div class="ui-title" id="poll-title"></div>
+    <div id="poll-timer"></div>
+    <table id="poll-choice-container">
+    </table>
+    <div id="poll-vote-count">Total votes: 0</div>
+  </div>
+
+  <div class="ui ui-maximize" id="ata-minimized" ui-tag="ata">
+    <span class="material-symbols-outlined">
+    groups_2
+    </span>
+    Ask the Audience
+  </div>
+
+  <div class="ui lifeline-container" id="paf-container">
+    <div class="ui-minimize noselect" ui-tag="paf">_</div>
+    <div class="ui-title" id="chat-title">Phone-a-Friend</div>
+    <div class="chat-history-container">
+      <div class="chat-history" id="paf-chat-history">
+      </div>
+    </div>
+    <div class="user-select-container">
+      <div class="user-select">
+        <div class="user-select-label">Input a chatter's username:</div>
+        <form id="paf-login-form">
+          <input type="text" columns="60" name="paf-login" id="paf-login-input">
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="ui ui-maximize" id="paf-minimized" ui-tag="paf">
+    <span class="material-symbols-outlined">
+    phone_in_talk
+    </span>
+    Phone a Friend
   </div>
 </div>
 

@@ -19,13 +19,14 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
 import overlay.routing
+import quiz.routing
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         "websocket": AllowedHostsOriginValidator(
           AuthMiddlewareStack(
-            URLRouter(overlay.routing.websocket_urlpatterns)
+            URLRouter(overlay.routing.websocket_urlpatterns + quiz.routing.websocket_urlpatterns)
             )
           ),
     }

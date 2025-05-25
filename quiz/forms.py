@@ -65,8 +65,8 @@ class BaseQuestionGroupFormset(forms.BaseInlineFormSet):
     super().add_fields(form, index)
     
     form.questions = MultiQuestionFormset(instance = form.instance, 
-                                      data = form.data if form.is_bound else None, 
-                                      prefix = f'multiquestion-{form.prefix}-{MultiQuestionFormset.get_default_prefix()}')
+                                         data = form.data if form.is_bound else None, 
+                                         prefix = f'multiquestion-{form.prefix}-{MultiQuestionFormset.get_default_prefix()}')
     
   def is_valid(self):
     result = super().is_valid()

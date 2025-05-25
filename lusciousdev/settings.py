@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
+from celery.schedules import crontab
+import datetime
 import os
 
 load_dotenv()
@@ -64,6 +66,7 @@ INSTALLED_APPS = [
     'youtubeapi',
     'blog',
     'quiz',
+    'bot',
     
     'django_cleanup.apps.CleanupConfig',
 ]
@@ -151,6 +154,8 @@ TWITCH_API_CLIENT_SECRET = os.getenv("TWITCH_API_CLIENT_SECRET")
 SOCIALACCOUNT_PROVIDERS = {
   "twitch": {
     "SCOPE": [
+      "channel:bot",
+      "user:read:chat",
       "channel:read:polls",
       "channel:manage:polls",
       "channel:read:redemptions",
@@ -164,6 +169,16 @@ SOCIALACCOUNT_PROVIDERS = {
     },
     "AUTH_PARAMS": {
       "access_type": "offline",
+    }
+  },
+  "twitch_chatbot": {
+    "SCOPE": [ "user:read:chat",  "user:write:chat",  "user:bot" ],
+    "APP": {
+      "client_id": TWITCH_API_CLIENT_ID,
+      "secret": TWITCH_API_CLIENT_SECRET,
+    },
+    "AUTH_PARAMS": {
+      "access_type": "offline"
     }
   }
 }
@@ -237,52 +252,75 @@ MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / "mediafiles")
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Logging
-LOGGING = {
-  "version": 1,
-  "disable_existing_loggers": False,
-  "handlers": {
-    "django_file": {
-      "level": "DEBUG",
-      "class": "logging.FileHandler",
-      "filename": "./logs/django.log",
-      "encoding": "utf-8",
+if not DEBUG:
+  LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+      "django_file": {
+        "level": "DEBUG",
+        "class": "logging.FileHandler",
+        "filename": "./logs/django.log",
+        "encoding": "utf-8",
+      },
+      "overlay_file": {
+        "level": "DEBUG",
+        "class": "logging.FileHandler",
+        "filename": "./logs/overlay.log",
+        "encoding": "utf-8",
+      },
+      "lastfm_file": {
+        "level": "DEBUG",
+        "class": "logging.FileHandler",
+        "filename": "./logs/lastfm.log",
+        "encoding": "utf-8",
+      },
+      "quiz_file": {
+        "level": "DEBUG",
+        "class": "logging.FileHandler",
+        "filename": "./logs/quiz.log",
+        "encoding": "utf-8",
+      },
+      "bot_file": {
+        "level": "DEBUG",
+        "class": "logging.FileHandler",
+        "filename": "./logs/bot.log",
+        "encoding": "utf-8",
+      },
+      "mail_admins": {
+        "level": "ERROR",
+        "class": "django.utils.log.AdminEmailHandler",
+        "include_html": True,
+      }
     },
-    "overlay_file": {
-      "level": "DEBUG",
-      "class": "logging.FileHandler",
-      "filename": "./logs/overlay.log",
-      "encoding": "utf-8",
+    "loggers": {
+      "django": {
+        "handlers": ["django_file"],
+        "level": "WARNING",
+        "propagate": True,
+      },
+      "overlay": {
+        "handlers": ["overlay_file"],
+        "level": "WARNING",
+        "propagate": True,
+      },
+      "lastfm": {
+        "handlers": ["lastfm_file"],
+        "level": "WARNING",
+        "propagate": True,
+      },
+      "quiz": {
+        "handlers": ["quiz_file"],
+        "level": "DEBUG",
+        "propagate": True,
+      },
+      "bot": {
+        "handlers": ["bot_file"],
+        "level": "WARNING",
+        "propagate": True,
+      },
     },
-    "lastfm_file": {
-      "level": "DEBUG",
-      "class": "logging.FileHandler",
-      "filename": "./logs/lastfm.log",
-      "encoding": "utf-8",
-    },
-    "mail_admins": {
-      "level": "ERROR",
-      "class": "django.utils.log.AdminEmailHandler",
-      "include_html": True,
-    }
-  },
-  "loggers": {
-    "django": {
-      "handlers": ["django_file"],
-      "level": "DEBUG",
-      "propagate": True,
-    },
-    "overlay": {
-      "handlers": ["overlay_file"],
-      "level": "DEBUG",
-      "propagate": True,
-    },
-    "lastfm": {
-      "handlers": ["lastfm_file"],
-      "level": "DEBUG",
-      "propagate": True,
-    },
-  },
-}
+  }
 
 CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev", 
                          "https://www.luscious.dev", 
@@ -294,6 +332,13 @@ CSRF_TRUSTED_ORIGINS = [ "https://luscious.dev",
 CELERY_DB = os.getenv("CELERY_DATABASE", 0)
 CELERY_BROKER_URL     = f"{REDIS_BASE_URL}/{CELERY_DB}"
 CELERY_RESULT_BACKEND = f"{REDIS_BASE_URL}/{CELERY_DB}"
+
+CELERY_BEAT_SCHEDULE = {
+  "send_chat_poll_state": {
+    "task": "bot.tasks.broadcast_poll_states",
+    "schedule": datetime.timedelta(seconds = 5),
+  }
+}
 
 # Custom
 LASTFM_API_URL = "https://ws.audioscrobbler.com"

@@ -79,6 +79,12 @@ class TakeQuizView(generic.DetailView):
   def get_context_data(self, **kwargs):
     context = super(TakeQuizView, self).get_context_data(**kwargs)
     
+    try:
+      twitchuser = self.request.user.socialaccount_set.get(provider = "twitch")
+      context["twitch_user_id"] = twitchuser.uid
+    except:
+      context["twitch_user_id"] = None
+    
     quiz : Quiz = self.get_object()
     
     questions : typing.List[Question] = [ random.choice(list(qg.question_set.all())) for qg in quiz.questiongroup_set.order_by("ordering").all() ]

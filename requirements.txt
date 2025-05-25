@@ -6,10 +6,10 @@ channels[daphne]
 django
 django-allauth
 django-cleanup
-django_channels
 websocket
 channels_redis
 google_api_python_client
+ratelimit
 luscioustwitch
 markdown
 pillow
