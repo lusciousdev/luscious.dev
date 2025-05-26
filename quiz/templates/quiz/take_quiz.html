@@ -35,7 +35,7 @@
   <div class="slide-title">Q{{ forloop.counter }}: {{ question.question }}</div>
   <div class="option-container optcount-{{ question.options|length }}">
     {% for opt in question.options %}
-    <div class="question-option" option="{{ forloop.counter0 }}">{{ opt.0 }}</div>
+    <div class="question-option" option="{{ forloop.counter0 }}"><div class="question-wrap">{{ opt.0 }}</div></div>
     {% endfor %}
   </div>
 

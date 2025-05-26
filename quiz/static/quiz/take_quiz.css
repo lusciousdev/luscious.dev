@@ -13,6 +13,9 @@ body {
 
 #page-title {
   font-size: 3em;
+
+  padding: 0;
+  margin: 0;
 }
 
 .slide {
@@ -21,11 +24,11 @@ body {
 
   background: light-dark(var(--light-foreground), var(--dark-foreground));
 
-  min-width: 300px;
+  min-width: 320px;
   width: 60%;
-  max-width: 900px;
+  max-width: 960px;
 
-  aspect-ratio: 16/9;
+  min-height: 320px;
 
   box-sizing: border-box;
   padding: 3em 3em;
@@ -68,31 +71,37 @@ body {
   display: flex;
 
   min-width: 40%;
-  max-width: 80%;
+  max-width: 95%;
+
+  padding-bottom: 4em;
+}
+
+.question-option {
+  flex: 1 1 0px;
 }
 
 .optcount-2, .optcount-4 {
   flex-flow: row wrap;
-  justify-content: center;
+  justify-content: stretch;
   align-content: center;
 }
 
 .optcount-2 .question-option, .optcount-4 .question-option {
   padding: 0.5em 0.25em;
+
   min-width: 40%;
-  width: min-content;
+  
   margin-right: 0.2em;
   margin-bottom: 0.2em;
 }
 
-.optcount-3 {
+.optcount-1, .optcount-3 {
   flex-flow: column;
-  justify-content: center;
+  justify-content: stretch;
   align-items: center;
 }
 
-.optcount-3 .question-option {
-  width: 85%;
+.optcount-1 .question-option, .optcount-3 .question-option {
   margin-bottom: 0.2em;
 }
 
@@ -102,8 +111,9 @@ body {
   justify-content: center;
   align-items: center;
 
+  width: 100%;
+
   font-size: 1.66em;
-  height: 1.8em;
 
   border-style: solid;
   border-color: light-dark(var(--light-text), var(--dark-text));
@@ -114,6 +124,12 @@ body {
   transition-property: background-color;
   transition-duration: 250ms;
   transition-timing-function: ease-in-out;
+}
+
+.question-wrap {
+  text-align: left;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .slide[submitted] .question-option, .question-option[blocked] {
@@ -151,6 +167,8 @@ body {
   justify-content: center;
   align-items: center;
   width: 100%;
+
+  min-height: 1.6em;
 
   font-size: 1.6em;
   font-weight: bold;
@@ -357,8 +375,16 @@ body {
   border-radius: 5%;
 }
 
+#ata-container {
+  max-width: 36em;
+}
+
+#paf-container {
+  max-width: 30em;
+}
+
 .ui-title {
-  font-size: 2em;
+  font-size: 1.6em;
   font-weight: bold;
 }
 
@@ -368,7 +394,7 @@ body {
 }
 
 .poll-choice-name {
-  font-size: 1.4em;
+  font-size: 1.2em;
 }
 
 .poll-choice-bar-container {
@@ -417,7 +443,7 @@ body {
   display: none;
 
   width: 100%;
-  height: 12em;
+  height: 15em;
 
   overflow-y: auto;
 

@@ -546,9 +546,9 @@ window.addEventListener('load', function(e) {
   connectWebsocket();
 
   $(".question-option").click(function (e) {
-    let slideElem = $(e.target.parentElement.parentElement);
-    let optContainerElem = $(e.target.parentElement);
-    let targetElem = $(e.target);
+    let slideElem = $(e.currentTarget.parentElement.parentElement);
+    let optContainerElem = $(e.currentTarget.parentElement);
+    let targetElem = $(e.currentTarget);
 
     if (slideElem.attr("submitted") !== undefined || targetElem.attr("blocked") !== undefined)
     {
@@ -558,7 +558,7 @@ window.addEventListener('load', function(e) {
     optContainerElem.find(".question-option").removeAttr("selected");
     targetElem.attr("selected", "");
 
-    let slideControls = $($(e.target.parentElement.parentElement).find(".slide-controls")[0]);
+    let slideControls = $($(e.currentTarget.parentElement.parentElement).find(".slide-controls")[0]);
 
     if (slideControls.find(".submit-question").length == 0)
     {

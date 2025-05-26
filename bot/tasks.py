@@ -97,10 +97,14 @@ def handle_chat_message(uuid : str, broadcaster : dict, chatter : dict, message 
         clean_message = message.lower()
         
         if chatter["id"] not in votes.keys():
+          accept_numbers = len(set([c[0].lower() for c in choices]) & set(["1", "2", "3", "4"])) == 0
+          accept_letters = len(set([c[0].lower() for c in choices]) & set(["a", "b", "c", "d"])) == 0
           for i, choice in enumerate(choices):
-            if clean_message in [str(i + 1), chr(ord('a') + i), choice[0].lower()]:
+            if clean_message == choice[0].lower() or (accept_numbers and (clean_message == str(i + 1))) or (accept_letters and (clean_message == chr(ord('a') + i))):
               poll.choices["choices"][i][1] += 1
               poll.votes["votes"][chatter["id"]] = i
+              break
+              
               
         poll.save()
         

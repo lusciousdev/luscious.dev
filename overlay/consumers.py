@@ -166,6 +166,8 @@ class OverlayConsumer(TwitchConsumer):
       self.send_chat_message(data)
     elif command == "start_poll":
       self.start_poll(data)
+    elif command == "start_prediction":
+      self.start_prediction(data)
     
   def get_overlay_items(self):
     overlay_items = []
