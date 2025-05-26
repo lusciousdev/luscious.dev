@@ -24,11 +24,11 @@ var g_NumFiftyFifty = 1;
 var g_NumAskTheAudience = 1;
 var g_NumPhoneAFriend = 1;
 
-if (c_QuestionCount > 10)
+if (c_QuestionCount >= 10)
 {
   g_NumAskTheAudience = 2;
 }
-else if (c_QuestionCount > 20)
+else if (c_QuestionCount >= 20)
 {
   g_NumFiftyFifty = 2;
   g_NumAskTheAudience = 2;
@@ -489,7 +489,7 @@ function activateAskTheAudience(event)
   });
 
   g_NumAskTheAudience--;
-  $("#ata-count").html("x{0}".format(g_NumFiftyFifty));
+  $("#ata-count").html("x{0}".format(g_NumAskTheAudience));
 
   if (g_NumAskTheAudience <= 0)
   {
