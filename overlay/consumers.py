@@ -9,12 +9,14 @@ from django.urls import reverse
 from django.utils import timezone
 import logging
 
+from bot.consumers import TwitchConsumer
+
 from .models import *
 from .forms import *
 
 logger = logging.getLogger("overlay")
 
-class OverlayConsumer(WebsocketConsumer):
+class OverlayConsumer(TwitchConsumer):
   response_list = []
   broadcast_list = []
   
@@ -80,6 +82,13 @@ class OverlayConsumer(WebsocketConsumer):
       logger.error(f"Error: {e}")
       self.close(reason = f"Error: {e}")
       return
+    
+    try:
+      self.twitch_account = self.overlay.owner.socialaccount_set.get(provider = "twitch")
+      
+      self.establish_twitch_connection(self.twitch_account.uid)
+    except SocialAccount.DoesNotExist:
+      ...
     
     logger.debug("Adding user to overlay group...")
     
@@ -155,6 +164,8 @@ class OverlayConsumer(WebsocketConsumer):
       self.get_chat_history()
     elif command == "send_chat_message":
       self.send_chat_message(data)
+    elif command == "start_poll":
+      self.start_poll(data)
     
   def get_overlay_items(self):
     overlay_items = []

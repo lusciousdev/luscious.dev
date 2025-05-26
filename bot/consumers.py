@@ -17,6 +17,8 @@ class TwitchConsumer(WebsocketConsumer):
   twitch_account = None
   channel_layer : RedisChannelLayer
   
+  chat_group_name : str = None
+  
   twitch_capabilities = False
   broadcaster_type = 0
   
@@ -25,19 +27,22 @@ class TwitchConsumer(WebsocketConsumer):
   
   def send_command(self, command : str, data):
     self.send(text_data = json.dumps({ "command": command, "data": data }))
+    
+  def establish_twitch_connection(self, broadcaster_user_id : str):
+    self.send_bot_command("join", { "broadcaster_user_id": broadcaster_user_id })
+  
+    self.chat_group_name = f"twitch_{broadcaster_user_id}"
+    
+    logger.debug(f"Attempting to join group {self.chat_group_name}")
+    async_to_sync(self.channel_layer.group_add)(self.chat_group_name, self.channel_name)
   
   def connect(self):
     logger.debug("Connection attempt started...")
     
     self.user : UserLazyObject = self.scope["user"]
-    
     self.twitch_account : SocialAccount = self.user.socialaccount_set.get(provider="twitch")
-    self.send_bot_command("join", { "broadcaster_user_id": self.twitch_account.uid })
-  
-    self.chat_group_name = f"twitch_{self.twitch_account.uid}"
     
-    logger.debug(f"Attempting to join group {self.chat_group_name}")
-    async_to_sync(self.channel_layer.group_add)(self.chat_group_name, self.channel_name)
+    self.establish_twitch_connection(self.twitch_account.uid)
     
     logger.debug("Accepting connection...")
     self.accept()
@@ -92,10 +97,10 @@ class TwitchConsumer(WebsocketConsumer):
   #     MESSAGE HANDLERS 
   #
   def twitch_error(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
   
   def twitch_chat_message(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_broadcaster_type(self, event : dict):
     data : dict = event.get("data", {})
@@ -103,31 +108,31 @@ class TwitchConsumer(WebsocketConsumer):
     self.broadcaster_type = data.get("broadcaster_type", 0)
     self.twitch_capabilities = True
     
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_poll_begin(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_poll_progress(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_poll_end(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_prediction_begin(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_prediction_progress(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_prediction_lock(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_prediction_end(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_redemption_add(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))
     
   def twitch_redemption_update(self, event : dict):
-    self.send(text_data = json.dumps(event))
+    self.send(text_data = json.dumps({ "command": event.get("type", "unknown"), "data": event.get("data", {}) }))

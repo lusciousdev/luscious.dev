@@ -68,9 +68,9 @@ function handleWebsocketMessage(e)
 {
   var eventData = JSON.parse(e.data);
 
-  let eventType = eventData.type || "unknown";
+  let command = eventData.command || "unknown";
 
-  switch (eventType)
+  switch (command)
   {
     case "twitch_broadcaster_type":
       g_TwitchConnected = true;
@@ -97,7 +97,7 @@ function handleWebsocketMessage(e)
       console.log(eventData);
       break;
     default:
-      console.error("Unknown event type: {0}".format(eventType));
+      console.error("Unknown event type: {0}".format(command));
       break;
   }
 }

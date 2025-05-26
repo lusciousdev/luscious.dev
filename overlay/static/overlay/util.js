@@ -92,7 +92,7 @@ function handleWebsocketCommand(command, data)
       console.warn(data);
       break;
     default:
-      console.log("Unknown command: {0}".format(command));
+      console.log("Unknown command: {0}".format(command), data);
       break;
   }
 }
