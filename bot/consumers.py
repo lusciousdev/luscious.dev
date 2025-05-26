@@ -93,6 +93,18 @@ class TwitchConsumer(WebsocketConsumer):
       self.send_command("error", "User is not capable of running a prediction.")
       return 
     
+    broadcaster_user_id = self.twitch_account.uid
+    title = data.get("title")
+    outcomes = data.get("outcomes")
+    duration = data.get("duration", 60)
+    
+    if title is None or outcomes is None or duration is None:
+      self.send_command("error", "Incomplete poll data.")
+      return
+    
+    print("Sending poll start command.")
+    self.send_bot_command("start_prediction", { "broadcaster_user_id": broadcaster_user_id, "title": title, "outcomes": outcomes, "duration": duration })
+    
   #
   #     MESSAGE HANDLERS 
   #
