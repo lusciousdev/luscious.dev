@@ -80,6 +80,26 @@ function handleWebsocketCommand(command, data)
     case "chat_message_sent":
       addChatMessages(data);
       break;
+    case "twitch_chat_message":
+      break;
+    case "twitch_poll_begin":
+      break;
+    case "twitch_poll_progress":
+      break;
+    case "twitch_poll_end":
+      break;
+    case "twitch_prediction_start":
+      break;
+    case "twitch_prediction_progress":
+      break;
+    case "twitch_prediction_lock":
+      break;
+    case "twitch_prediction_end":
+      break;
+    case "twitch_redemption_add":
+      break;
+    case "twitch_redemption_update":
+      break
     case "pong":
       break;
     case "redirect":

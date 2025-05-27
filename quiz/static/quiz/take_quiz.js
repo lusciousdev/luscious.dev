@@ -24,13 +24,19 @@ var g_NumFiftyFifty = 1;
 var g_NumAskTheAudience = 1;
 var g_NumPhoneAFriend = 1;
 
-if (c_QuestionCount >= 10)
-{
-  g_NumAskTheAudience = 2;
-}
-else if (c_QuestionCount >= 20)
+if (c_QuestionCount >= 20)
 {
   g_NumFiftyFifty = 2;
+  g_NumAskTheAudience = 2;
+  g_NumPhoneAFriend = 2;
+}
+else if (c_QuestionCount >= 15)
+{
+  g_NumFiftyFifty = 2;
+  g_NumAskTheAudience = 2;
+}
+else if (c_QuestionCount >= 10)
+{
   g_NumAskTheAudience = 2;
 }
 
