@@ -76,13 +76,14 @@ class TwitchConsumer(WebsocketConsumer):
     title = data.get("title")
     choices = data.get("choices")
     duration = data.get("duration", 60)
+    delete_poll = data.get("delete_poll", False)
     
     if title is None or choices is None or duration is None:
       self.send_command("error", "Incomplete poll data.")
       return
     
     print("Sending poll start command.")
-    self.send_bot_command("start_poll", { "broadcaster_user_id": broadcaster_user_id, "title": title, "choices": choices, "duration": duration })
+    self.send_bot_command("start_poll", { "broadcaster_user_id": broadcaster_user_id, "title": title, "choices": choices, "duration": duration, "delete_poll": delete_poll })
     
   def start_prediction(self, data : dict):
     if not self.twitch_capabilities:
