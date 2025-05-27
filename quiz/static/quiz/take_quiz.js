@@ -491,7 +491,8 @@ function activateAskTheAudience(event)
   sendWebsocketMessage("start_poll", {
     "title": questionData["question"],
     "choices": choices,
-    "duration": 120
+    "duration": 60,
+    "delete_poll": true
   });
 
   g_NumAskTheAudience--;

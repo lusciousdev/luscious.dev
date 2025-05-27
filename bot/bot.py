@@ -144,6 +144,7 @@ class LusciousBot(twitchio_commands.Bot):
       title = msgdata.get("title")
       choices = msgdata.get("choices")
       duration = msgdata.get("duration")
+      delete_poll = msgdata.get("delete_poll", False)
       
       if buid is None:
         return
@@ -151,7 +152,7 @@ class LusciousBot(twitchio_commands.Bot):
         self.send_user_group_error(buid, "poll.bad_data", "Start poll request does not contain necessary information.")
         return
       
-      await self.start_poll(buid, title, choices, duration)
+      await self.start_poll(buid, title, choices, duration, delete_poll)
     elif msgtype == "start_prediction":
       buid = msgdata.get("broadcaster_user_id")
       title = msgdata.get("title")
@@ -313,10 +314,8 @@ class LusciousBot(twitchio_commands.Bot):
     else:
       await self.subscribe_to_user(buid)
     
-  async def start_poll(self, buid : str, title : str, choices : list[str], duration : int = 60) -> None:
+  async def start_poll(self, buid : str, title : str, choices : list[str], duration : int = 60, delete_poll : bool = False) -> None:
     broadcaster_type = await self.get_broadcaster_type(buid)
-    
-    print(f"Broadcaster type: {broadcaster_type}")
     
     if broadcaster_type == BroadcasterType.DEFAULT:
       try:
@@ -337,7 +336,10 @@ class LusciousBot(twitchio_commands.Bot):
       
       for poll in polls:
         if poll.status == "ACTIVE":
-          await self.send_user_group_error(buid, "poll.active", "There's already a poll active.")
+          if not delete_poll:
+            await self.send_user_group_error(buid, "poll.active", "There's already a poll active.")
+          else:
+            await broadcaster_partial_user.end_poll(poll.id, "TERMINATED")
           return
       
       poll_title = title if len(title) <= 60 else f"{ title[:57] }..."
