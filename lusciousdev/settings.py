@@ -298,17 +298,17 @@ if not DEBUG:
     "loggers": {
       "django": {
         "handlers": ["django_file"],
-        "level": "WARNING",
+        "level": "DEBUG",
         "propagate": True,
       },
       "overlay": {
         "handlers": ["overlay_file"],
-        "level": "WARNING",
+        "level": "DEBUG",
         "propagate": True,
       },
       "lastfm": {
         "handlers": ["lastfm_file"],
-        "level": "WARNING",
+        "level": "DEBUG",
         "propagate": True,
       },
       "quiz": {
@@ -318,7 +318,7 @@ if not DEBUG:
       },
       "bot": {
         "handlers": ["bot_file"],
-        "level": "WARNING",
+        "level": "DEBUG",
         "propagate": True,
       },
     },
