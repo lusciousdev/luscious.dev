@@ -117,10 +117,13 @@ class LusciousBot(twitchio_commands.Bot):
     
       
   async def check_bot_channel(self) -> None:
-    while True:
-      LOGGER.debug("Waiting for next message...")
-      msg = await self.channel_layer.receive(self.channel_name)
-      await self.handle_bot_channel_messages(msg)
+    try:
+      while True:
+        LOGGER.debug("Waiting for next message...")
+        msg = await self.channel_layer.receive(self.channel_name)
+        await self.handle_bot_channel_messages(msg)
+    except Exception as e:
+      LOGGER.error(e)
       
   async def send_user_group_message(self, buid : str, type : str, data : dict) -> None:
     await self.channel_layer.group_send(group_name(buid), { 'type': f"twitch_{type}", "data": data, })
