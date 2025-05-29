@@ -81,6 +81,7 @@ function handleWebsocketCommand(command, data)
       addChatMessages(data);
       break;
     case "twitch_chat_message":
+      handleTwitchChatMessage(data);
       break;
     case "twitch_poll_begin":
       break;
@@ -885,6 +886,16 @@ function handleCanvasActionWithContext(context, itemId, action, actionData, acti
   context.stroke();
 
   g_ItemDict[itemId]['last_point'] = new Point(actionData.points[actionData.points.length - 1][0], actionData.points[actionData.points.length - 1][1]);
+}
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           TWITCH
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function handleTwitchChatMessage(data)
+{
+  
 }
 
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

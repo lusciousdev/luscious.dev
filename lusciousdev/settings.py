@@ -144,6 +144,8 @@ CHANNEL_LAYERS = {
     "CONFIG": {
       "hosts": [ f"{REDIS_BASE_URL}/{CHANNELS_DB}" ],
       "symmetric_encryption_keys": [ SECRET_KEY ],
+      "capacity": 2500,
+      "expiry": 10,
     }
   }
 }

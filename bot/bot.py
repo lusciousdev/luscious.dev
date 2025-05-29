@@ -94,7 +94,7 @@ class LusciousBot(twitchio_commands.Bot):
       elif set(resp.scopes) == set(settings.SOCIALACCOUNT_PROVIDERS.get("twitch_chatbot", {}).get("SCOPE", [])):
         account = await SocialAccount.objects.aget(provider = "twitch_chatbot", uid = resp.user_id)
     except SocialAccount.DoesNotExist:
-      print(f"Token added for unknown user: {resp.user_id}")
+      LOGGER.debug(f"Token added for unknown user: {resp.user_id}")
       return resp
     
     if account:
@@ -118,7 +118,7 @@ class LusciousBot(twitchio_commands.Bot):
       
   async def check_bot_channel(self) -> None:
     while True:
-      print("Waiting for next message...")
+      LOGGER.debug("Waiting for next message...")
       msg = await self.channel_layer.receive(self.channel_name)
       await self.handle_bot_channel_messages(msg)
       
@@ -132,7 +132,7 @@ class LusciousBot(twitchio_commands.Bot):
     msgtype : str = message.get("type", "")
     msgdata : dict = message.get("data", {})
     
-    print(message)
+    LOGGER.debug(message)
     
     if msgtype == "join":
       broadcaster_user_id = message["data"]["broadcaster_user_id"]
@@ -167,10 +167,10 @@ class LusciousBot(twitchio_commands.Bot):
       
       await self.start_prediction(buid, title, outcomes, duration)
     else:
-      print("ERROR: unhandled message type.")
+      LOGGER.debug("ERROR: unhandled message type.")
   
   async def event_ready(self) -> None:
-    print(f"Successfully logged in as: {self.bot_id}")
+    LOGGER.debug(f"Successfully logged in as: {self.bot_id}")
     
     self.bot_channel_task = asyncio.create_task(self.check_bot_channel())
     
