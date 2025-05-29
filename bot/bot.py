@@ -340,7 +340,7 @@ class LusciousBot(twitchio_commands.Bot):
             await self.send_user_group_error(buid, "poll.active", "There's already a poll active.")
             return
           else:
-            await poll.end_poll("ARCHIVED")
+            await poll.end_poll(status = "ARCHIVED")
       
       poll_title = title if len(title) <= 60 else f"{ title[:57] }..."
       poll_choices = [ c if len(c) <= 25 else f"{ c[:22] }..." for c in choices ]
