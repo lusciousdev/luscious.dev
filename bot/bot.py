@@ -81,13 +81,10 @@ class LusciousBot(twitchio_commands.Bot):
     self.channel_name = await self.channel_layer.new_channel()
     await self.channel_layer.group_add(self.bot_group_name, self.channel_name)
     
-    # self.rejoin_bot_channel.start()
-    
   async def add_token(self, token : str, refresh : str) -> twitchio.authentication.ValidateTokenPayload:
     resp : twitchio.authentication.ValidateTokenPayload = await super().add_token(token, refresh)
     
     account = None
-    
     try:
       if set(resp.scopes) == set(settings.SOCIALACCOUNT_PROVIDERS.get("twitch", {}).get("SCOPE", [])):
         account = await SocialAccount.objects.aget(provider = "twitch", uid = resp.user_id)
@@ -114,16 +111,15 @@ class LusciousBot(twitchio_commands.Bot):
     bot_token = await SocialToken.objects.aget(account = bot_account)
     
     await self.add_token(bot_token.token, bot_token.token_secret)
-    
       
   async def check_bot_channel(self) -> None:
-    try:
-      while True:
+    while True:
+      try:
         LOGGER.debug("Waiting for next message...")
         msg = await self.channel_layer.receive(self.channel_name)
         await self.handle_bot_channel_messages(msg)
-    except Exception as e:
-      LOGGER.error(e)
+      except Exception as e:
+        LOGGER.error(e)
       
   async def send_user_group_message(self, buid : str, type : str, data : dict) -> None:
     await self.channel_layer.group_send(group_name(buid), { 'type': f"twitch_{type}", "data": data, })
@@ -141,7 +137,11 @@ class LusciousBot(twitchio_commands.Bot):
       broadcaster_user_id = message["data"]["broadcaster_user_id"]
       await self.add_user(broadcaster_user_id)
     elif msgtype == "send_message":
-      await self.send_chat_message(**message["data"])
+      buid = msgdata.get("broadcaster_user_id")
+      chatmsg = msgdata.get("message")
+      
+      await self.add_user(buid)
+      await self.send_chat_message(buid, chatmsg)
     elif msgtype == "start_poll":
       buid = msgdata.get("broadcaster_user_id")
       title = msgdata.get("title")
@@ -155,6 +155,7 @@ class LusciousBot(twitchio_commands.Bot):
         self.send_user_group_error(buid, "poll.bad_data", "Start poll request does not contain necessary information.")
         return
       
+      await self.add_user(buid)
       await self.start_poll(buid, title, choices, duration, delete_poll)
     elif msgtype == "start_prediction":
       buid = msgdata.get("broadcaster_user_id")
@@ -168,6 +169,7 @@ class LusciousBot(twitchio_commands.Bot):
         self.send_user_group_error(buid, "prediction.bad_data", "Start prediction request does not contain necessary information.")
         return
       
+      await self.add_user(buid)
       await self.start_prediction(buid, title, outcomes, duration)
     else:
       LOGGER.debug("ERROR: unhandled message type.")
@@ -311,7 +313,11 @@ class LusciousBot(twitchio_commands.Bot):
     await broadcaster.send_message(message, sender = self.bot_id)
     
   async def add_user(self, buid : str) -> None:
-    success, reason = await self.add_user_token(buid)
+    success = True
+    reason = ""
+    if buid not in self.tokens:
+      success, reason = await self.add_user_token(buid)
+    
     if not success:
       await self.send_user_group_error(buid, "user.unauth", reason)
     else:
