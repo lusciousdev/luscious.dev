@@ -68,11 +68,18 @@
 
 .twitch-chat-message {
   width: 100%;
+
+  box-sizing: border-box;
+  padding: 0.16em 0.33em;
 }
 
 .emote-img {
-  height: 0.9em;
+  height: 1.1em;
   width: auto;
+
+  margin: -0.16em 0px;
+  position: relative;
+  vertical-align: middle;
 }
 
 @-moz-keyframes leftRightScrollAnim {
