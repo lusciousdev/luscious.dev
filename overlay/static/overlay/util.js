@@ -980,7 +980,7 @@ function getChatEmotes()
 {
   let ffz = [
     "https://api.betterttv.net/3/cached/frankerfacez/emotes/global",
-    "https://api.betterttv.net/3/cached/frankerfacez/twitch/{0}".format(twitchUID),
+    "https://api.betterttv.net/3/cached/frankerfacez/users/twitch/{0}".format(twitchUID),
   ];
 
   ffz.forEach((url, i) => {
