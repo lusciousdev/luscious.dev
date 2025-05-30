@@ -1134,6 +1134,9 @@ function getItemIconName(itemType)
     case "twitch_video":
       itemIcon = "live_tv";
       break;
+    case "twitch_chat":
+      itemIcon = "forum";
+      break
     case "text":
     default:
       break;
