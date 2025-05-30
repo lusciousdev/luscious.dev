@@ -958,7 +958,7 @@ function addMessageToChatHistory(elem, msg)
     if (part in msg["emotes"])
     {
       let emoteData = msg["emotes"][part];
-      let emoteUrl = "https://static-cdn.jtvnw.net/emoticons/v2/{0}/{1}/light/1.0".format(emoteData["id"], emoteData["format"]);
+      let emoteUrl = "https://static-cdn.jtvnw.net/emoticons/v2/{0}/default/dark/1.0".format(emoteData["id"]);
       msgRes.push(`<img class="emote-img" src="{0}" alt="{1}" title="">`.format(emoteUrl, part));
     }
     else if (part in g_EmoteMap)
