@@ -39,6 +39,37 @@
   overflow: hidden;
 }
 
+.twitch-chat-history-container {
+  width: 100%;
+  height: 100%;
+
+  overflow-y: scroll;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.twitch-chat-history-container::-webkit-scrollbar {
+  display: none;
+}
+
+.twitch-chat-history {
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  align-items: start;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  min-height: 100%;
+}
+
+.twitch-chat-message {
+  width: 100%;
+}
+
 @-moz-keyframes leftRightScrollAnim {
   from {
     -moz-transform: translateX(-100%);

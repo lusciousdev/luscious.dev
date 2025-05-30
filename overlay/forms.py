@@ -511,6 +511,18 @@ class EditCounterItem(AbstractEditText):
     widgets.update(BASE_TEXT_WIDGETS)
     widgets.update(COUNTER_WIDGETS)
     
+class EditTwitchChatItem(AbstractEditText):
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
+  class Meta:
+    model = TwitchChatItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
+    
 class AddItemForm(forms.ModelForm):
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES, initial = 1)
   scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
@@ -644,6 +656,15 @@ class AddCounterItem(AbstractAddText):
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
     widgets.update(COUNTER_WIDGETS)
+  
+class AddTwitchChatItem(AbstractAddText):
+  class Meta:
+    model = TwitchChatItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
     
 
 FORMS_MAP = {
@@ -658,6 +679,7 @@ FORMS_MAP = {
     "TextItem": EditTextItem,
     "StopwatchItem": EditStopwatchItem,
     "CounterItem": EditCounterItem,
+    "TwitchChatItem": EditTwitchChatItem,
   },
   "add": {
     "ImageItem": AddImageItem,
@@ -670,5 +692,6 @@ FORMS_MAP = {
     "TextItem": AddTextItem,
     "StopwatchItem": AddStopwatchItem,
     "CounterItem": AddCounterItem,
+    "TwitchChatItem": AddTwitchChatItem,
   }
 }

@@ -449,6 +449,19 @@ class CounterItem(AbstractTextItem):
   def is_displayed():
     return True
   
+class TwitchChatItem(AbstractTextItem):
+  @staticmethod
+  def get_pretty_type():
+    return "Twitch Chat"
+  
+  @staticmethod
+  def get_simple_type():
+    return "twitch_chat"
+  
+  @staticmethod
+  def is_displayed():
+    return True
+  
 class ChatMessage(models.Model):
   overlay = models.ForeignKey(CollaborativeOverlay, null = True, on_delete = models.CASCADE)
   user = models.ForeignKey(settings.AUTH_USER_MODEL, null = True, on_delete = models.SET_NULL)
@@ -470,4 +483,5 @@ ITEM_TYPES = [
   TextItem,
   StopwatchItem,
   CounterItem,
+  TwitchChatItem,
 ]

@@ -44,6 +44,14 @@ def partialuser_to_dict(pu : twitchio.PartialUser) -> dict[str, str]:
     "display_name": pu.display_name,
   }
   
+def chatter_to_dict(chatter : twitchio.Chatter) -> dict[str, str]:
+  return {
+    "id": chatter.id,
+    "login": chatter.name,
+    "display_name": chatter.display_name,
+    "color": "#737373" if chatter.color is None else chatter.color.html,
+  }
+  
 def group_name(broadcaster_user_id : str) -> str:
   return f"twitch_{broadcaster_user_id}"
 
@@ -183,7 +191,7 @@ class LusciousBot(twitchio_commands.Bot):
     msg_data = { 
       "uuid": payload.id,
       "broadcaster": partialuser_to_dict(payload.broadcaster), 
-      "chatter": partialuser_to_dict(payload.chatter), 
+      "chatter": chatter_to_dict(payload.chatter), 
       "message": payload.text 
     }
     

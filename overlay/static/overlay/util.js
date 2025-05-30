@@ -12,6 +12,9 @@ const RIGHTLEFT = 2;
 const TOPBOTTOM = 3;
 const BOTTOMTOP = 4;
 
+const g_TwitchChatHistoryLimit = 50;
+const g_TwitchChatHistory = [];
+
 function handleWebsocketMessage(e)
 {
   var eventData = JSON.parse(e.data);
@@ -399,12 +402,10 @@ function secondsToTimeFormat(totalSeconds)
   return "{0}:{1}:{2}".format(hours.pad(), minutes.pad(), seconds.pad());
 }
 
-function setTextItemContent(overlayElement, itemId, itemText, itemData)
+function setTextItemCSS(overlayElement, itemId, itemData)
 {
   var textElemId = "#item-{0}-text".format(itemId);
   var fontSize = EDIT_VIEW ? viewToEditLength(itemData["font_size"]) : itemData["font_size"];
-
-  $(textElemId).text(itemText);
 
   var itemCSS = getDefaultCSS(itemData);
   itemCSS["font-size"] = "{0}pt".format(fontSize);
@@ -417,6 +418,15 @@ function setTextItemContent(overlayElement, itemId, itemText, itemData)
   itemCSS["text-align"] = itemData["text_alignment"];
 
   $(textElemId).css(itemCSS);
+}
+
+function setTextItemContent(overlayElement, itemId, itemText, itemData)
+{
+  var textElemId = "#item-{0}-text".format(itemId);
+
+  $(textElemId).text(itemText);
+
+  setTextItemCSS(overlayElement, itemId, itemData);
 }
 
 function moveItem(itemId, x, y)
@@ -646,6 +656,16 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
+      case "twitch_chat":
+        $(itemContainerId).append("<div id='item-{0}-text' class='twitch-chat-history-container overlay-item-child noselect nopointer'><div class='twitch-chat-history'></div></div>".format(itemId));
+        
+        let historyElem = $("#item-{0}-text".format(itemId));
+        g_TwitchChatHistory.forEach((msg, i) => {
+          addMessageToChatHistory(historyElem, msg);
+        });
+        
+        setTextItemCSS(overlayElement, itemId, itemData);
+        break;
       default:
         break;
     }
@@ -784,6 +804,9 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
+      case "twitch_chat":
+        setTextItemCSS(overlayElement, itemId, itemData);
+        break;
       default:
         break;
     }
@@ -889,13 +912,36 @@ function handleCanvasActionWithContext(context, itemId, action, actionData, acti
 }
 
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-///           TWITCH
+///       TWITCH CONNECTION
 ///
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-function handleTwitchChatMessage(data)
+function handleTwitchChatMessage(msgData)
 {
-  
+  g_TwitchChatHistory.push(msgData);
+
+  while (g_TwitchChatHistory.length > g_TwitchChatHistoryLimit)
+  {
+    g_TwitchChatHistory.shift();
+  }
+
+  addMessageToChatHistory($(".twitch-chat-history"), msgData);
+
+  $(".twitch-chat-history").each((i, elem) => {
+    while ($(elem).find(".twitch-chat-message").length > g_TwitchChatHistoryLimit)
+    {
+      $(elem).find(".twitch-chat-message:first").remove();
+    }
+  });
+
+  $(".twitch-chat-history-container").each((i, elem) => {
+    $(elem).scrollTop(elem.scrollHeight);
+  });
+}
+
+function addMessageToChatHistory(elem, msg)
+{
+  elem.append("<div class='twitch-chat-message'><b style='color: {0};'>{1}:</b> {2}</div>".format(msg["chatter"]["color"], msg["chatter"]["display_name"], msg["message"]));
 }
 
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
