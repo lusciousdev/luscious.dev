@@ -653,6 +653,13 @@ function setAllItemPositions()
     {
       setTextItemContent($("#overlay"), prop, g_ItemDict[prop]["item_data"]["text"], g_ItemDict[prop]["item_data"])
     }
+    
+    if (g_ItemDict[prop]['item_type'] == "twitch_chat")
+    {
+      setTextItemCSS($("#overlay"), prop, g_ItemDict[prop]["item_data"]);
+
+      $("#item-{0}-text".format(itemId)).scrollTop($("#item-{0}-text".format(itemId))[0].scrollHeight);
+    }
 
     setItemPosition(itemId, top, left, width, height, itemData["z"], itemData['rotation']);
   }
@@ -1051,7 +1058,11 @@ function handleItemLeftClick(e, elem)
         imgTag.attr("width", "{0}px".format(newWidth));
         imgTag.attr("height", "{0}px".format(newHeight));
       }
-  
+      else if (g_ItemDict[elemId].item_type == "twitch_chat")
+      {
+        $("#item-{0}-text".format(elemId)).scrollTop($("#item-{0}-text".format(elemId))[0].scrollHeight);
+      }
+      
       var itemTop    = editToViewLength(newPos.y + borderWidth);
       var itemLeft   = editToViewLength(newPos.x + borderWidth);
       var itemWidth  = editToViewLength(newWidth);

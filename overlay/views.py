@@ -191,6 +191,14 @@ class EditOverlayView(generic.DetailView):
     context['item_types'] = ITEM_TYPES
     context['forms'] = FORMS_MAP
     context['overlayuid'] = OverlayUser.objects.get(id = self.request.user.id).overlay.identifier
+    context['twitchuid'] = None
+    
+    overlay = self.get_object()
+    try:
+      twitchaccount : SocialAccount = overlay.owner.socialaccount_set.get(provider="twitch")
+      context['twitchuid'] = twitchaccount.uid
+    except Exception as e:
+      pass
     
     return context
 
@@ -199,8 +207,15 @@ def view_overlay(request, pk):
     overlay = CollaborativeOverlay.objects.get(id = pk)
   except CollaborativeOverlay.DoesNotExist:
     return Http404("Overlay does not exist.")
+    
+  twitchuid = None
+  try:
+    twitchaccount : SocialAccount = overlay.owner.socialaccount_set.get(provider="twitch")
+    twitchuid = twitchaccount.uid
+  except Exception as e:
+    pass
   
-  return render(request, "overlay/view.html", { "collaborativeoverlay": overlay })
+  return render(request, "overlay/view.html", { "collaborativeoverlay": overlay, "twitchuid": twitchuid })
   
 @login_required
 def create_overlay(request):

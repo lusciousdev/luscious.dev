@@ -52,6 +52,14 @@ def chatter_to_dict(chatter : twitchio.Chatter) -> dict[str, str]:
     "color": "#737373" if chatter.color is None else chatter.color.html,
   }
   
+def emote_to_dict(emote : twitchio.ChatMessageEmote) -> dict[str, str]:
+  return {
+    "set_id": emote.set_id,
+    "id": emote.id,
+    "owner": partialuser_to_dict(emote.owner),
+    "format": emote.format,
+  }
+  
 def group_name(broadcaster_user_id : str) -> str:
   return f"twitch_{broadcaster_user_id}"
 
@@ -192,7 +200,8 @@ class LusciousBot(twitchio_commands.Bot):
       "uuid": payload.id,
       "broadcaster": partialuser_to_dict(payload.broadcaster), 
       "chatter": chatter_to_dict(payload.chatter), 
-      "message": payload.text 
+      "message": payload.text,
+      "emotes": { frag.text: emote_to_dict(frag.emote) for frag in payload.fragments if frag.emote is not None },
     }
     
     celery_app.send_task("bot.tasks.handle_chat_message", kwargs = msg_data)

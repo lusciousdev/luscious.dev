@@ -70,6 +70,11 @@
   width: 100%;
 }
 
+.emote-img {
+  height: 0.9em;
+  width: auto;
+}
+
 @-moz-keyframes leftRightScrollAnim {
   from {
     -moz-transform: translateX(-100%);

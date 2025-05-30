@@ -1,3 +1,7 @@
+const scriptData = document.currentScript.dataset;
+
+const twitchUID = scriptData.twitchuid;
+
 var g_Websocket = undefined;
 var g_ReconnectInterval = undefined;
 var g_YouTubePlayerAPILoaded = false;
@@ -13,7 +17,9 @@ const TOPBOTTOM = 3;
 const BOTTOMTOP = 4;
 
 const g_TwitchChatHistoryLimit = 50;
-const g_TwitchChatHistory = [];
+var g_TwitchChatHistory = [];
+
+var g_EmoteMap = {};
 
 function handleWebsocketMessage(e)
 {
@@ -512,6 +518,9 @@ function resizeItem(itemId, x, y, width, height)
         if (Math.abs(height - canvasTag.height()) > 1) canvasTag.attr('height', "{0}px".format(height));
       }
       break;
+    case "twitch_chat":
+      $("#item-{0}-text".format(itemId)).scrollTop($("#item-{0}-text".format(itemId))[0].scrollHeight);
+      break;
     default:
       break;
   }
@@ -805,6 +814,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemContent(overlayElement, itemId, textContent, itemData);
         break;
       case "twitch_chat":
+        $("#item-{0}-text".format(itemId)).scrollTop($("#item-{0}-text".format(itemId))[0].scrollHeight);
         setTextItemCSS(overlayElement, itemId, itemData);
         break;
       default:
@@ -941,7 +951,94 @@ function handleTwitchChatMessage(msgData)
 
 function addMessageToChatHistory(elem, msg)
 {
-  elem.append("<div class='twitch-chat-message'><b style='color: {0};'>{1}:</b> {2}</div>".format(msg["chatter"]["color"], msg["chatter"]["display_name"], msg["message"]));
+  let msgParts = msg["message"].split(" ");
+  let msgRes = [];
+
+  msgParts.forEach((part) => {
+    if (part in msg["emotes"])
+    {
+      let emoteData = msg["emotes"][part];
+      let emoteUrl = "https://static-cdn.jtvnw.net/emoticons/v2/{0}/{1}/light/1.0".format(emoteData["id"], emoteData["format"]);
+      msgRes.push(`<img class="emote-img" src="{0}" alt="{1}" title="">`.format(emoteUrl, part));
+    }
+    else if (part in g_EmoteMap)
+    {
+      msgRes.push(`<img class="emote-img" src="{0}" alt="{1}" title="">`.format(g_EmoteMap[part], part));
+    }
+    else
+    {
+      msgRes.push(part);
+    }
+  });
+
+  let message = msgRes.join(" ");
+
+  elem.append("<div class='twitch-chat-message'><b style='color: {0};'>{1}:</b> {2}</div>".format(msg["chatter"]["color"], msg["chatter"]["display_name"], message));
+}
+
+function getChatEmotes()
+{
+  let ffz = [
+    "https://api.betterttv.net/3/cached/frankerfacez/emotes/global",
+    "https://api.betterttv.net/3/cached/frankerfacez/twitch/{0}".format(twitchUID),
+  ];
+
+  ffz.forEach((url, i) => {
+    $.get(url, handleFFZResp);
+  });
+
+  $.get("https://api.betterttv.net/3/cached/emotes/global", handleBTTVGlobalResp);
+  $.get("https://api.betterttv.net/3/cached/users/twitch/{0}".format(twitchUID), handleBTTVUserResp);
+
+  $.get("https://7tv.io/v3/emote-sets/global", handle7TVGlobalResp);
+  $.get("https://7tv.io/v3/users/twitch/{0}".format(twitchUID), handle7TVUserResp);
+}
+
+function handleFFZResp(resp)
+{
+  resp.forEach((emote, i) => {
+    let emoteKey = Object.keys(emote["images"]).sort().shift();
+    let emoteUrl = emote["images"][emoteKey];
+    g_EmoteMap[emote["code"]] = emoteUrl;
+  });
+}
+
+function handleBTTVEmoteList(emoteList)
+{
+  emoteList.forEach((emote, i) => {
+    g_EmoteMap[emote["code"]] = "https://cdn.betterttv.net/emote/{0}/1x.{1}".format(emote["id"], emote["imageType"]);
+  });
+}
+
+function handleBTTVGlobalResp(resp)
+{
+  handleBTTVEmoteList(resp);
+}
+
+function handleBTTVUserResp(resp)
+{
+  handleBTTVEmoteList(resp["channelEmotes"]);
+  handleBTTVEmoteList(resp["sharedEmotes"]);
+}
+
+function handle7TVEmoteList(emoteList)
+{
+  emoteList.forEach((emote, i) => {
+    let emoteBase = emote["data"]["host"]["url"];
+    let emoteUrl = "{0}/{1}".format(emoteBase, emote["data"]["host"]["files"][0]["name"]);
+
+    g_EmoteMap[emote["name"]] = emoteUrl;
+  });
+}
+
+function handle7TVGlobalResp(resp)
+{
+  handle7TVEmoteList(resp["emotes"]);
+}
+
+function handle7TVUserResp(resp)
+{
+  handle7TVEmoteList(resp["emote_set"]["emotes"]);
 }
 
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1151,4 +1248,6 @@ window.addEventListener('load', function(e) {
   tag.src = "https://www.youtube.com/iframe_api";
   var firstScriptTag = document.getElementsByTagName('script')[0];
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+  getChatEmotes();
 }, false);
