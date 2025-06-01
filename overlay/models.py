@@ -462,6 +462,32 @@ class TwitchChatItem(AbstractTextItem):
   def is_displayed():
     return True
   
+class TwitchPollItem(AbstractTextItem):
+  @staticmethod
+  def get_pretty_type():
+    return "Twitch Poll"
+  
+  @staticmethod
+  def get_simple_type():
+    return "twitch_poll"
+  
+  @staticmethod
+  def is_displayed():
+    return True
+  
+class TwitchPredictionItem(AbstractTextItem):
+  @staticmethod
+  def get_pretty_type():
+    return "Twitch Prediction"
+  
+  @staticmethod
+  def get_simple_type():
+    return "twitch_prediction"
+  
+  @staticmethod
+  def is_displayed():
+    return True
+  
 class ChatMessage(models.Model):
   overlay = models.ForeignKey(CollaborativeOverlay, null = True, on_delete = models.CASCADE)
   user = models.ForeignKey(settings.AUTH_USER_MODEL, null = True, on_delete = models.SET_NULL)
@@ -484,4 +510,6 @@ ITEM_TYPES = [
   StopwatchItem,
   CounterItem,
   TwitchChatItem,
+  TwitchPollItem,
+  TwitchPredictionItem,
 ]

@@ -249,7 +249,7 @@ function handlePollProgress(data)
   g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_PollTimerUpdateIntervalTimeout);
 }
 
-function handlePollEnd(data)
+function handlePollEnd(pollData)
 {
   g_PollTimeRemaining = 0;
 

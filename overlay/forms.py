@@ -125,6 +125,13 @@ VISIBILITY_CHOICES = (
   (2, "Visible"),
 )
 
+TWITCH_EVENT_VISIBILITY_CHOICES = {
+  (0, "Hidden"),
+  (1, "Visible to editors"),
+  (2, "Visible"),
+  (3, "Visible while ongoing"),
+}
+
 FONT_CHOICES = (
   ("Roboto Mono", "Roboto Mono"),
   ("EB Garamond", "EB Garamond"),
@@ -523,6 +530,40 @@ class EditTwitchChatItem(AbstractEditText):
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
     
+class EditTwitchPollItem(AbstractEditText):
+  visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
+  
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
+  class Meta:
+    model = TwitchPollItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
+    
+class EditTwitchPredictionItem(AbstractEditText):
+  visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
+  
+  field_order = BASE_WIDGET_ORDER
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
+  class Meta:
+    model = TwitchPredictionItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
+    
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#          ADD ITEM FORMS
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
 class AddItemForm(forms.ModelForm):
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES, initial = 1)
   scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
@@ -665,6 +706,28 @@ class AddTwitchChatItem(AbstractAddText):
     widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+  
+class AddTwitchPollItem(AbstractAddText):
+  visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
+  
+  class Meta:
+    model = TwitchPollItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
+  
+class AddTwitchPredictionItem(AbstractAddText):
+  visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
+  
+  class Meta:
+    model = TwitchPredictionItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
     
 
 FORMS_MAP = {
@@ -680,6 +743,8 @@ FORMS_MAP = {
     "StopwatchItem": EditStopwatchItem,
     "CounterItem": EditCounterItem,
     "TwitchChatItem": EditTwitchChatItem,
+    "TwitchPollItem": EditTwitchPollItem,
+    "TwitchPredictionItem": EditTwitchPredictionItem,
   },
   "add": {
     "ImageItem": AddImageItem,
@@ -693,5 +758,7 @@ FORMS_MAP = {
     "StopwatchItem": AddStopwatchItem,
     "CounterItem": AddCounterItem,
     "TwitchChatItem": AddTwitchChatItem,
+    "TwitchPollItem": AddTwitchPollItem,
+    "TwitchPredictionItem": AddTwitchPredictionItem,
   }
 }

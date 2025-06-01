@@ -1,5 +1,4 @@
 const scriptData = document.currentScript.dataset;
-
 const twitchUID = scriptData.twitchuid;
 
 var g_Websocket = undefined;
@@ -20,6 +19,17 @@ const g_TwitchChatHistoryLimit = 50;
 var g_TwitchChatHistory = [];
 
 var g_EmoteMap = {};
+
+var g_PollActive = false;
+var g_PollTimeRemaining = 0;
+var g_PollTimerUpdateInterval = undefined;
+
+var c_PollTimerUpdateIntervalTimeout = 250;
+var g_LastTime = Date.now();
+
+var g_PredictionActive = false;
+var g_PredictionTimeRemaining = 0;
+var g_PredictionTimerUpdateInterval = undefined;
 
 function handleWebsocketMessage(e)
 {
@@ -46,7 +56,7 @@ function handleWebsocketMessage(e)
 function handleWebsocketCommand(command, data)
 {
   var editor = "";
-  if ("uid" in data)
+  if (typeof data === "object" && "uid" in data)
     editor = data.uid;
 
   switch (command)
@@ -93,18 +103,25 @@ function handleWebsocketCommand(command, data)
       handleTwitchChatMessage(data);
       break;
     case "twitch_poll_begin":
+      handleTwitchPollBegin(data);
       break;
     case "twitch_poll_progress":
+      handleTwitchPollProgress(data);
       break;
     case "twitch_poll_end":
+      handleTwitchPollEnd(data);
       break;
     case "twitch_prediction_start":
+      handleTwitchPredictionStart(data);
       break;
     case "twitch_prediction_progress":
+      handleTwitchPredictionProgress(data);
       break;
     case "twitch_prediction_lock":
+      handleTwitchPredictionLock(data);
       break;
     case "twitch_prediction_end":
+      handleTwitchPredictionEnd(data);
       break;
     case "twitch_redemption_add":
       break;
@@ -163,13 +180,27 @@ function requestRefresh()
   sendWebsocketMessage("request_refresh", {});
 }
 
-function getDefaultCSS(idata)
+function getDefaultCSS(itype, idata)
 {
   var visible = "hidden";
 
   if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
   {
     visible = "inherit";
+  }
+  else if (idata["visibility"] == 3)
+  {
+    switch (itype)
+    {
+      case "twitch_poll":
+        visible = g_PollActive ? "inherit" : "hidden";
+        break;
+      case "twitch_prediction":
+        visible = g_PredictionActive ? "inherit" : "hidden";
+        break;
+      default:
+        break;
+    }
   }
 
   var cssObj = {
@@ -408,12 +439,12 @@ function secondsToTimeFormat(totalSeconds)
   return "{0}:{1}:{2}".format(hours.pad(), minutes.pad(), seconds.pad());
 }
 
-function setTextItemCSS(overlayElement, itemId, itemData)
+function setTextItemCSS(overlayElement, itemId, itemType, itemData)
 {
   var textElemId = "#item-{0}-text".format(itemId);
   var fontSize = EDIT_VIEW ? viewToEditLength(itemData["font_size"]) : itemData["font_size"];
 
-  var itemCSS = getDefaultCSS(itemData);
+  var itemCSS = getDefaultCSS(itemType, itemData);
   itemCSS["font-size"] = "{0}pt".format(fontSize);
   itemCSS["font-family"] = "{0}, sans-serif".format(itemData["font"]);
   itemCSS["font-weight"] = itemData["font_weight"];
@@ -426,13 +457,13 @@ function setTextItemCSS(overlayElement, itemId, itemData)
   $(textElemId).css(itemCSS);
 }
 
-function setTextItemContent(overlayElement, itemId, itemText, itemData)
+function setTextItemContent(overlayElement, itemId, itemText, itemType, itemData)
 {
   var textElemId = "#item-{0}-text".format(itemId);
 
   $(textElemId).text(itemText);
 
-  setTextItemCSS(overlayElement, itemId, itemData);
+  setTextItemCSS(overlayElement, itemId, itemType, itemData);
 }
 
 function moveItem(itemId, x, y)
@@ -564,12 +595,12 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         
         $(imgElemId).on('dragstart', (event) => { event.preventDefault(); });
 
-        $(imgElemId).css(getDefaultCSS(itemData));
+        $(imgElemId).css(getDefaultCSS(itemType, itemData));
         break;
       case "canvas":
         $(itemContainerId).append("<canvas id='item-{0}-canvas' width='{1}px' height='{2}px' />".format(itemId, width, height));
 
-        $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(itemData));
+        $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(itemType, itemData));
         handleCanvasUpdate(itemId, itemData["history"]);
         break;
       case "audio":
@@ -593,7 +624,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
 
-        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect nopointer" />`.format(itemId));
+        $(itemContainerId).html(PlayerTemplate.format(itemId));
 
         g_ItemDict[itemId]['player_ready'] = false;
         g_ItemDict[itemId]['player'] = undefined;
@@ -603,12 +634,12 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           createYouTubePlayer(itemId);
         }
 
-        $(playerId).css(getDefaultCSS(itemData));
+        $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect nopointer" />`.format(itemId));
+        $(itemContainerId).html(PlayerTemplate.format(itemId));
 
         if (g_ItemDict[itemId].item_data.channel != "")
         {
@@ -621,12 +652,12 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           g_ItemDict[itemId]['player'] = null;
         }
 
-        $(playerId).css(getDefaultCSS(itemData));
+        $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemContainerId).html(`<div id="item-{0}-player" class="overlay-item-child noselect nopointer" />`.format(itemId));
+        $(itemContainerId).html(PlayerTemplate.format(itemId));
 
         if (g_ItemDict[itemId].item_data.video_id != "")
         {
@@ -641,14 +672,14 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           g_ItemDict[itemId]['player'] = null;
         }
 
-        $(playerId).css(getDefaultCSS(itemData));
+        $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "text":
-        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect nopointer' />".format(itemId));
-        setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
+        $(itemContainerId).append(TextTemplate.format(itemId));
+        setTextItemContent(overlayElement, itemId, itemData['text'], itemType, itemData);
         break;
       case "stopwatch":
-        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect nopointer' />".format(itemId));
+        $(itemContainerId).append(TextTemplate.format(itemId));
 
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
         if (itemData['paused'])
@@ -657,13 +688,13 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         }
         var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
         
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
         break;
       case "counter":
-        $(itemContainerId).append("<pre id='item-{0}-text' class='overlay-item-child noselect nopointer' />".format(itemId));
+        $(itemContainerId).append(TextTemplate.format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
         break;
       case "twitch_chat":
         $(itemContainerId).append("<div id='item-{0}-text' class='twitch-chat-history-container overlay-item-child noselect nopointer'><div class='twitch-chat-history'></div></div>".format(itemId));
@@ -673,7 +704,14 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           addMessageToChatHistory(historyElem, msg);
         });
         
-        setTextItemCSS(overlayElement, itemId, itemData);
+        setTextItemCSS(overlayElement, itemId, itemType, itemData);
+        break;
+      case "twitch_poll":
+        $(itemContainerId).append(PollTemplate.format(itemId));
+
+        setTextItemCSS(overlayElement, itemId, itemType, itemData);
+        break;
+      case "twitch_prediction":
         break;
       default:
         break;
@@ -709,13 +747,13 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         imgTag.attr('width', "{0}px".format(width));
         imgTag.attr('height', "{0}px".format(height));
 
-        imgTag.css(getDefaultCSS(itemData));
+        imgTag.css(getDefaultCSS(itemType, itemData));
         break;
       case "canvas":
         var canvasId = "#item-{0}-canvas".format(itemId);
         var canvasTag = $(canvasId);
 
-        canvasTag.css(getDefaultCSS(itemData));
+        canvasTag.css(getDefaultCSS(itemType, itemData));
         
         if (!g_ItemDict[itemId]["drawing"])
         {
@@ -744,7 +782,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           $(iframeId).attr('src', itemData['embed_url']);
         }
 
-        $(iframeId).css(getDefaultCSS(itemData));
+        $(iframeId).css(getDefaultCSS(itemType, itemData));
         break;
       case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
@@ -762,7 +800,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           }
         }
 
-        $(playerId).css(getDefaultCSS(itemData));
+        $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId);
@@ -777,7 +815,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           updateTwitchStreamPlayer(itemId);
         }
 
-        $(playerId).css(getDefaultCSS(itemData));
+        $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
@@ -794,10 +832,10 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           updateTwitchVideoPlayer(itemId);
         }
 
-        $(playerId).css(getDefaultCSS(itemData));
+        $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "text":
-        setTextItemContent(overlayElement, itemId, itemData['text'], itemData);
+        setTextItemContent(overlayElement, itemId, itemData['text'], itemType, itemData);
         break;
       case "stopwatch":
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
@@ -807,15 +845,21 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         }
         var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
         
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
         break
       case "counter":
         var textContent = itemData['counter_format'].format(itemData['count'])
-        setTextItemContent(overlayElement, itemId, textContent, itemData);
+        setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
         break;
       case "twitch_chat":
         $("#item-{0}-text".format(itemId)).scrollTop($("#item-{0}-text".format(itemId))[0].scrollHeight);
-        setTextItemCSS(overlayElement, itemId, itemData);
+        setTextItemCSS(overlayElement, itemId, itemType, itemData);
+        break;
+      case "twitch_poll":
+        setTextItemCSS(overlayElement, itemId, itemType, itemData);
+        break;
+      case "twitch_prediction":
+        setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       default:
         break;
@@ -921,6 +965,134 @@ function handleCanvasActionWithContext(context, itemId, action, actionData, acti
   g_ItemDict[itemId]['last_point'] = new Point(actionData.points[actionData.points.length - 1][0], actionData.points[actionData.points.length - 1][1]);
 }
 
+function handleTwitchPollBegin(pollData)
+{
+  g_PollActive = true;
+  changePollVisibility();
+
+  $(".twitch-poll-title").html(pollData.title);
+
+  $(".twitch-poll-choice-container").empty();
+
+  pollData.choices.forEach((val, idx) => { $(".twitch-poll-choice-container").append(PollChoiceTemplate.format((idx + 1), val.title)); });
+
+  $(".twitch-poll-vote-count").html("Total votes: 0")
+
+  g_PollTimeRemaining = pollData.time_remaining;
+
+  updatePollTimer(false);
+  clearInterval(g_PollTimerUpdateInterval);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_PollTimerUpdateIntervalTimeout);
+}
+
+function handleTwitchPollProgress(pollData)
+{
+  g_PollActive = true;
+  changePollVisibility();
+
+  $(".twitch-poll-title").html(pollData.title);
+
+  $(".twitch-poll-choice-container").empty();
+
+  let totalVotes = 0;
+  pollData.choices.forEach((val, idx) => { 
+    totalVotes += val.votes; 
+    $(".twitch-poll-choice-container").append(PollChoiceTemplate.format((idx + 1), val.title)); 
+  });
+
+  if (totalVotes > 0)
+  {
+    pollData.choices.forEach((val, idx) => {
+      let barElem = $(".twitch-poll-choice-bar[choice='{0}']".format((idx + 1)));
+
+      let percent = val.votes / totalVotes;
+
+      let label = $(barElem).find(".twitch-poll-choice-bar-label");
+      let fill = $(barElem).find(".twitch-poll-choice-bar-fill");
+
+      label.html("{0}%".format((percent * 100).toFixed(1)));
+      fill.css({ "width": "{0}%".format(percent * 100) });
+    });
+  }
+
+  $(".twitch-poll-vote-count").html("Total votes: {0}".format(totalVotes));
+
+  g_PollTimeRemaining = pollData.time_remaining;
+
+  updatePollTimer(false);
+  clearInterval(g_PollTimerUpdateInterval);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_PollTimerUpdateIntervalTimeout);
+}
+
+function handleTwitchPollEnd(pollData)
+{
+  setTimeout(() => { 
+    g_PollActive = false;
+    changePollVisibility()
+  }, 15000);
+
+  g_PollTimeRemaining = 0;
+  clearInterval(g_PollTimerUpdateInterval);
+
+  $(".twitch-poll-timer").html("Poll ended.");
+}
+
+function changePollVisibility()
+{
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj["item_type"] == "twitch_prediction")
+    {
+      if (itemObj["item_data"]["visibility"] == 3)
+      {
+        if (g_PollActive)
+        {
+          $("#item-{0}-text".format(itemId)).css({ "visibility": "inherit" });
+        }
+        else
+        {
+          $("#item-{0}-text".format(itemId)).css({ "visibility": "hidden" });
+        }
+      }
+    }
+  }
+}
+
+function handleTwitchPredictionStart(predData)
+{
+
+}
+
+function handleTwitchPredictionProgress(predData)
+{
+  
+}
+
+function handleTwitchPredictionLock(predData)
+{
+  
+}
+
+function handleTwitchPredictionEnd(predData)
+{
+  
+}
+
+function updatePollTimer(decrementTime = true)
+{
+  timeSince = Date.now() - g_LastTime;
+
+  if (decrementTime) 
+  {
+    g_PollTimeRemaining -= (timeSince / 1000.0);
+  }
+
+  if (g_PollTimeRemaining < 0) g_PollTimeRemaining = 0;
+  $(".twitch-poll-timer").html("Vote now - {0}s left".format(Math.round(g_PollTimeRemaining).toFixed(0)));
+
+  g_LastTime = Date.now();
+}
+
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ///       TWITCH CONNECTION
 ///
@@ -959,11 +1131,11 @@ function addMessageToChatHistory(elem, msg)
     {
       let emoteData = msg["emotes"][part];
       let emoteUrl = "https://static-cdn.jtvnw.net/emoticons/v2/{0}/default/dark/1.0".format(emoteData["id"]);
-      msgRes.push(`<img class="emote-img" src="{0}" alt="{1}" title="">`.format(emoteUrl, part));
+      msgRes.push(EmoteTemplate.format(emoteUrl, part));
     }
     else if (part in g_EmoteMap)
     {
-      msgRes.push(`<img class="emote-img" src="{0}" alt="{1}" title="">`.format(g_EmoteMap[part], part));
+      msgRes.push(EmoteTemplate.format(g_EmoteMap[part], part));
     }
     else
     {
@@ -973,7 +1145,7 @@ function addMessageToChatHistory(elem, msg)
 
   let message = msgRes.join(" ");
 
-  elem.append("<div class='twitch-chat-message'><b style='color: {0};'>{1}:</b> {2}</div>".format(msg["chatter"]["color"], msg["chatter"]["display_name"], message));
+  elem.append(TwitchChatMessageTemplate.format(msg["chatter"]["color"], msg["chatter"]["display_name"], message));
 }
 
 function getChatEmotes()

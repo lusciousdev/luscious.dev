@@ -80,7 +80,7 @@ def broadcast_poll_states():
       send_poll_progress(poll)
   
 @shared_task
-def handle_chat_message(uuid : str, broadcaster : dict, chatter : dict, message : str):
+def handle_chat_message(uuid : str, broadcaster : dict, chatter : dict, message : str, emotes : dict):
   # Log vote in any active polls
   try:
     polls = ChatPoll.objects.filter(broadcaster_user_id = broadcaster["id"], in_progress = True).all()

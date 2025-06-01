@@ -82,6 +82,76 @@
   vertical-align: middle;
 }
 
+.twitch-poll-timer {
+  font-size: 0.75em;
+  font-style: italic;
+}
+
+.twitch-poll-vote-count {
+  font-size: 0.75em;
+}
+
+.twitch-poll {
+  margin: 0.5em;
+  box-sizing: border-box;
+}
+
+.twitch-poll-choice-container {
+  width: 100%;
+
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.twitch-poll-choice-name {
+  font-size: 0.75em;
+}
+
+.twitch-poll-choice-bar-container {
+  position: relative;
+
+  height: 1.33em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+}
+
+.twitch-poll-choice-bar {
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+  row-gap: 0px;
+  column-gap: 0px;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  max-width: 20em;
+  height: 95%;
+
+  background: light-dark(var(--light-lighter), var(--dark-lighter));
+}
+
+.twitch-poll-choice-bar-label {
+  margin-left: 1em;
+  text-align: left;
+  font-size: 0.75em;
+
+  grid-row-start: 1;
+  grid-column-start: 1;
+}
+
+.twitch-poll-choice-bar-fill {
+  background: var(--logo);
+
+  height: 100%;
+
+  grid-row-start: 1;
+  grid-column-start: 1;
+}
+
 @-moz-keyframes leftRightScrollAnim {
   from {
     -moz-transform: translateX(-100%);
