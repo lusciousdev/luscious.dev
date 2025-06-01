@@ -119,7 +119,7 @@ function handleWebsocketCommand(command, data)
     case "twitch_poll_end":
       handleTwitchPollEnd(data);
       break;
-    case "twitch_prediction_start":
+    case "twitch_prediction_begin":
       handleTwitchPredictionBegin(data);
       break;
     case "twitch_prediction_progress":
