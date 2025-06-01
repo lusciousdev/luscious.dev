@@ -215,8 +215,6 @@ BASE_WIDGET_ORDER = [
   'width',
   'height',
   'rotation',
-  'background_enabled',
-  'background_color',
   'crop_top',
   'crop_left',
   'crop_bottom',
@@ -228,6 +226,8 @@ BASE_WIDGET_ORDER = [
   'opacity',
   'scroll_direction',
   'scroll_duration',
+  'background_enabled',
+  'background_color',
 ]
 
 BASE_TEXT_WIDGETS = {
@@ -318,6 +318,29 @@ COUNTER_WIDGETS = {
   'count': forms.NumberInput(attrs={ "field-type": "integer", "title": "Count" }),
 }
 
+TWITCH_EVENT_WIDGETS = {
+  'title_color': forms.TextInput(attrs = { "field-type": "text", "title": "Title color" }),
+  'bar_color': forms.TextInput(attrs = { "field-type": "text", "title": "Bar fill color" }),
+}
+
+TWITCH_EVENT_WIDGET_ORDER = [
+  'font',
+  'font_size',
+  'font_weight',
+  'text_alignment',
+  'title_color',
+  'bar_color',
+  'color',
+  'drop_shadow_enabled',
+  'drop_shadow_offset_x',
+  'drop_shadow_offset_y',
+  'drop_shadow_blur_radius',
+  'drop_shadow_color',
+  'text_outline_enabled',
+  'text_outline_width',
+  'text_outline_color',
+]
+
 NO_DISPLAY_ITEM_EXCLUDES = [
   "x",
   "y",
@@ -345,7 +368,8 @@ class EditItemForm(forms.ModelForm):
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES, initial = 1)
   scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
   
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   
   class Meta:
     abstract = True
@@ -355,7 +379,8 @@ class EditNoDisplayItemForm(forms.ModelForm):
   item_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   overlay_id = forms.CharField(max_length=16, widget=forms.HiddenInput(attrs={ "field-type": "text" }))
   
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   
   class Meta:
     abstract = True
@@ -364,7 +389,8 @@ class EditNoDisplayItemForm(forms.ModelForm):
 class EditImageItem(EditItemForm):
   image_url = forms.CharField(max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", 'readonly': 'readonly' }), label = "Uploaded Image URL")
   
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(["image", "image_url", "url"])
   
   class Meta:
@@ -396,7 +422,8 @@ class EditCanvasItem(EditItemForm):
 class EditAudioItem(EditNoDisplayItemForm):
   audio_url = forms.CharField(max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", 'readonly': 'readonly' }), label = "Uploaded Audio URL")
   
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(["audio", "audio_url"])
   
   class Meta:
@@ -410,7 +437,8 @@ class EditAudioItem(EditNoDisplayItemForm):
     widgets.update(AUDIO_WIDGETS)
     
 class EditEmbedItem(EditItemForm):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   
   class Meta:
     model = EmbedItem
@@ -421,7 +449,8 @@ class EditEmbedItem(EditItemForm):
     widgets.update(EMBED_WIDGETS)
     
 class EditYouTubeEmbedItem(EditItemForm):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(["video_id", "start_time"])
   field_order.extend(BASE_VIDEO_WIDGET_ORDER)
   
@@ -435,7 +464,8 @@ class EditYouTubeEmbedItem(EditItemForm):
     widgets.update(YOUTUBE_VIDEO_WIDGETS)
     
 class EditTwitchStreamEmbedItem(EditItemForm):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(["channel"])
   field_order.extend(BASE_VIDEO_WIDGET_ORDER)
   
@@ -449,7 +479,8 @@ class EditTwitchStreamEmbedItem(EditItemForm):
     widgets.update(TWITCH_STREAM_WIDGETS)
     
 class EditTwitchVideoEmbedItem(EditItemForm):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(["video_id", "start_time"])
   field_order.extend(BASE_VIDEO_WIDGET_ORDER)
   
@@ -473,14 +504,16 @@ class AbstractEditText(EditItemForm):
   
   text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Text outline width" }))
   
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
     abstract = True
     
 class EditTextItem(AbstractEditText):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
@@ -493,7 +526,8 @@ class EditTextItem(AbstractEditText):
     widgets.update(TEXT_WIDGETS)
     
 class EditStopwatchItem(AbstractEditText):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
@@ -506,7 +540,8 @@ class EditStopwatchItem(AbstractEditText):
     widgets.update(STOPWATCH_WIDGETS)
     
 class EditCounterItem(AbstractEditText):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
@@ -519,7 +554,8 @@ class EditCounterItem(AbstractEditText):
     widgets.update(COUNTER_WIDGETS)
     
 class EditTwitchChatItem(AbstractEditText):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
@@ -533,8 +569,9 @@ class EditTwitchChatItem(AbstractEditText):
 class EditTwitchPollItem(AbstractEditText):
   visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
   
-  field_order = BASE_WIDGET_ORDER
-  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(TWITCH_EVENT_WIDGET_ORDER)
   
   class Meta:
     model = TwitchPollItem
@@ -543,12 +580,14 @@ class EditTwitchPollItem(AbstractEditText):
     widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(TWITCH_EVENT_WIDGETS)
     
 class EditTwitchPredictionItem(AbstractEditText):
   visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
   
-  field_order = BASE_WIDGET_ORDER
-  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(TWITCH_EVENT_WIDGET_ORDER)
   
   class Meta:
     model = TwitchPredictionItem
@@ -557,6 +596,7 @@ class EditTwitchPredictionItem(AbstractEditText):
     widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(TWITCH_EVENT_WIDGETS)
     
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -568,14 +608,16 @@ class AddItemForm(forms.ModelForm):
   visibility = forms.ChoiceField(choices = VISIBILITY_CHOICES, initial = 1)
   scroll_direction = forms.ChoiceField(choices = SCROLL_DIRECTIONS)
   
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   
   class Meta:
     abstract = True
     exclude = [ "overlay", "id", "item_type" ]
     
 class AddNoDisplayItemForm(forms.ModelForm):
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   
   class Meta:
     abstract = True
@@ -662,13 +704,18 @@ class AbstractAddText(AddItemForm):
   
   text_outline_width = forms.DecimalField(label = "Text outline width", decimal_places = 1, step_size = 0.1, initial = 0.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Text outline width" }))
   
-  field_order = BASE_WIDGET_ORDER
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
   field_order.extend(BASE_TEXT_WIDGET_ORDER)
   
   class Meta:
     abstract = True
   
 class AddTextItem(AbstractAddText):
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
   class Meta:
     model = TextItem
     exclude = AddItemForm.Meta.exclude
@@ -679,6 +726,10 @@ class AddTextItem(AbstractAddText):
     widgets.update(TEXT_WIDGETS)
     
 class AddStopwatchItem(AbstractAddText):
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
   class Meta:
     model = StopwatchItem
     exclude = AddItemForm.Meta.exclude
@@ -689,6 +740,10 @@ class AddStopwatchItem(AbstractAddText):
     widgets.update(STOPWATCH_WIDGETS)
     
 class AddCounterItem(AbstractAddText):
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
   class Meta:
     model = CounterItem
     exclude = AddItemForm.Meta.exclude
@@ -699,6 +754,10 @@ class AddCounterItem(AbstractAddText):
     widgets.update(COUNTER_WIDGETS)
   
 class AddTwitchChatItem(AbstractAddText):
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
   class Meta:
     model = TwitchChatItem
     exclude = AddItemForm.Meta.exclude
@@ -710,6 +769,10 @@ class AddTwitchChatItem(AbstractAddText):
 class AddTwitchPollItem(AbstractAddText):
   visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
   
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(TWITCH_EVENT_WIDGET_ORDER)
+  
   class Meta:
     model = TwitchPollItem
     exclude = AddItemForm.Meta.exclude
@@ -717,9 +780,14 @@ class AddTwitchPollItem(AbstractAddText):
     widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(TWITCH_EVENT_WIDGETS)
   
 class AddTwitchPredictionItem(AbstractAddText):
   visibility = forms.ChoiceField(choices = TWITCH_EVENT_VISIBILITY_CHOICES, initial = 1)
+  
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(TWITCH_EVENT_WIDGET_ORDER)
   
   class Meta:
     model = TwitchPredictionItem
@@ -728,6 +796,7 @@ class AddTwitchPredictionItem(AbstractAddText):
     widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(TWITCH_EVENT_WIDGETS)
     
 
 FORMS_MAP = {

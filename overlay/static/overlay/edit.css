@@ -168,6 +168,15 @@ body {
   box-sizing: border-box;
 }
 
+.item-form table {
+  border-collapse: collapse;
+}
+
+.item-form table td {
+  padding: 0;
+  margin: 0;
+}
+
 .hidden {
   display: none;
 }

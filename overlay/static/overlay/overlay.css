@@ -82,32 +82,32 @@
   vertical-align: middle;
 }
 
-.twitch-poll-timer {
-  font-size: 0.75em;
+.twitch-poll-timer, .twitch-pred-timer {
+  font-size: 0.66em;
   font-style: italic;
 }
 
-.twitch-poll-vote-count {
-  font-size: 0.75em;
+.twitch-poll-vote-count, .twitch-pred-point-count {
+  font-size: 0.66em;
 }
 
-.twitch-poll {
+.twitch-poll, .twitch-pred {
   margin: 0.5em;
   box-sizing: border-box;
 }
 
-.twitch-poll-choice-container {
+.twitch-poll-choice-container, .twitch-pred-outcome-container {
   width: 100%;
 
   table-layout: auto;
   border-collapse: collapse;
 }
 
-.twitch-poll-choice-name {
+.twitch-poll-choice-name, .twitch-pred-outcome-name {
   font-size: 0.75em;
 }
 
-.twitch-poll-choice-bar-container {
+.twitch-poll-choice-bar-container, .twitch-pred-outcome-bar-container {
   position: relative;
 
   height: 1.33em;
@@ -117,7 +117,7 @@
   width: 100%;
 }
 
-.twitch-poll-choice-bar {
+.twitch-poll-choice-bar, .twitch-pred-outcome-bar {
   display: grid;
   grid-template-rows: 1fr;
   grid-template-columns: 1fr;
@@ -134,7 +134,7 @@
   background: light-dark(var(--light-lighter), var(--dark-lighter));
 }
 
-.twitch-poll-choice-bar-label {
+.twitch-poll-choice-bar-label, .twitch-pred-outcome-bar-label {
   margin-left: 1em;
   text-align: left;
   font-size: 0.75em;
@@ -143,7 +143,7 @@
   grid-column-start: 1;
 }
 
-.twitch-poll-choice-bar-fill {
+.twitch-poll-choice-bar-fill, .twitch-pred-outcome-bar-fill {
   background: var(--logo);
 
   height: 100%;

@@ -76,50 +76,7 @@
 
         <div class="sidebar-section" id="item-edit-forms">
           {% for k, form in forms.edit.items %}
-          <div class="form-container edit-container hidden" id="edit-{{ form.Meta.model.get_simple_type }}-container">
-            <form class="item-form edit-form" id="edit-{{ form.Meta.model.get_simple_type }}-form">
-              <div class="item-title">
-                Edit {{ form.Meta.model.get_pretty_type }}
-              </div>
-              {{ form.non_field_errors }}
-              {% for field in form.hidden_fields %}
-              <span class="hidden">{{ field }}</span>
-              {% endfor %}
-              <table>
-              {% for field in form.visible_fields %}
-                <tr>
-                  <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
-                  <td>
-                    {{ field }}
-                    {% for error in field.errors %}
-                    <br>
-                    <span class="field-error">{{ error|escape }}</span>
-                    {% endfor %}
-                  </td>
-                </tr>
-              {% endfor %}
-                <tr>
-                  <td></td>
-                  <td>
-                    {% if k == "StopwatchItem" %}
-                    <div class="medium-button pause-item" id="pause-{{ form.Meta.model.get_simple_type }}">Pause</div>
-                    <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
-                    {% elif k == "YouTubeEmbedItem" or k == "TwitchStreamEmbedItem" or k == "TwitchVideoEmbedItem" %}
-                    <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
-                    {% elif k == "AudioItem" %}
-                    <div class="medium-button play-item" id="play-{{ form.Meta.model.get_simple_type }}">Play</div>
-                    <div class="medium-button pause-item" id="pause-{{ form.Meta.model.get_simple_type }}">Pause</div>
-                    <div class="medium-button reset-item" id="reset-{{ form.Meta.model.get_simple_type }}">Reset</div>
-                    {% elif k == "CanvasItem" %}
-                    <div class="medium-button undo-item" id="undo-{{ form.Meta.model.get_simple_type }}">Undo</div>
-                    <div class="medium-button clear-item" id="clear-{{ form.Meta.model.get_simple_type }}">Clear</div>
-                    {% endif %}
-                    <div class="medium-button delete-item" id="delete-{{ form.Meta.model.get_simple_type }}">Delete</div>
-                  </td>
-                </tr>
-              </table>
-            </form>
-          </div>
+          {% include k|model_edit_form_template with form=form form_model=k %}
           {% endfor %}
         </div>
       </div>
@@ -144,30 +101,7 @@
 
           <div class="tab-container">
             {% for k, form in forms.add.items %}
-            <div class="form-container tabcontent" id="add-{{ form.Meta.model.get_simple_type }}">
-              <form class="item-form add-form" id="add-{{ form.Meta.model.get_simple_type }}-form">
-                <input type='hidden' id="id_item_type" name="item_type" value="{{ form.Meta.model.get_simple_type }}">
-                {{ form.non_field_errors }}
-                <table>
-                {% for field in form.visible_fields %}
-                  <tr>
-                    <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
-                    <td>
-                      {{ field }}
-                      {% for error in field.errors %}
-                      <br>
-                      <span class="field-error">{{ error|escape }}</span>
-                      {% endfor %}
-                    </td>
-                  </tr>
-                {% endfor %}
-                  <tr>
-                    <td></td>
-                    <td><input type="submit" value="Add"></td>
-                  </tr>
-                </table>
-              </form>
-            </div>
+              {% include k|model_add_form_template with form=form form_model=k %}
             {% endfor %}
           </div>
         </div>

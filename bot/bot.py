@@ -246,7 +246,7 @@ class LusciousBot(twitchio_commands.Bot):
       "id": payload.id,
       "broadcaster": partialuser_to_dict(payload.broadcaster),
       "title": payload.title,
-      "outcomes": [ (outcome.id, outcome.title, outcome.channel_points) for outcome in payload.outcomes ],
+      "outcomes": [ { "id": outcome.id, "title": outcome.title, "channel_points": outcome.channel_points } for outcome in payload.outcomes ],
       "duration": (payload.locks_at - payload.started_at).total_seconds(),
       "time_remaining": (payload.locks_at - timezone.now()).total_seconds(),
     }
@@ -258,7 +258,7 @@ class LusciousBot(twitchio_commands.Bot):
       "id": payload.id,
       "broadcaster": partialuser_to_dict(payload.broadcaster),
       "title": payload.title,
-      "outcomes": [ (outcome.id, outcome.title, outcome.channel_points) for outcome in payload.outcomes ],
+      "outcomes": [ { "id": outcome.id, "title": outcome.title, "channel_points": outcome.channel_points } for outcome in payload.outcomes ],
       "duration": (payload.locks_at - payload.started_at).total_seconds(),
       "time_remaining": (payload.locks_at - timezone.now()).total_seconds(),
     }
@@ -270,7 +270,7 @@ class LusciousBot(twitchio_commands.Bot):
       "id": payload.id,
       "broadcaster": partialuser_to_dict(payload.broadcaster),
       "title": payload.title,
-      "outcomes": [ (outcome.id, outcome.title, outcome.channel_points) for outcome in payload.outcomes ],
+      "outcomes": [ { "id": outcome.id, "title": outcome.title, "channel_points": outcome.channel_points } for outcome in payload.outcomes ],
     }
     
     await self.send_user_group_message(payload.broadcaster.id, "prediction_lock", prediction_data)
@@ -280,8 +280,8 @@ class LusciousBot(twitchio_commands.Bot):
       "id": payload.id,
       "broadcaster": partialuser_to_dict(payload.broadcaster),
       "title": payload.title,
-      "outcomes": [ (outcome.id, outcome.title, outcome.channel_points) for outcome in payload.outcomes ],
-      "winning_outcome": (payload.winning_outcome.id, payload.winning_outcome.title, payload.winning_outcome.channel_points) if payload.winning_outcome else None,
+      "outcomes": [ { "id": outcome.id, "title": outcome.title, "channel_points": outcome.channel_points } for outcome in payload.outcomes ],
+      "winning_outcome": { "id": payload.winning_outcome.id, "title": payload.winning_outcome.title, "channel_points": payload.winning_outcome.channel_points } if payload.winning_outcome else None,
       "status": payload.status,
     }
     

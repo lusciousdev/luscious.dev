@@ -103,6 +103,18 @@ class AbstractItem(NonConsecutiveModel):
   
   class Meta:
     abstract = True
+  
+  @staticmethod
+  def get_pretty_type():
+    return "Item"
+  
+  @staticmethod
+  def get_simple_type():
+    return "item"
+  
+  @staticmethod
+  def is_displayed():
+    return True
     
   def to_data_dict(self):
     return {
@@ -139,6 +151,8 @@ def validate_file_size(fieldfile_obj):
     raise ValidationError(f"Max file size is {megabyte_limit}MB.")
     
 class ImageItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My Image")
+  
   image = models.ImageField(upload_to = media_directory_path, validators=[validate_file_size], blank = True, null = True, help_text="Max file size: 25MB")
   url = models.URLField(verbose_name = "URL", default = "", blank = True, null = True)
   
@@ -161,6 +175,8 @@ class ImageItem(AbstractItem):
     return True
   
 class CanvasItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My Canvas")
+  
   def to_data_dict(self, since : datetime.datetime = None):
     d = super().to_data_dict()
     d['history'] = []
@@ -219,6 +235,8 @@ class CanvasAction(models.Model):
     ordering = ('-timestamp', )
   
 class AudioItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My Audio")
+  
   audio = models.FileField(upload_to = media_directory_path, validators=[validate_file_size], blank = False, null = False, help_text = "Max file size: 25MB")
   volume = models.FloatField(default = 50.0)
   
@@ -241,6 +259,8 @@ class AudioItem(AbstractItem):
     return False
 
 class EmbedItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My Embed")
+  
   embed_url = models.URLField(verbose_name = "Embed URL", default = "", blank = True)
   
   def to_data_dict(self):
@@ -261,6 +281,8 @@ class EmbedItem(AbstractItem):
     return True
   
 class YouTubeEmbedItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My YouTube Video")
+  
   video_id = models.CharField(max_length = 256, verbose_name = "YouTube Video ID", default = "", blank = True)
   start_time = models.IntegerField(default = 0)
   
@@ -290,6 +312,8 @@ class YouTubeEmbedItem(AbstractItem):
     return True
   
 class TwitchStreamEmbedItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My Twitch Stream")
+  
   channel = models.CharField(max_length = 256, verbose_name = "Twitch Channel Name", default = "", blank = True)
   
   paused = models.BooleanField()
@@ -317,6 +341,8 @@ class TwitchStreamEmbedItem(AbstractItem):
     return True
   
 class TwitchVideoEmbedItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My Twitch Video")
+  
   video_id = models.CharField(max_length = 256, verbose_name = "Twitch Video ID", default = "", blank = True)
   start_time = models.IntegerField(default = 0)
   
@@ -381,6 +407,8 @@ class AbstractTextItem(AbstractItem):
     return d
   
 class TextItem(AbstractTextItem):
+  name = models.CharField(max_length = 256, default = "My Text")
+  
   text = models.TextField(default = "Example text.")
   
   def to_data_dict(self):
@@ -401,6 +429,8 @@ class TextItem(AbstractTextItem):
     return True
   
 class StopwatchItem(AbstractTextItem):
+  name = models.CharField(max_length = 256, default = "My Stopwatch")
+  
   timer_format = models.TextField(default = "{0}")
   timer_start = models.BigIntegerField(default = current_time_seconds)
   
@@ -428,6 +458,8 @@ class StopwatchItem(AbstractTextItem):
     return True
   
 class CounterItem(AbstractTextItem):
+  name = models.CharField(max_length = 256, default = "My Counter")
+  
   counter_format = models.TextField(default = "Count: {0}")
   count = models.IntegerField(default = 0)
   
@@ -450,6 +482,8 @@ class CounterItem(AbstractTextItem):
     return True
   
 class TwitchChatItem(AbstractTextItem):
+  name = models.CharField(max_length = 256, default = "My Twitch Chat")
+  
   @staticmethod
   def get_pretty_type():
     return "Twitch Chat"
@@ -463,6 +497,11 @@ class TwitchChatItem(AbstractTextItem):
     return True
   
 class TwitchPollItem(AbstractTextItem):
+  name = models.CharField(max_length = 256, default = "My Twitch Poll")
+  
+  title_color = models.CharField(max_length = 255, default = "#FFFFFF")
+  bar_color = models.CharField(max_length = 255, default = "#EB5E28")
+  
   @staticmethod
   def get_pretty_type():
     return "Twitch Poll"
@@ -476,6 +515,11 @@ class TwitchPollItem(AbstractTextItem):
     return True
   
 class TwitchPredictionItem(AbstractTextItem):
+  name = models.CharField(max_length = 256, default = "My Twitch Prediction")
+  
+  title_color = models.CharField(max_length = 255, default = "#FFFFFF")
+  bar_color = models.CharField(max_length = 255, default = "#EB5E28")
+  
   @staticmethod
   def get_pretty_type():
     return "Twitch Prediction"

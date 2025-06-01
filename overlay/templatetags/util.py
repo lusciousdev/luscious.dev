@@ -19,3 +19,11 @@ def add_attr(field, css):
 @register.filter
 def keyvalue(dictionary, key):
   return dictionary[key]
+
+@register.filter
+def model_edit_form_template(model_name):
+  return f"overlay/forms/edit/{ model_name }.html"
+
+@register.filter
+def model_add_form_template(model_name):
+  return f"overlay/forms/add/{ model_name }.html"

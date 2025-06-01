@@ -1,0 +1,39 @@
+
+<div class="form-container edit-container hidden" id="edit-{{ form.Meta.model.get_simple_type }}-container">
+  <form class="item-form edit-form" id="edit-{{ form.Meta.model.get_simple_type }}-form">
+    <div class="item-title">
+      Edit {{ form.Meta.model.get_pretty_type }}
+    </div>
+    {{ form.non_field_errors }}
+    {% for field in form.hidden_fields %}
+    <span class="hidden">{{ field }}</span>
+    {% endfor %}
+    <table>
+    {% for field in form.visible_fields %}
+      <tr>
+        <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
+        <td>
+          {{ field }}
+          {% for error in field.errors %}
+          <br>
+          <span class="field-error">{{ error|escape }}</span>
+          {% endfor %}
+        </td>
+      </tr>
+      {% if field.name == "crop_right" or field.name == "background_color" %}
+      <tr>
+        <td><hr></td>
+        <td><hr></td>
+      </tr>
+      {% endif %}
+    {% endfor %}
+    <tr><td>&nbsp;</td><td></td></tr>
+    <tr>
+      <td></td>
+      <td>
+        <div class="medium-button delete-item" id="delete-{{ form.Meta.model.get_simple_type }}">Delete</div>
+      </td>
+    </tr>
+    </table>
+  </form>
+</div>

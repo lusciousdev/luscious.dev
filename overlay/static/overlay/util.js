@@ -15,21 +15,25 @@ const RIGHTLEFT = 2;
 const TOPBOTTOM = 3;
 const BOTTOMTOP = 4;
 
+var g_TwitchConnected = false;
+var g_TwitchBroadcasterType = 0;
+
 const g_TwitchChatHistoryLimit = 50;
 var g_TwitchChatHistory = [];
 
 var g_EmoteMap = {};
 
+var c_TimerUpdateIntervalTimeout = 250;
+
 var g_PollActive = false;
 var g_PollTimeRemaining = 0;
 var g_PollTimerUpdateInterval = undefined;
-
-var c_PollTimerUpdateIntervalTimeout = 250;
-var g_LastTime = Date.now();
+var g_PollLastTime = Date.now();
 
 var g_PredictionActive = false;
 var g_PredictionTimeRemaining = 0;
 var g_PredictionTimerUpdateInterval = undefined;
+var g_PredictionLastTime = Date.now();
 
 function handleWebsocketMessage(e)
 {
@@ -99,6 +103,10 @@ function handleWebsocketCommand(command, data)
     case "chat_message_sent":
       addChatMessages(data);
       break;
+    case "twitch_broadcaster_type":
+      g_TwitchConnected = true;
+      g_TwitchBroadcasterType = data.broadcaster_type;
+      break;
     case "twitch_chat_message":
       handleTwitchChatMessage(data);
       break;
@@ -112,7 +120,7 @@ function handleWebsocketCommand(command, data)
       handleTwitchPollEnd(data);
       break;
     case "twitch_prediction_start":
-      handleTwitchPredictionStart(data);
+      handleTwitchPredictionBegin(data);
       break;
     case "twitch_prediction_progress":
       handleTwitchPredictionProgress(data);
@@ -257,13 +265,27 @@ function getDefaultCSS(itype, idata)
   return cssObj;
 }
 
-function getDefaultContainerCSS(idata)
+function getDefaultContainerCSS(itype, idata)
 {
   var visible = false;
 
   if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
   {
     visible = true;
+  }
+  else if (idata["visibility"] == 3)
+  {
+    switch (itype)
+    {
+      case "twitch_poll":
+        visible = g_PollActive;
+        break;
+      case "twitch_prediction":
+        visible = g_PredictionActive;
+        break;
+      default:
+        break;
+    }
   }
 
   var containerCss = {
@@ -572,7 +594,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
     $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item {1}-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId, itemType))
   
     setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemContainerId).css(getDefaultContainerCSS(itemData));
+    $(itemContainerId).css(getDefaultContainerCSS(itemType, itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
@@ -712,6 +734,9 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       case "twitch_prediction":
+        $(itemContainerId).append(PredictionTemplate.format(itemId));
+
+        setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       default:
         break;
@@ -722,7 +747,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
   else
   {
     setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemContainerId).css(getDefaultContainerCSS(itemData));
+    $(itemContainerId).css(getDefaultContainerCSS(itemType, itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
@@ -965,134 +990,6 @@ function handleCanvasActionWithContext(context, itemId, action, actionData, acti
   g_ItemDict[itemId]['last_point'] = new Point(actionData.points[actionData.points.length - 1][0], actionData.points[actionData.points.length - 1][1]);
 }
 
-function handleTwitchPollBegin(pollData)
-{
-  g_PollActive = true;
-  changePollVisibility();
-
-  $(".twitch-poll-title").html(pollData.title);
-
-  $(".twitch-poll-choice-container").empty();
-
-  pollData.choices.forEach((val, idx) => { $(".twitch-poll-choice-container").append(PollChoiceTemplate.format((idx + 1), val.title)); });
-
-  $(".twitch-poll-vote-count").html("Total votes: 0")
-
-  g_PollTimeRemaining = pollData.time_remaining;
-
-  updatePollTimer(false);
-  clearInterval(g_PollTimerUpdateInterval);
-  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_PollTimerUpdateIntervalTimeout);
-}
-
-function handleTwitchPollProgress(pollData)
-{
-  g_PollActive = true;
-  changePollVisibility();
-
-  $(".twitch-poll-title").html(pollData.title);
-
-  $(".twitch-poll-choice-container").empty();
-
-  let totalVotes = 0;
-  pollData.choices.forEach((val, idx) => { 
-    totalVotes += val.votes; 
-    $(".twitch-poll-choice-container").append(PollChoiceTemplate.format((idx + 1), val.title)); 
-  });
-
-  if (totalVotes > 0)
-  {
-    pollData.choices.forEach((val, idx) => {
-      let barElem = $(".twitch-poll-choice-bar[choice='{0}']".format((idx + 1)));
-
-      let percent = val.votes / totalVotes;
-
-      let label = $(barElem).find(".twitch-poll-choice-bar-label");
-      let fill = $(barElem).find(".twitch-poll-choice-bar-fill");
-
-      label.html("{0}%".format((percent * 100).toFixed(1)));
-      fill.css({ "width": "{0}%".format(percent * 100) });
-    });
-  }
-
-  $(".twitch-poll-vote-count").html("Total votes: {0}".format(totalVotes));
-
-  g_PollTimeRemaining = pollData.time_remaining;
-
-  updatePollTimer(false);
-  clearInterval(g_PollTimerUpdateInterval);
-  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_PollTimerUpdateIntervalTimeout);
-}
-
-function handleTwitchPollEnd(pollData)
-{
-  setTimeout(() => { 
-    g_PollActive = false;
-    changePollVisibility()
-  }, 15000);
-
-  g_PollTimeRemaining = 0;
-  clearInterval(g_PollTimerUpdateInterval);
-
-  $(".twitch-poll-timer").html("Poll ended.");
-}
-
-function changePollVisibility()
-{
-  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
-  {
-    if (itemObj["item_type"] == "twitch_prediction")
-    {
-      if (itemObj["item_data"]["visibility"] == 3)
-      {
-        if (g_PollActive)
-        {
-          $("#item-{0}-text".format(itemId)).css({ "visibility": "inherit" });
-        }
-        else
-        {
-          $("#item-{0}-text".format(itemId)).css({ "visibility": "hidden" });
-        }
-      }
-    }
-  }
-}
-
-function handleTwitchPredictionStart(predData)
-{
-
-}
-
-function handleTwitchPredictionProgress(predData)
-{
-  
-}
-
-function handleTwitchPredictionLock(predData)
-{
-  
-}
-
-function handleTwitchPredictionEnd(predData)
-{
-  
-}
-
-function updatePollTimer(decrementTime = true)
-{
-  timeSince = Date.now() - g_LastTime;
-
-  if (decrementTime) 
-  {
-    g_PollTimeRemaining -= (timeSince / 1000.0);
-  }
-
-  if (g_PollTimeRemaining < 0) g_PollTimeRemaining = 0;
-  $(".twitch-poll-timer").html("Vote now - {0}s left".format(Math.round(g_PollTimeRemaining).toFixed(0)));
-
-  g_LastTime = Date.now();
-}
-
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ///       TWITCH CONNECTION
 ///
@@ -1211,6 +1108,335 @@ function handle7TVGlobalResp(resp)
 function handle7TVUserResp(resp)
 {
   handle7TVEmoteList(resp["emote_set"]["emotes"]);
+}
+
+function handleTwitchPollBegin(pollData)
+{
+  g_PollActive = true;
+  changePollVisibility();
+
+  $(".twitch-poll-title").html("Poll: {0}".format(pollData.title));
+
+  $(".twitch-poll-choice-container").empty();
+
+  pollData.choices.forEach((val, idx) => { $(".twitch-poll-choice-container").append(PollChoiceTemplate.format((idx + 1), val.title)); });
+
+  $(".twitch-poll-vote-count").html("Total votes: 0")
+
+  g_PollTimeRemaining = pollData.time_remaining;
+
+  updatePollTimer(false);
+  clearInterval(g_PollTimerUpdateInterval);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_TimerUpdateIntervalTimeout);
+}
+
+function handleTwitchPollProgress(pollData)
+{
+  g_PollActive = true;
+  changePollVisibility();
+
+  $(".twitch-poll-title").html("Poll: {0}".format(pollData.title));
+
+  $(".twitch-poll-choice-container").empty();
+
+  let totalVotes = 0;
+  pollData.choices.forEach((val, idx) => { 
+    totalVotes += val.votes; 
+    $(".twitch-poll-choice-container").append(PollChoiceTemplate.format((idx + 1), val.title)); 
+  });
+
+  if (totalVotes > 0)
+  {
+    pollData.choices.forEach((val, idx) => {
+      let barElem = $(".twitch-poll-choice-bar[choice='{0}']".format((idx + 1)));
+
+      let percent = val.votes / totalVotes;
+
+      let label = $(barElem).find(".twitch-poll-choice-bar-label");
+      let fill = $(barElem).find(".twitch-poll-choice-bar-fill");
+
+      label.html("{0}%".format((percent * 100).toFixed(1)));
+      fill.css({ "width": "{0}%".format(percent * 100) });
+    });
+  }
+
+  $(".twitch-poll-vote-count").html("Total votes: {0}".format(totalVotes));
+
+  g_PollTimeRemaining = pollData.time_remaining;
+
+  updatePollTimer(false);
+  clearInterval(g_PollTimerUpdateInterval);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_TimerUpdateIntervalTimeout);
+}
+
+function handleTwitchPollEnd(pollData)
+{
+  setTimeout(() => { 
+    g_PollActive = false;
+    changePollVisibility()
+  }, 15000);
+
+  g_PollTimeRemaining = 0;
+  clearInterval(g_PollTimerUpdateInterval);
+
+  $(".twitch-poll-timer").html("Poll ended.");
+}
+
+function changePollVisibility()
+{
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj["item_type"] == "twitch_poll")
+    {
+      if (itemObj["item_data"]["visibility"] == 3)
+      {
+        if (g_PollActive)
+        {
+          $("#item-{0}-text".format(itemId)).css({ "visibility": "inherit" });
+        }
+        else
+        {
+          $("#item-{0}-text".format(itemId)).css({ "visibility": "hidden" });
+        }
+      }
+    }
+  }
+}
+
+function updatePollTimer(decrementTime = true)
+{
+  timeSince = Date.now() - g_PollLastTime;
+
+  if (decrementTime) 
+  {
+    g_PollTimeRemaining -= (timeSince / 1000.0);
+  }
+
+  if (g_PollTimeRemaining < 0) g_PollTimeRemaining = 0;
+  $(".twitch-poll-timer").html("Vote now - {0}s left".format(Math.ceil(g_PollTimeRemaining).toFixed(0)));
+
+  g_PollLastTime = Date.now();
+}
+
+function handleTwitchPredictionBegin(predData)
+{
+  g_PredictionActive = true;
+  changePredictionVisibility();
+
+  $(".twitch-pred-title").html("Prediction: {0}".format(predData.title));
+
+  $(".twitch-pred-choice-container").empty();
+
+  predData.outcomes.forEach((val, idx) => { $(".twitch-pred-outcome-container").append(PredictionOutcomeTemplate.format(val.id, val.title)); });
+
+  g_PredictionTimeRemaining = predData.time_remaining;
+
+  updatePredictionTimer(false);
+  clearInterval(g_PredictionTimerUpdateInterval);
+  g_PredictionTimerUpdateInterval = setInterval(updatePredictionTimer, c_TimerUpdateIntervalTimeout);
+}
+
+function handleTwitchPredictionProgress(predData)
+{
+  g_PredictionActive = true;
+  changePredictionVisibility();
+
+  $(".twitch-pred-title").html("Prediction: {0}".format(predData.title));
+
+  $(".twitch-pred-outcome-container").empty();
+
+  let totalPoints = 0;
+  predData.outcomes.forEach((val, idx) => { 
+    totalPoints += val.channel_points; 
+    $(".twitch-pred-outcome-container").append(PredictionOutcomeTemplate.format(val.id, val.title)); 
+  });
+
+  if (totalPoints > 0)
+  {
+    predData.outcomes.forEach((val, idx) => {
+      let barElem = $(".twitch-pred-outcome-bar[outcome='{0}']".format(val.id));
+
+      let percent = val.channel_points / totalPoints;
+
+      let label = $(barElem).find(".twitch-pred-outcome-bar-label");
+      let fill = $(barElem).find(".twitch-pred-outcome-bar-fill");
+
+      label.html("{0} points".format(pointFormatter(val.channel_points)));
+      fill.css({ "width": "{0}%".format(percent * 100) });
+    });
+  }
+
+  $(".twitch-pred-point-count").html("Total points: {0}".format(pointFormatter(totalPoints)));
+
+  g_PredictionTimeRemaining = predData.time_remaining;
+
+  updatePredictionTimer(false);
+  clearInterval(g_PredictionTimerUpdateInterval);
+  g_PredictionTimerUpdateInterval = setInterval(updatePredictionTimer, c_TimerUpdateIntervalTimeout);
+}
+
+function handleTwitchPredictionLock(predData)
+{
+  g_PredictionActive = true;
+  changePredictionVisibility();
+
+  $(".twitch-pred-title").html("Prediction: {0}".format(predData.title));
+
+  $(".twitch-pred-outcome-container").empty();
+
+  let totalPoints = 0;
+  predData.outcomes.forEach((val, idx) => { 
+    totalPoints += val.channel_points; 
+    $(".twitch-pred-outcome-container").append(PredictionOutcomeTemplate.format(val.id, val.title)); 
+  });
+
+  if (totalPoints > 0)
+  {
+    predData.outcomes.forEach((val, idx) => {
+      let barElem = $(".twitch-pred-outcome-bar[outcome='{0}']".format(val.id));
+
+      let percent = val.channel_points / totalPoints;
+
+      let label = $(barElem).find(".twitch-pred-outcome-bar-label");
+      let fill = $(barElem).find(".twitch-pred-outcome-bar-fill");
+
+      label.html("{0} points".format(pointFormatter(val.channel_points)));
+      fill.css({ "width": "{0}%".format(percent * 100) });
+    });
+  }
+
+  $(".twitch-pred-point-count").html("Total points: {0}".format(pointFormatter(totalPoints)));
+
+  g_PredictionTimeRemaining = 0;
+  clearInterval(g_PredictionTimerUpdateInterval);
+
+  $(".twitch-pred-timer").html("Prediction closed. Awaiting payout.");
+}
+
+function handleTwitchPredictionEnd(predData)
+{
+  setTimeout(() => { 
+    g_PredictionActive = false;
+    changePredictionVisibility()
+  }, 25000);
+
+  $(".twitch-pred-title").html("Prediction: {0}".format(predData.title));
+
+  $(".twitch-pred-outcome-container").empty();
+
+  let totalPoints = 0;
+  predData.outcomes.forEach((val, idx) => { 
+    totalPoints += val.channel_points; 
+    $(".twitch-pred-outcome-container").append(PredictionOutcomeTemplate.format(val.id, val.title)); 
+  });
+
+  if (totalPoints > 0)
+  {
+    predData.outcomes.forEach((val, idx) => {
+      let barElem = $(".twitch-pred-outcome-bar[outcome='{0}']".format(val.id));
+
+      let percent = val.channel_points / totalPoints;
+
+      let label = $(barElem).find(".twitch-pred-outcome-bar-label");
+      let fill = $(barElem).find(".twitch-pred-outcome-bar-fill");
+
+      label.html("{0} points".format(pointFormatter(val.channel_points)));
+      fill.css({ "width": "{0}%".format(percent * 100) });
+    });
+  }
+
+  $(".twitch-pred-point-count").html("Total points: {0}".format(pointFormatter(totalPoints)));
+
+  if (predData.status == "resolved" && predData.winning_outcome !== null)
+  {
+    if (predData.outcomes.length == 2)
+    {
+      if (predData.outcomes[0].id == predData.winning_outcome.id)
+      {
+        $(".twitch-pred-timer").html("Believers win!");
+      }
+      else
+      {
+        $(".twitch-pred-timer").html("Doubters win!");
+      }
+    }
+    else
+    {
+      for (var i = 0; i < predData.outcomes.length; i++)
+      {
+        if (predData.outcomes[i].id == predData.winning_outcome.id)
+        {
+          $(".twitch-pred-timer").html("Outcome {0} wins!".format(i));
+        }
+      }
+    }
+
+    $(".twitch-pred-outcome-name[outcome='{0}']".format(predData.winning_outcome.id)).html("{0} &check;".format(predData.winning_outcome.title));
+  }
+  else
+  {
+    $(".twitch-pred-timer").html("Prediction canceled. Points returned.");
+  }
+}
+
+function changePredictionVisibility()
+{
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj["item_type"] == "twitch_prediction")
+    {
+      if (itemObj["item_data"]["visibility"] == 3)
+      {
+        if (g_PredictionActive)
+        {
+          $("#item-{0}-text".format(itemId)).css({ "visibility": "inherit" });
+        }
+        else
+        {
+          $("#item-{0}-text".format(itemId)).css({ "visibility": "hidden" });
+        }
+      }
+    }
+  }
+}
+
+function pointFormatter(num)
+{
+  let absv = Math.abs(num);
+  if (absv < 100_000)
+  {
+    return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+  else if (absv >= 100_000 && absv < 100_000_000)
+  {
+    let thousands = num / 1_000;
+    return "{0}K".format(thousands.toLocaleString('en-US', { maximumFractionDigits: 0 }));
+  }
+  else if (absv >= 100_000_000 && absv < 100_000_000_000)
+  {
+    let millions = num / 1_000_000;
+    return "{0}M".format(millions.toLocaleString('en-US', { maximumFractionDigits: 0 }));
+  }
+  else
+  {
+    let billions = num / 1_000_000_000;
+    return "{0}B".format(billions.toLocaleString('en-US', { maximumFractionDigits: 0 }));
+  }
+}
+
+function updatePredictionTimer(decrementTime = true)
+{
+  timeSince = Date.now() - g_PredictionLastTime;
+
+  if (decrementTime) 
+  {
+    g_PredictionTimeRemaining -= (timeSince / 1000.0);
+  }
+
+  if (g_PredictionTimeRemaining < 0) g_PredictionTimeRemaining = 0;
+  $(".twitch-pred-timer").html("Gamble now - {0}s left".format(Math.ceil(g_PredictionTimeRemaining).toFixed(0)));
+
+  g_PredictionLastTime = Date.now();
 }
 
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1406,6 +1632,12 @@ function getItemIconName(itemType)
     case "twitch_chat":
       itemIcon = "forum";
       break
+    case "twitch_poll":
+      itemIcon = "ballot";
+      break;
+    case "twitch_prediction":
+      itemIcon = "casino";
+      break;
     case "text":
     default:
       break;

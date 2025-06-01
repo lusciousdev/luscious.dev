@@ -45,8 +45,8 @@ var g_PollTimeRemaining = 0;
 var g_PollQuestion = undefined;
 var g_PollTimerUpdateInterval = undefined;
 
-var c_PollTimerUpdateIntervalTimeout = 250;
-var g_LastTime = Date.now();
+var c_TimerUpdateIntervalTimeout = 250;
+var g_PollLastTime = Date.now();
 
 var g_PhoneAFriendQuestion = undefined;
 var g_PhoneAFriendLogin = undefined;
@@ -182,7 +182,7 @@ function handlePollBegin(data)
 
   updatePollTimer(false);
   clearInterval(g_PollTimerUpdateInterval);
-  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_PollTimerUpdateIntervalTimeout);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_TimerUpdateIntervalTimeout);
 }
 
 function handlePollProgress(data)
@@ -246,7 +246,7 @@ function handlePollProgress(data)
 
   updatePollTimer(false);
   clearInterval(g_PollTimerUpdateInterval);
-  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_PollTimerUpdateIntervalTimeout);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_TimerUpdateIntervalTimeout);
 }
 
 function handlePollEnd(pollData)
@@ -270,7 +270,7 @@ function handleChatMessage(data)
 
 function updatePollTimer(decrementTime = true)
 {
-  timeSince = Date.now() - g_LastTime;
+  timeSince = Date.now() - g_PollLastTime;
 
   if (decrementTime) 
   {
@@ -280,7 +280,7 @@ function updatePollTimer(decrementTime = true)
   if (g_PollTimeRemaining < 0) g_PollTimeRemaining = 0;
   $("#poll-timer").html("Vote now - {0}s left".format(Math.round(g_PollTimeRemaining).toFixed(0)));
 
-  g_LastTime = Date.now();
+  g_PollLastTime = Date.now();
 }
 
 function nextSlide()
