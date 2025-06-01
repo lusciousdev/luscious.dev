@@ -502,6 +502,12 @@ class TwitchPollItem(AbstractTextItem):
   title_color = models.CharField(max_length = 255, default = "#FFFFFF")
   bar_color = models.CharField(max_length = 255, default = "#EB5E28")
   
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d["title_color"] = self.title_color
+    d["bar_color"] = self.bar_color
+    return d
+  
   @staticmethod
   def get_pretty_type():
     return "Twitch Poll"
@@ -519,6 +525,12 @@ class TwitchPredictionItem(AbstractTextItem):
   
   title_color = models.CharField(max_length = 255, default = "#FFFFFF")
   bar_color = models.CharField(max_length = 255, default = "#EB5E28")
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d["title_color"] = self.title_color
+    d["bar_color"] = self.bar_color
+    return d
   
   @staticmethod
   def get_pretty_type():

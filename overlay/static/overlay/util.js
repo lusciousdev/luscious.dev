@@ -731,11 +731,15 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "twitch_poll":
         $(itemContainerId).append(PollTemplate.format(itemId));
 
+        $("#item-{0}-text".format(itemId)).find(".twitch-poll-title").css({ "color": itemData["title_color"]});
+        $("#item-{0}-text".format(itemId)).find(".twitch-poll-choice-bar-fill").css({ "background-color": itemData["bar_color"]});
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       case "twitch_prediction":
         $(itemContainerId).append(PredictionTemplate.format(itemId));
 
+        $("#item-{0}-text".format(itemId)).find(".twitch-pred-title").css({ "color": itemData["title_color"]});
+        $("#item-{0}-text".format(itemId)).find(".twitch-pred-outcome-bar-fill").css({ "background-color": itemData["bar_color"]});
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       default:
@@ -881,9 +885,13 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       case "twitch_poll":
+        $("#item-{0}-text".format(itemId)).find(".twitch-poll-title").css({ "color": itemData["title_color"]});
+        $("#item-{0}-text".format(itemId)).find(".twitch-poll-choice-bar-fill").css({ "background-color": itemData["bar_color"]});
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       case "twitch_prediction":
+        $("#item-{0}-text".format(itemId)).find(".twitch-pred-title").css({ "color": itemData["title_color"]});
+        $("#item-{0}-text".format(itemId)).find(".twitch-pred-outcome-bar-fill").css({ "background-color": itemData["bar_color"]});
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       default:
@@ -1121,6 +1129,14 @@ function handleTwitchPollBegin(pollData)
 
   pollData.choices.forEach((val, idx) => { $(".twitch-poll-choice-container").append(PollChoiceTemplate.format((idx + 1), val.title)); });
 
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj.item_type == "twitch_poll")
+    {
+      $("#item-{0}-text".format(itemId)).find(".twitch-poll-choice-bar-fill").css({ "background-color": itemObj.item_data.bar_color });
+    }
+  }
+
   $(".twitch-poll-vote-count").html("Total votes: 0")
 
   g_PollTimeRemaining = pollData.time_remaining;
@@ -1158,6 +1174,14 @@ function handleTwitchPollProgress(pollData)
       label.html("{0}%".format((percent * 100).toFixed(1)));
       fill.css({ "width": "{0}%".format(percent * 100) });
     });
+  }
+
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj.item_type == "twitch_poll")
+    {
+      $("#item-{0}-text".format(itemId)).find(".twitch-poll-choice-bar-fill").css({ "background-color": itemObj.item_data.bar_color });
+    }
   }
 
   $(".twitch-poll-vote-count").html("Total votes: {0}".format(totalVotes));
@@ -1225,9 +1249,17 @@ function handleTwitchPredictionBegin(predData)
 
   $(".twitch-pred-title").html("Prediction: {0}".format(predData.title));
 
-  $(".twitch-pred-choice-container").empty();
+  $(".twitch-pred-outcome-container").empty();
 
   predData.outcomes.forEach((val, idx) => { $(".twitch-pred-outcome-container").append(PredictionOutcomeTemplate.format(val.id, val.title)); });
+
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj.item_type == "twitch_prediction")
+    {
+      $("#item-{0}-text".format(itemId)).find(".twitch-pred-outcome-bar-fill").css({ "background-color": itemObj.item_data.bar_color });
+    }
+  }
 
   g_PredictionTimeRemaining = predData.time_remaining;
 
@@ -1264,6 +1296,14 @@ function handleTwitchPredictionProgress(predData)
       label.html("{0} points".format(pointFormatter(val.channel_points)));
       fill.css({ "width": "{0}%".format(percent * 100) });
     });
+  }
+
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj.item_type == "twitch_prediction")
+    {
+      $("#item-{0}-text".format(itemId)).find(".twitch-pred-outcome-bar-fill").css({ "background-color": itemObj.item_data.bar_color });
+    }
   }
 
   $(".twitch-pred-point-count").html("Total points: {0}".format(pointFormatter(totalPoints)));
@@ -1305,6 +1345,14 @@ function handleTwitchPredictionLock(predData)
     });
   }
 
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj.item_type == "twitch_prediction")
+    {
+      $("#item-{0}-text".format(itemId)).find(".twitch-pred-outcome-bar-fill").css({ "background-color": itemObj.item_data.bar_color });
+    }
+  }
+
   $(".twitch-pred-point-count").html("Total points: {0}".format(pointFormatter(totalPoints)));
 
   g_PredictionTimeRemaining = 0;
@@ -1343,6 +1391,14 @@ function handleTwitchPredictionEnd(predData)
       label.html("{0} points".format(pointFormatter(val.channel_points)));
       fill.css({ "width": "{0}%".format(percent * 100) });
     });
+  }
+
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    if (itemObj.item_type == "twitch_prediction")
+    {
+      $("#item-{0}-text".format(itemId)).find(".twitch-pred-outcome-bar-fill").css({ "background-color": itemObj.item_data.bar_color });
+    }
   }
 
   $(".twitch-pred-point-count").html("Total points: {0}".format(pointFormatter(totalPoints)));

@@ -144,8 +144,6 @@
 }
 
 .twitch-poll-choice-bar-fill, .twitch-pred-outcome-bar-fill {
-  background: var(--logo);
-
   height: 100%;
 
   grid-row-start: 1;
