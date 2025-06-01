@@ -651,12 +651,14 @@ function setAllItemPositions()
         g_ItemDict[prop]['item_type'] == "counter" ||
         g_ItemDict[prop]['item_type'] == "stopwatch")
     {
-      setTextItemContent($("#overlay"), prop, g_ItemDict[prop]["item_data"]["text"], g_ItemDict[prop]["item_data"])
+      setTextItemContent($("#overlay"), prop, g_ItemDict[prop]["item_data"]["text"], g_ItemDict[prop]['item_type'], g_ItemDict[prop]["item_data"])
     }
     
-    if (g_ItemDict[prop]['item_type'] == "twitch_chat")
+    if (g_ItemDict[prop]['item_type'] == "twitch_chat" ||
+        g_ItemDict[prop]['item_type'] == "twitch_poll" ||
+        g_ItemDict[prop]['item_type'] == "twitch_prediction")
     {
-      setTextItemCSS($("#overlay"), prop, g_ItemDict[prop]["item_data"]);
+      setTextItemCSS($("#overlay"), prop, g_ItemDict[prop]['item_type'], g_ItemDict[prop]["item_data"]);
 
       $("#item-{0}-text".format(itemId)).scrollTop($("#item-{0}-text".format(itemId))[0].scrollHeight);
     }
