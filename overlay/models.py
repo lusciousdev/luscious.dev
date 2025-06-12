@@ -86,6 +86,7 @@ class AbstractItem(NonConsecutiveModel):
   width = models.IntegerField(default = 300)
   height = models.IntegerField(default = 100)
   rotation = models.FloatField(default = 0)
+  mirrored = models.BooleanField(default = False)
   background_enabled = models.BooleanField(default = False)
   background_color = models.CharField(max_length = 255, default = "#000000")
   opacity = models.FloatField(default = 100.0)
@@ -126,6 +127,7 @@ class AbstractItem(NonConsecutiveModel):
       "width": self.width,
       "height": self.height,
       "rotation": self.rotation,
+      "mirrored": self.mirrored,
       "background_enabled": self.background_enabled,
       "background_color": self.background_color,
       "opacity": self.opacity,

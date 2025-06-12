@@ -217,6 +217,60 @@ function getDefaultCSS(itype, idata)
     "clip-path": "inset({0}% {1}% {2}% {3}%)".format(idata["crop_top"], idata["crop_right"], idata["crop_bottom"], idata["crop_left"]),
   };
 
+  if (idata['mirrored'])
+  {
+    cssObj["transform"] = "scale(-1, 1)";
+    cssObj["-moz-transform"] = "scale(-1, 1)";
+    cssObj["-webkit-transform"] = "scale(-1, 1)";
+    cssObj["-o-transform"] = "scale(-1, 1)";
+    cssObj["-ms-transform"] = "scale(-1, 1)";
+  }
+  else
+  {
+    cssObj["transform"] = "scale(1, 1)";
+    cssObj["-moz-transform"] = "scale(1, 1)";
+    cssObj["-webkit-transform"] = "scale(1, 1)";
+    cssObj["-o-transform"] = "scale(1, 1)";
+    cssObj["-ms-transform"] = "scale(1, 1)";
+  }
+
+  return cssObj;
+}
+
+function getDefaultContainerCSS(itype, idata)
+{
+  var visible = false;
+
+  if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
+  {
+    visible = true;
+  }
+  else if (idata["visibility"] == 3)
+  {
+    switch (itype)
+    {
+      case "twitch_poll":
+        visible = g_PollActive;
+        break;
+      case "twitch_prediction":
+        visible = g_PredictionActive;
+        break;
+      default:
+        break;
+    }
+  }
+
+  var cssObj = {
+    "background-color": (visible && idata['background_enabled']) ? idata['background_color'] : TRANSPARENT,
+  };
+  
+  return cssObj;
+}
+
+function getDefaultInnerContainerCSS(itype, idata)
+{
+  var cssObj = {};
+
   switch (idata["scroll_direction"])
   {
     case LEFTRIGHT:
@@ -263,36 +317,6 @@ function getDefaultCSS(itype, idata)
   }
 
   return cssObj;
-}
-
-function getDefaultContainerCSS(itype, idata)
-{
-  var visible = false;
-
-  if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
-  {
-    visible = true;
-  }
-  else if (idata["visibility"] == 3)
-  {
-    switch (itype)
-    {
-      case "twitch_poll":
-        visible = g_PollActive;
-        break;
-      case "twitch_prediction":
-        visible = g_PredictionActive;
-        break;
-      default:
-        break;
-    }
-  }
-
-  var containerCss = {
-    "background-color": (visible && idata['background_enabled']) ? idata['background_color'] : TRANSPARENT,
-  };
-  
-  return containerCss;
 }
 
 function attemptReconnect(e, overlayId)
@@ -582,7 +606,8 @@ function resizeItem(itemId, x, y, width, height)
 function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, prevItemData, afterAdditionCallback, afterEditCallback)
 {
   var itemElemId = '#item-{0}'.format(itemId);
-  var itemContainerId = '#item-{0}-container'.format(itemId);
+  var itemOuterContainerId = '#item-{0}-outer-container'.format(itemId);
+  var itemInnerContainerId = "#item-{0}-inner-container".format(itemId);
 
   if(!EDIT_VIEW && itemData["view_lock"])
   {
@@ -591,10 +616,11 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
 
   if ($(itemElemId).length == 0)
   {
-    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item {1}-item unselected'><div id='item-{0}-container' itemId='{0}' class='overlay-item-container'></div></div>".format(itemId, itemType))
+    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item {1}-item unselected'><div id='item-{0}-outer-container' itemId='{0}' class='overlay-item-container'><div id='item-{0}-inner-container' itemId='{0}' class='overlay-item-container'></div></div></div>".format(itemId, itemType))
   
     setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemContainerId).css(getDefaultContainerCSS(itemType, itemData));
+    $(itemOuterContainerId).css(getDefaultContainerCSS(itemType, itemData));
+    $(itemInnerContainerId).css(getDefaultInnerContainerCSS(itemType, itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
@@ -609,9 +635,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           imageUrl = itemData['image_url'];
         }
 
-        $(itemContainerId).append("<img id='item-{0}-img' class='noselect nopointer' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
-        // $(itemElemId).data('id', itemData['id']);
-        // $(itemElemId).data('item_type', itemType);
+        $(itemInnerContainerId).append("<img id='item-{0}-img' class='noselect nopointer' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
 
         var imgElemId = "#item-{0}-img".format(itemId);
         
@@ -620,7 +644,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         $(imgElemId).css(getDefaultCSS(itemType, itemData));
         break;
       case "canvas":
-        $(itemContainerId).append("<canvas id='item-{0}-canvas' width='{1}px' height='{2}px' />".format(itemId, width, height));
+        $(itemInnerContainerId).append("<canvas id='item-{0}-canvas' width='{1}px' height='{2}px' />".format(itemId, width, height));
 
         $("#item-{0}-canvas".format(itemId)).css(getDefaultCSS(itemType, itemData));
         handleCanvasUpdate(itemId, itemData["history"]);
@@ -635,7 +659,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "embed":
         var iframeId = "#item-{0}-iframe".format(itemId)
 
-        $(itemContainerId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect nopointer" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
+        $(itemInnerContainerId).html(`<iframe id="item-{0}-iframe" src="{1}" height="100%" width="100%" class="noselect nopointer" frameBorder="0"></iframe>`.format(itemId, itemData['embed_url']));
 
         $(iframeId).css({
           "opacity": itemData['opacity'],
@@ -646,7 +670,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "youtube_video":
         var playerId = "#item-{0}-player".format(itemId);
 
-        $(itemContainerId).html(PlayerTemplate.format(itemId));
+        $(itemInnerContainerId).html(PlayerTemplate.format(itemId));
 
         g_ItemDict[itemId]['player_ready'] = false;
         g_ItemDict[itemId]['player'] = undefined;
@@ -661,7 +685,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "twitch_stream":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemContainerId).html(PlayerTemplate.format(itemId));
+        $(itemInnerContainerId).html(PlayerTemplate.format(itemId));
 
         if (g_ItemDict[itemId].item_data.channel != "")
         {
@@ -679,7 +703,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "twitch_video":
         var playerId = "#item-{0}-player".format(itemId)
 
-        $(itemContainerId).html(PlayerTemplate.format(itemId));
+        $(itemInnerContainerId).html(PlayerTemplate.format(itemId));
 
         if (g_ItemDict[itemId].item_data.video_id != "")
         {
@@ -697,11 +721,11 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "text":
-        $(itemContainerId).append(TextTemplate.format(itemId));
+        $(itemInnerContainerId).append(TextTemplate.format(itemId));
         setTextItemContent(overlayElement, itemId, itemData['text'], itemType, itemData);
         break;
       case "stopwatch":
-        $(itemContainerId).append(TextTemplate.format(itemId));
+        $(itemInnerContainerId).append(TextTemplate.format(itemId));
 
         var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
         if (itemData['paused'])
@@ -713,13 +737,13 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
         break;
       case "counter":
-        $(itemContainerId).append(TextTemplate.format(itemId));
+        $(itemInnerContainerId).append(TextTemplate.format(itemId));
 
         var textContent = itemData['counter_format'].format(itemData['count'])
         setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
         break;
       case "twitch_chat":
-        $(itemContainerId).append("<div id='item-{0}-text' class='twitch-chat-history-container overlay-item-child noselect nopointer'><div class='twitch-chat-history'></div></div>".format(itemId));
+        $(itemInnerContainerId).append("<div id='item-{0}-text' class='twitch-chat-history-container overlay-item-child noselect nopointer'><div class='twitch-chat-history'></div></div>".format(itemId));
         
         let historyElem = $("#item-{0}-text".format(itemId));
         g_TwitchChatHistory.forEach((msg, i) => {
@@ -729,14 +753,14 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       case "twitch_poll":
-        $(itemContainerId).append(PollTemplate.format(itemId));
+        $(itemInnerContainerId).append(PollTemplate.format(itemId));
 
         $("#item-{0}-text".format(itemId)).find(".twitch-poll-title").css({ "color": itemData["title_color"]});
         $("#item-{0}-text".format(itemId)).find(".twitch-poll-choice-bar-fill").css({ "background-color": itemData["bar_color"]});
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       case "twitch_prediction":
-        $(itemContainerId).append(PredictionTemplate.format(itemId));
+        $(itemInnerContainerId).append(PredictionTemplate.format(itemId));
 
         $("#item-{0}-text".format(itemId)).find(".twitch-pred-title").css({ "color": itemData["title_color"]});
         $("#item-{0}-text".format(itemId)).find(".twitch-pred-outcome-bar-fill").css({ "background-color": itemData["bar_color"]});
@@ -751,7 +775,8 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
   else
   {
     setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemContainerId).css(getDefaultContainerCSS(itemType, itemData));
+    $(itemOuterContainerId).css(getDefaultContainerCSS(itemType, itemData));
+    $(itemInnerContainerId).css(getDefaultInnerContainerCSS(itemType, itemData));
 
     $(itemElemId).css({
       "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
