@@ -11,6 +11,7 @@ const editOverlayItemsUrl = data.edititemsurl;
 const deleteOverlayItemUrl = data.deleteitemurl;
 const overlayOwner = data.overlayowner;
 const overlayUserId = data.overlayuid;
+const notificationURL = data.notificationurl;
 
 const EDIT_VIEW = true;
 
@@ -41,6 +42,13 @@ const WEBSOCKET_SEND_COOLDOWN = 50; // ms
 var g_WebsocketEventQueue = []
 
 var g_StreamEmbed;
+
+const c_NotificationAudio = new Audio(notificationURL);
+c_NotificationAudio.load();
+
+// USER SETTINGS
+var g_EmbedStream = false;
+var g_NotificationVolume = 0.5;
 
 const GrabTypes = {
   Move: 0,
@@ -369,7 +377,13 @@ function removeInactiveCursors()
 
 function handleWebsocketOpen(e)
 {
+  getUserSettings();
+
   getOverlayItems();
+  var getInterval = setInterval(function() { getOverlayItems(); }, 2500);
+
+  getChatHistory();
+  var historyInterval = setInterval(function() { getChatHistory(); }, 2500);
 
   setInterval(sendPing, WEBSOCKET_SEND_COOLDOWN * 100);
   setInterval(checkMousePosition, WEBSOCKET_SEND_COOLDOWN);
@@ -441,6 +455,23 @@ function sendAllMessages()
   sendWebsocketMessages(msgList);
 }
 
+function getUserSettings()
+{
+  sendWebsocketMessage("get_user_settings", {});
+}
+
+function handleUserSettings(data)
+{
+  g_EmbedStream = data.embed_stream;
+  g_NotificationVolume = data.notification_volume;
+
+  c_NotificationAudio.volume = g_NotificationVolume;
+  $("#notification-volume").val(g_NotificationVolume * 100);
+
+  $("#embed-checkbox").prop('checked', g_EmbedStream);
+  toggleEmbeddedTwitchStream({});
+}
+
 function getChatHistory()
 {
   sendWebsocketMessage("get_chat_history", {});
@@ -495,6 +526,8 @@ function addChatMessages(msg)
   {
     $("#chat-message-indicator").css({ "display": "flex" });
   }
+  
+  c_NotificationAudio.play();
 }
 
 function initialResize(event)
@@ -1767,13 +1800,14 @@ function openAddItemTab(event, tabId)
   $(event.currentTarget).addClass("active");
 }
 
-function toggleEmbeddedTwitchStream(e)
+function toggleEmbeddedTwitchStream()
 {
-  var checked = $("#embed-checkbox").is(":checked");
+  var checked = g_EmbedStream;
   var interactable = $("#embed-interact").is(":checked");
 
   if (checked)
   {
+    $("#twitch-embed").empty();
     g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", overlayOwner);
     
     if (!interactable)
@@ -1913,12 +1947,6 @@ $(window).on('load', function() {
 
   connectWebsocket(overlayId);
 
-  getOverlayItems();
-  var getInterval = setInterval(function() { getOverlayItems(); }, 2500);
-
-  getChatHistory();
-  var historyInterval = setInterval(function() { getChatHistory(); }, 2500);
-
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   
   $("#main-container").on("mousemove touchmove", onMouseMove);
@@ -1983,14 +2011,27 @@ $(window).on('load', function() {
     $(".tabcontent").eq(i).css({ "z-index": i });
   }
 
-  toggleEmbeddedTwitchStream();
   $("#embed-checkbox").change((e) => {
-    toggleEmbeddedTwitchStream(e);
+    g_EmbedStream = $(e.currentTarget).is(":checked");
+
+    toggleEmbeddedTwitchStream();
+
+    sendWebsocketMessage("update_user_settings", { "embed_stream": g_EmbedStream });
+  });
+
+  $("#notification-volume").change((e) => {
+    let floatVal = parseFloat($(e.currentTarget).val());
+
+    g_NotificationVolume = floatVal / 100.0;
+    c_NotificationAudio.volume = g_NotificationVolume;
+    c_NotificationAudio.play();
+
+    sendWebsocketMessage("update_user_settings", { "notification_volume": g_NotificationVolume });
   });
 
   toggleEmbeddedStreamInteraction();
   $("#embed-interact").change((e) => {
-    toggleEmbeddedStreamInteraction(e);
+    toggleEmbeddedStreamInteraction();
   });
 
   $(".delete-item").click((e) => {

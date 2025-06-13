@@ -23,7 +23,8 @@
         data-overlaywidth="{{ collaborativeoverlay.width }}"
         data-overlayheight="{{ collaborativeoverlay.height }}"
         data-overlayowner="{{ collaborativeoverlay.owner.username }}"
-        data-overlayuid="{{ overlayuid }}">
+        data-overlayuid="{{ overlayuid }}"
+        data-notificationurl="{% static 'overlay/notification.wav' %}">
 </script>
 {% endblock %}
 
@@ -46,13 +47,31 @@
           <a href="{% url 'overlay:change_log' %}">Change log</a>
         </div>
         <div class="sidebar-section" id="sidebar-controls">
-          <div class="sidebar-item" id="enable-twitch-embed">
-            <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
-            <label for="enable-embed">Embed Twitch Stream</label>
-            <br/>
-            <input type="checkbox" id="embed-interact" name="interact-embed" value="Allow interaction with stream embed."/>
-            <label for="interact-embed">Allow interaction with embed</label>
-          </div>
+          <table class="sidebar-item" id="page-settings">
+            <tr>
+              <td>
+                <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
+              </td>
+              <td>
+                <label for="enable-embed">Embed Twitch Stream</label>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <input type="checkbox" id="embed-interact" name="interact-embed" value="Allow interaction with stream embed."/>
+              </td>
+              <td>
+                <label for="interact-embed">Allow interaction with embed</label>
+              </td>
+            </tr>
+            <tr>
+              <td></td>
+              <td id="notification-volume-row">
+                <label for="noti-vol" id="notification-volume-label">Notification Volume:</label>
+                <input type="range" id="notification-volume" name="noti-vol" min="0" max="100">
+              </td>
+            </tr>
+          </table>
 
           <div class="big-button" id="open-add-item">
             Add item.

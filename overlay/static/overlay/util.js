@@ -65,6 +65,9 @@ function handleWebsocketCommand(command, data)
 
   switch (command)
   {
+    case "user_settings":
+      handleUserSettings(data);
+      break;
     case "list_overlay_items":
       updateItems(data);
       break;

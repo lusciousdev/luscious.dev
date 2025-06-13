@@ -518,6 +518,28 @@ body {
   text-indent: -2em;
 }
 
+#page-settings {
+  width: 100%;
+}
+
+#notification-volume-row {
+  display: flex;
+  flex-direction: row;
+
+  width: 100%;
+}
+
+#notification-volume-label {
+  flex-basis: content;
+
+  margin-right: 1em;
+}
+
+#notification-volume {
+  flex-basis: 1px;
+  flex-grow: 1;
+}
+
 @media screen and (max-width: 300px)
 {
   html {

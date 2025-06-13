@@ -20,14 +20,12 @@ class OverlayConsumer(TwitchConsumer):
   response_list = []
   broadcast_list = []
   
-  overlay_user_id = None
+  overlay_user : OverlayUserInfo = None
   
   def owner_or_editor(self):
     self.user : UserLazyObject = self.scope["user"]
     if self.user.is_anonymous:
       return False
-    
-    self.overlay_user_id = OverlayUser.objects.get(id = self.user.id).overlay.identifier
     
     if self.overlay.owner.id == self.user.id:
       return True
@@ -47,7 +45,7 @@ class OverlayConsumer(TwitchConsumer):
         pass
       
     try:
-      editormatch = self.overlay.owner.editor_set.get(id_type = 2, identifier = self.overlay_user_id)
+      editormatch = self.overlay.owner.editor_set.get(id_type = 2, identifier = self.overlay_user.identifier)
       return True
     except:
       pass
@@ -66,6 +64,13 @@ class OverlayConsumer(TwitchConsumer):
   
   def connect(self):
     logger.debug("Connection attempt started...")
+    
+    self.user : UserLazyObject = self.scope["user"]
+    if not self.user.is_anonymous:
+      try:
+        self.overlay_user = OverlayUser.objects.get(id = self.user.id).overlay
+      except OverlayUser.DoesNotExist:
+        ...
     
     overlay_id = self.scope["url_route"]["kwargs"]["overlay_id"]
     self.overlay_group_name = f"overlay_{overlay_id}"
@@ -141,7 +146,11 @@ class OverlayConsumer(TwitchConsumer):
     data : dict = command_json.get("data", {})
     
     command = command.lower()
-    if command == "get_overlay_items":
+    if command == "get_user_settings":
+      self.get_user_settings()
+    elif command == "update_user_settings":
+      self.update_user_settings(data)
+    elif command == "get_overlay_items":
       self.get_overlay_items()
     elif command == "add_overlay_item":
       self.add_overlay_item(data)
@@ -171,6 +180,19 @@ class OverlayConsumer(TwitchConsumer):
       self.start_poll(data)
     elif command == "start_prediction":
       self.start_prediction(data)
+      
+  def get_user_settings(self):
+    user_settings = {
+      "embed_stream": self.overlay_user.embed_stream,
+      "notification_volume": self.overlay_user.notification_volume
+    }
+    
+    self.queue_command("user_settings", user_settings)
+    
+  def update_user_settings(self, data : dict):
+    for key, value in data.items():
+      setattr(self.overlay_user, key, value)
+    self.overlay_user.save()
     
   def get_overlay_items(self):
     overlay_items = []
@@ -230,7 +252,7 @@ class OverlayConsumer(TwitchConsumer):
       "command": "overlay_item_added",
       "loopback": True,
       "data": {
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_type": item_instance.item_type,
         "is_displayed": item_instance.is_displayed(),
         "item_data": item_instance.to_data_dict(),
@@ -273,7 +295,7 @@ class OverlayConsumer(TwitchConsumer):
     self.queue_broadcast({ 
       "command": "overlay_item_deleted", 
       "data": {
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_id": item_id, 
       } 
     })
@@ -327,7 +349,7 @@ class OverlayConsumer(TwitchConsumer):
     self.queue_broadcast({ 
       "command": "overlay_item_moved", 
       "data": {
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_id": item_instance.id,
         "x": item_instance.x,
         "y": item_instance.y, 
@@ -340,7 +362,7 @@ class OverlayConsumer(TwitchConsumer):
     self.queue_broadcast({
       "command": "overlay_item_resized",
       "data": {
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_id": item_instance.id,
         "x": item_instance.x,
         "y": item_instance.y,
@@ -356,7 +378,7 @@ class OverlayConsumer(TwitchConsumer):
       "command": "overlay_item_edited",
       "loopback": True,
       "data": {
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_type": item_instance.get_simple_type(),
         "is_displayed": item_instance.is_displayed(),
         "item_data": item_instance.to_data_dict(), 
@@ -370,7 +392,7 @@ class OverlayConsumer(TwitchConsumer):
         "command": "user_present", 
         "data": {
           "username": self.user.username,
-          "uid": self.overlay_user_id,
+          "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         } 
       })
     else:
@@ -395,7 +417,7 @@ class OverlayConsumer(TwitchConsumer):
         "command": "mouse_position", 
         "data": {
           "username": self.user.username,
-          "uid": self.overlay_user_id,
+          "uid": None if self.overlay_user is None else self.overlay_user.identifier,
           "x": data["x"],
           "y": data["y"],
         } 
@@ -413,7 +435,7 @@ class OverlayConsumer(TwitchConsumer):
       "loopback": True,
       "data": {
         "username": self.user.username,
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "epoch": int(messageObj.timestamp.timestamp()),
         "message": messageObj.message,
       }
@@ -471,7 +493,7 @@ class OverlayConsumer(TwitchConsumer):
     self.queue_broadcast({ 
       "command": "item_event_triggered", 
       "data": {
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_id": item_instance.id,
         "item_type": item_instance.get_simple_type(),
         "event": data["event"],
@@ -542,7 +564,7 @@ class OverlayConsumer(TwitchConsumer):
         "command": "canvas_undo",
         "loopback": True,
         "data": {
-          "uid": self.overlay_user_id,
+          "uid": None if self.overlay_user is None else self.overlay_user.identifier,
           "item_id": item_instance.id,
           "history": item_instance.to_data_dict()["history"],
         }
@@ -558,7 +580,7 @@ class OverlayConsumer(TwitchConsumer):
     self.queue_broadcast({ 
       "command": "canvas_action", 
       "data": {
-        "uid": self.overlay_user_id,
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_id": item_instance.id,
         "action": action,
         "continue": action_continued,
@@ -577,7 +599,8 @@ class OverlayConsumer(TwitchConsumer):
   def broadcast_events(self, event):
     event_list = event.get("event_list", [])
     
-    event_list = list(filter(lambda command : command.get("loopback", False) or (command.get("data", {}).get("uid", "") != self.overlay_user_id), event_list))
+    overlay_user_id = None if self.overlay_user is None else self.overlay_user.identifier
+    event_list = list(filter(lambda command : command.get("loopback", False) or (command.get("data", {}).get("uid", "") != overlay_user_id), event_list))
     
     if (len(event_list) > 0):
       self.send(text_data = json.dumps({ "commands": event_list }))

@@ -73,8 +73,8 @@ class EditorForm(forms.ModelForm):
       identifier = data['id_input']
       
       try:
-        ovl_user_id = OverlayUserId.objects.get(identifier = identifier)
-      except OverlayUserId.DoesNotExist:
+        ovl_user_id = OverlayUserInfo.objects.get(identifier = identifier)
+      except OverlayUserInfo.DoesNotExist:
         raise forms.ValidationError({ "id_input": "That overlay user does not exist." })
       
       username = ovl_user_id.user.username

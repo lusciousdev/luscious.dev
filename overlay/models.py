@@ -43,10 +43,13 @@ class CollaborativeOverlay(NonConsecutiveModel):
   def __str__(self):
     return f"{self.name} ({self.description})"
   
-class OverlayUserId(models.Model):
+class OverlayUserInfo(models.Model):
   user = models.OneToOneField(User, on_delete = models.CASCADE, related_name = "ovl", unique = True)
   
   identifier = models.CharField(max_length = ID_LENGTH, default = id_gen, editable = False)
+  
+  embed_stream = models.BooleanField(default = False)
+  notification_volume = models.FloatField(default = 0.5)
   
   class Meta:
     indexes = [
@@ -58,8 +61,8 @@ class OverlayUser(User):
   def overlay(self):
     try:
       return self.ovl
-    except OverlayUserId.DoesNotExist:
-      return OverlayUserId.objects.create(user = self)
+    except OverlayUserInfo.DoesNotExist:
+      return OverlayUserInfo.objects.create(user = self)
   
   class Meta:
     proxy = True

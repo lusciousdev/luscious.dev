@@ -123,6 +123,7 @@ function createYouTubePlayer(itemId)
   });
 }
 
+function handleUserSettings(data) {}
 function userPresent(data) { }
 function repositionMouse(data) { }
 function repopulateChatHistory() { }
