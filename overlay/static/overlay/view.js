@@ -135,7 +135,7 @@ function handleWebsocketOpen(e)
 }
 
 $(window).on('load', function() {
-  connectWebsocket(overlayId);
+  connectWebsocket(g_OverlayID);
 
   var intervalId = setInterval(function() { getOverlayItems(); }, 1000);
 });

@@ -23,7 +23,9 @@ var g_TwitchChatHistory = [];
 
 var g_EmoteMap = {};
 
-var c_TimerUpdateIntervalTimeout = 250;
+var g_ItemTimerUpdateInterval = undefined;
+var c_ItemTimerUpdateIntervalTimeout = 250;
+var c_EventTimerUpdateIntervalTimeout = 250;
 
 var g_PollActive = false;
 var g_PollTimeRemaining = 0;
@@ -80,7 +82,7 @@ function handleWebsocketCommand(command, data)
       resizeItem(data.item_id, data.x, data.y, data.width, data.height);
       break;
     case "overlay_item_edited":
-      updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == overlayUserId));
+      updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == g_OverlayUserID));
       break;
     case "overlay_item_deleted":
       deleteItem(data.item_id);
@@ -729,15 +731,9 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         break;
       case "stopwatch":
         $(itemInnerContainerId).append(TextTemplate.format(itemId));
-
-        var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
-        if (itemData['paused'])
-        {
-          elapsedTime = itemData['pause_time'] - itemData['timer_start'];
-        }
-        var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
         
-        setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
+        let itemText = getStopwatchText(itemData);
+        setTextItemContent(overlayElement, itemId, itemText, itemType, itemData);
         break;
       case "counter":
         $(itemInnerContainerId).append(TextTemplate.format(itemId));
@@ -895,14 +891,8 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemContent(overlayElement, itemId, itemData['text'], itemType, itemData);
         break;
       case "stopwatch":
-        var elapsedTime = Math.round(Date.now() / 1000) - itemData['timer_start'];
-        if (itemData['paused'])
-        {
-          elapsedTime = itemData['pause_time'] - itemData['timer_start']
-        }
-        var textContent = itemData["timer_format"].format(secondsToTimeFormat(elapsedTime));
-        
-        setTextItemContent(overlayElement, itemId, textContent, itemType, itemData);
+        let itemText = getStopwatchText(itemData);
+        setTextItemContent(overlayElement, itemId, itemText, itemType, itemData);
         break
       case "counter":
         var textContent = itemData['counter_format'].format(itemData['count'])
@@ -1171,7 +1161,7 @@ function handleTwitchPollBegin(pollData)
 
   updatePollTimer(false);
   clearInterval(g_PollTimerUpdateInterval);
-  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_TimerUpdateIntervalTimeout);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_EventTimerUpdateIntervalTimeout);
 }
 
 function handleTwitchPollProgress(pollData)
@@ -1218,7 +1208,7 @@ function handleTwitchPollProgress(pollData)
 
   updatePollTimer(false);
   clearInterval(g_PollTimerUpdateInterval);
-  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_TimerUpdateIntervalTimeout);
+  g_PollTimerUpdateInterval = setInterval(updatePollTimer, c_EventTimerUpdateIntervalTimeout);
 }
 
 function handleTwitchPollEnd(pollData)
@@ -1293,7 +1283,7 @@ function handleTwitchPredictionBegin(predData)
 
   updatePredictionTimer(false);
   clearInterval(g_PredictionTimerUpdateInterval);
-  g_PredictionTimerUpdateInterval = setInterval(updatePredictionTimer, c_TimerUpdateIntervalTimeout);
+  g_PredictionTimerUpdateInterval = setInterval(updatePredictionTimer, c_EventTimerUpdateIntervalTimeout);
 }
 
 function handleTwitchPredictionProgress(predData)
@@ -1340,7 +1330,7 @@ function handleTwitchPredictionProgress(predData)
 
   updatePredictionTimer(false);
   clearInterval(g_PredictionTimerUpdateInterval);
-  g_PredictionTimerUpdateInterval = setInterval(updatePredictionTimer, c_TimerUpdateIntervalTimeout);
+  g_PredictionTimerUpdateInterval = setInterval(updatePredictionTimer, c_EventTimerUpdateIntervalTimeout);
 }
 
 function handleTwitchPredictionLock(predData)
@@ -1683,6 +1673,43 @@ function pauseAudioItem(itemId)
   g_ItemDict[itemId]['audio'].pause();
 }
 
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           TIMERS
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function getStopwatchText(idata)
+{
+  var elapsedTime = Math.round(Date.now() / 1000) - idata['timer_start'];
+  if (idata['paused'])
+  {
+    elapsedTime = idata['pause_time'] - idata['timer_start']
+  }
+  return idata["timer_format"].format(secondsToTimeFormat(elapsedTime));
+}
+
+function updateTimerItems()
+{
+  let overlayElem = $("#overlay");
+  for (const [itemId, itemObj] of Object.entries(g_ItemDict))
+  {
+    switch (itemObj["item_type"])
+    {
+      case "stopwatch":
+        let itemText = getStopwatchText(itemObj["item_data"]);
+        setTextItemContent(overlayElem, itemId, itemText, itemObj["item_type"], itemObj["item_data"]);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           MISC
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 function getItemIconName(itemType)
 {
   var itemIcon = 'text_snippet'
@@ -1738,4 +1765,6 @@ window.addEventListener('load', function(e) {
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
   getChatEmotes();
+
+  g_ItemTimerUpdateInterval = setInterval(updateTimerItems, c_ItemTimerUpdateIntervalTimeout);
 }, false);

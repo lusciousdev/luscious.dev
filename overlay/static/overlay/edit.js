@@ -3,15 +3,15 @@ const data = document.currentScript.dataset;
 window.shiftheld = false;
 window.ctrlheld = false;
 
-const overlayId = data.overlayid;
-const getOverlayItemsUrl  = data.getitemsurl;
-const addOverlayItemsUrl  = data.additemsurl;
-const editOverlayItemUrl = data.edititemurl;
-const editOverlayItemsUrl = data.edititemsurl;
-const deleteOverlayItemUrl = data.deleteitemurl;
-const overlayOwner = data.overlayowner;
-const overlayUserId = data.overlayuid;
-const notificationURL = data.notificationurl;
+const g_OverlayID = data.overlayid;
+const g_GetOverlayItemsURL  = data.getitemsurl;
+const g_AddOverlayItemsURL  = data.additemsurl;
+const g_EditOverlayItemURL = data.edititemurl;
+const g_EditOverlayItemsURL = data.edititemsurl;
+const g_DeleteOverlayItemURL = data.deleteitemurl;
+const g_OverlayOwner = data.overlayowner;
+const g_OverlayUserID = data.overlayuid;
+const g_NotificationURL = data.notificationurl;
 
 const EDIT_VIEW = true;
 
@@ -43,7 +43,7 @@ var g_WebsocketEventQueue = []
 
 var g_StreamEmbed;
 
-const c_NotificationAudio = new Audio(notificationURL);
+const c_NotificationAudio = new Audio(g_NotificationURL);
 c_NotificationAudio.load();
 
 // USER SETTINGS
@@ -298,7 +298,7 @@ function checkMousePosition()
 
 function userPresent(data) 
 {
-  if (data["uid"] == overlayUserId)
+  if (data["uid"] == g_OverlayUserID)
     return;
 
   if (!(data["uid"] in g_EditorList))
@@ -321,7 +321,7 @@ function userPresent(data)
 
 function repositionMouse(data)
 {
-  if (data["uid"] == overlayUserId)
+  if (data["uid"] == g_OverlayUserID)
     return;
 
   if ($("#{0}".format(data["uid"])).length == 0)
@@ -527,7 +527,10 @@ function addChatMessages(msg)
     $("#chat-message-indicator").css({ "display": "flex" });
   }
   
-  c_NotificationAudio.play();
+  if (msg.uid != g_OverlayUserID)
+  {
+    c_NotificationAudio.play();
+  }
 }
 
 function initialResize(event)
@@ -1407,7 +1410,7 @@ function setEditFormInputs(itemId, ignoreFocus = false)
 
   var itemData = g_ItemDict[g_SelectedItem]['item_data'];
 
-  $(formId).find("#id_overlay_id").prop('value', overlayId);
+  $(formId).find("#id_overlay_id").prop('value', g_OverlayID);
   $(formId).find("#id_item_id").prop('value', itemId);
 
   for (var key in itemData)
@@ -1446,13 +1449,13 @@ function sendFileEdit(itemId, itemType, inputObj)
   }
   
   var itemFormData = new FormData();
-  itemFormData.set("overlay_id", overlayId);
+  itemFormData.set("overlay_id", g_OverlayID);
   itemFormData.set("item_id", itemId);
   itemFormData.set("item_type", itemType);
 
   itemFormData.set(inputField, file);
 
-  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, editOverlayItemUrl, itemFormData, handleEditItemsSuccess, handleAjaxError));
+  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, g_EditOverlayItemURL, itemFormData, handleEditItemsSuccess, handleAjaxError));
 }
 
 function inputToValue(inputObj)
@@ -1613,7 +1616,7 @@ function submitAddForm(form)
 
   var itemFormData = new FormData();
 
-  itemFormData.set("overlay_id", overlayId);
+  itemFormData.set("overlay_id", g_OverlayID);
   itemFormData.set("item_type", itemType);
   
   for (const itemProp in itemData)
@@ -1621,7 +1624,7 @@ function submitAddForm(form)
     itemFormData.set(itemProp, itemData[itemProp]);
   }
 
-  AjaxFormPost(addOverlayItemsUrl, itemFormData, (e) => {}, handleAjaxError);
+  AjaxFormPost(g_AddOverlayItemsURL, itemFormData, (e) => {}, handleAjaxError);
 
   $("#close-add-item").click();
 }
@@ -1808,7 +1811,7 @@ function toggleEmbeddedTwitchStream()
   if (checked)
   {
     $("#twitch-embed").empty();
-    g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", overlayOwner);
+    g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", g_OverlayOwner);
     
     if (!interactable)
     {
@@ -1945,7 +1948,7 @@ function setCanvasCursor()
 $(window).on('load', function() {
   initialResize();
 
-  connectWebsocket(overlayId);
+  connectWebsocket(g_OverlayID);
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   
