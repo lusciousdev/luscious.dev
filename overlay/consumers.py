@@ -170,6 +170,8 @@ class OverlayConsumer(TwitchConsumer):
       self.ping(data)
     elif command == "request_refresh":
       self.request_refresh(data)
+    elif command == "request_tts":
+      self.request_tts(data)
     elif command == "mouse_position":
       self.send_mouse_position(data)
     elif command == "get_chat_history":
@@ -385,7 +387,7 @@ class OverlayConsumer(TwitchConsumer):
       } 
     })
     
-  def ping(self, data):
+  def ping(self, data : dict):
     if self.owner_or_editor():
       self.queue_command("pong", {})
       self.queue_broadcast({ 
@@ -398,16 +400,25 @@ class OverlayConsumer(TwitchConsumer):
     else:
       self.queue_command("redirect", { "url": reverse("overlay:home") })
       
-  def request_refresh(self, data):
+  def request_refresh(self, data : dict):
     if self.owner_or_editor():
       self.queue_broadcast({
         "command": "refresh",
         "loopback": True,
         "data": {}
       })
-    
+  
+  def request_tts(self, data : dict):
+    if self.owner_or_editor():
+      self.queue_broadcast({
+        "command": "tts",
+        "loopback": True,
+        "data": {
+          "text": data.get("text", "")
+        }
+      })
       
-  def send_mouse_position(self, data):
+  def send_mouse_position(self, data : dict):
     if "x" not in data or "y" not in data:
       self.queue_command("error", "Mouse reposition missing data.")
       return
@@ -423,7 +434,7 @@ class OverlayConsumer(TwitchConsumer):
         } 
       })
       
-  def send_chat_message(self, data):
+  def send_chat_message(self, data : dict):
     if not self.owner_or_editor():
       self.queue_command("error", "Invalid user.")
       return
@@ -456,7 +467,7 @@ class OverlayConsumer(TwitchConsumer):
       
     self.queue_command("chat_history", response)
       
-  def trigger_item_event(self, data):
+  def trigger_item_event(self, data : dict):
     if "event" not in data:
       self.queue_command("error", "Could not trigger an event because you did not provide an event.")
       return
@@ -500,7 +511,7 @@ class OverlayConsumer(TwitchConsumer):
       } 
     })
       
-  def record_canvas_event(self, data):
+  def record_canvas_event(self, data : dict):
     if "event" not in data:
       self.queue_command("error", "Could not trigger an event because you did not provide an event.")
       return

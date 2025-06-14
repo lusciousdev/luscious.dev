@@ -1,14 +1,5 @@
-const data = document.currentScript.dataset;
-
-const overlayId = data.overlayid;
-const getOverlayItemsUrl = data.getitemsurl;
-
-const OVERLAY_WIDTH = parseInt(data.overlaywidth, 10)
-const OVERLAY_HEIGHT = parseInt(data.overlayheight, 10)
-
-const EDIT_VIEW = false;
-
-const overlayUserId = undefined;
+const c_EditView = false;
+const c_OverlayUserID = undefined;
 
 function updateItems(data, fullItemList = true, selfEdit = false)
 {
@@ -135,7 +126,7 @@ function handleWebsocketOpen(e)
 }
 
 $(window).on('load', function() {
-  connectWebsocket(g_OverlayID);
+  connectWebsocket();
 
   var intervalId = setInterval(function() { getOverlayItems(); }, 1000);
 });

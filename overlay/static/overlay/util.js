@@ -1,5 +1,11 @@
-const scriptData = document.currentScript.dataset;
-const twitchUID = scriptData.twitchuid;
+const utilScriptData = document.currentScript.dataset;
+
+const c_TwitchUID = utilScriptData.twitchuid;
+const c_OverlayID = utilScriptData.overlayid;
+const c_GetOverlayItemsURL  = utilScriptData.getitemsurl;
+
+const c_OverlayWidth = parseInt(utilScriptData.overlaywidth, 10)
+const c_OverlayHeight = parseInt(utilScriptData.overlayheight, 10)
 
 var g_Websocket = undefined;
 var g_ReconnectInterval = undefined;
@@ -7,7 +13,7 @@ var g_YouTubePlayerAPILoaded = false;
 
 var g_ItemDict = {};
 
-const TRANSPARENT = "#00000000"
+const c_Transparent = "#00000000"
 
 const NOSCROLL  = 0;
 const LEFTRIGHT = 1;
@@ -18,14 +24,14 @@ const BOTTOMTOP = 4;
 var g_TwitchConnected = false;
 var g_TwitchBroadcasterType = 0;
 
-const g_TwitchChatHistoryLimit = 50;
+const c_TwitchChatHistoryLimit = 50;
 var g_TwitchChatHistory = [];
 
 var g_EmoteMap = {};
 
 var g_ItemTimerUpdateInterval = undefined;
-var c_ItemTimerUpdateIntervalTimeout = 250;
-var c_EventTimerUpdateIntervalTimeout = 250;
+const c_ItemTimerUpdateIntervalTimeout = 250;
+const c_EventTimerUpdateIntervalTimeout = 250;
 
 var g_PollActive = false;
 var g_PollTimeRemaining = 0;
@@ -82,7 +88,7 @@ function handleWebsocketCommand(command, data)
       resizeItem(data.item_id, data.x, data.y, data.width, data.height);
       break;
     case "overlay_item_edited":
-      updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == g_OverlayUserID));
+      updateItems({ "items": [ { "item_type": data.item_type, "is_displayed": data.is_displayed, "item_data": data.item_data, } ]}, false, (editor == c_OverlayUserID));
       break;
     case "overlay_item_deleted":
       deleteItem(data.item_id);
@@ -148,6 +154,13 @@ function handleWebsocketCommand(command, data)
     case "refresh":
       window.location.reload(true);
       break;
+    case "tts":
+      if ("speechSynthesis" in window)
+      {
+        let msg = new SpeechSynthesisUtterance(data.text);
+        window.speechSynthesis.speak(msg);
+      }
+      break;
     case "error":
       console.warn(data);
       break;
@@ -157,16 +170,16 @@ function handleWebsocketCommand(command, data)
   }
 }
 
-function connectWebsocket(overlayId)
+function connectWebsocket()
 {
   var protocol = "ws:"
   if (window.location.protocol == "https:")
     protocol = "wss:"
-  g_Websocket = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, overlayId));
+  g_Websocket = new WebSocket("{0}//{1}/ws/overlay/{2}/".format(protocol, window.location.host, c_OverlayID));
 
   g_Websocket.onopen = (e) => { handleWebsocketOpen(e); };
   g_Websocket.onmessage = (e) => { handleWebsocketMessage(e); };
-  g_Websocket.onclose = (e) => { attemptReconnect(e, overlayId); };
+  g_Websocket.onclose = (e) => { attemptWebSocketReconnect(e); };
 }
 
 function sendWebsocketMessage(cmd, objData)
@@ -197,7 +210,7 @@ function getDefaultCSS(itype, idata)
 {
   var visible = "hidden";
 
-  if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
+  if ((idata['visibility'] == 1 && c_EditView) || (idata["visibility"] == 2))
   {
     visible = "inherit";
   }
@@ -246,7 +259,7 @@ function getDefaultContainerCSS(itype, idata)
 {
   var visible = false;
 
-  if ((idata['visibility'] == 1 && EDIT_VIEW) || (idata["visibility"] == 2))
+  if ((idata['visibility'] == 1 && c_EditView) || (idata["visibility"] == 2))
   {
     visible = true;
   }
@@ -266,7 +279,7 @@ function getDefaultContainerCSS(itype, idata)
   }
 
   var cssObj = {
-    "background-color": (visible && idata['background_enabled']) ? idata['background_color'] : TRANSPARENT,
+    "background-color": (visible && idata['background_enabled']) ? idata['background_color'] : c_Transparent,
   };
   
   return cssObj;
@@ -324,7 +337,7 @@ function getDefaultInnerContainerCSS(itype, idata)
   return cssObj;
 }
 
-function attemptReconnect(e, overlayId)
+function attemptWebSocketReconnect(e)
 {
   if (g_ReconnectInterval == undefined)
   {
@@ -338,7 +351,7 @@ function attemptReconnect(e, overlayId)
       }
   
       console.log("Attempting to reconnect websocket.");
-      connectWebsocket(overlayId);
+      connectWebsocket();
     }, 5000);
   }
 }
@@ -493,16 +506,16 @@ function secondsToTimeFormat(totalSeconds)
 function setTextItemCSS(overlayElement, itemId, itemType, itemData)
 {
   var textElemId = "#item-{0}-text".format(itemId);
-  var fontSize = EDIT_VIEW ? viewToEditLength(itemData["font_size"]) : itemData["font_size"];
+  var fontSize = c_EditView ? viewToEditLength(itemData["font_size"]) : itemData["font_size"];
 
   var itemCSS = getDefaultCSS(itemType, itemData);
   itemCSS["font-size"] = "{0}pt".format(fontSize);
   itemCSS["font-family"] = "{0}, sans-serif".format(itemData["font"]);
   itemCSS["font-weight"] = itemData["font_weight"];
   itemCSS["color"] = itemData['color'];
-  itemCSS["text-shadow"] = "{0}pt {1}pt {2}pt {3}".format(itemData["drop_shadow_offset_x"], itemData["drop_shadow_offset_y"], itemData["drop_shadow_blur_radius"], itemData["drop_shadow_enabled"] ? itemData["drop_shadow_color"] : TRANSPARENT);
+  itemCSS["text-shadow"] = "{0}pt {1}pt {2}pt {3}".format(itemData["drop_shadow_offset_x"], itemData["drop_shadow_offset_y"], itemData["drop_shadow_blur_radius"], itemData["drop_shadow_enabled"] ? itemData["drop_shadow_color"] : c_Transparent);
   itemCSS["-webkit-text-stroke-width"] = "{0}pt".format(itemData["text_outline_width"])
-  itemCSS["-webkit-text-stroke-color"] = itemData["text_outline_enabled"] ? itemData["text_outline_color"] : TRANSPARENT
+  itemCSS["-webkit-text-stroke-color"] = itemData["text_outline_enabled"] ? itemData["text_outline_color"] : c_Transparent
   itemCSS["text-align"] = itemData["text_alignment"];
 
   $(textElemId).css(itemCSS);
@@ -525,7 +538,7 @@ function moveItem(itemId, x, y)
     return;
   }
 
-  if (!EDIT_VIEW || !g_ItemDict[itemId]['moving'])
+  if (!c_EditView || !g_ItemDict[itemId]['moving'])
   {
     g_ItemDict[itemId]['item_data']['x'] = x;
     g_ItemDict[itemId]['item_data']['y'] = y;
@@ -535,7 +548,7 @@ function moveItem(itemId, x, y)
   var left = g_ItemDict[itemId]['item_data']['x'];
   var width = g_ItemDict[itemId]['item_data']['width'];
   var height = g_ItemDict[itemId]['item_data']['height'];
-  if (EDIT_VIEW)
+  if (c_EditView)
   {
     top    = viewToEditLength(top);
     left   = viewToEditLength(left);
@@ -557,7 +570,7 @@ function resizeItem(itemId, x, y, width, height)
     return;
   }
 
-  if (!EDIT_VIEW || !g_ItemDict[itemId]['moving'])
+  if (!c_EditView || !g_ItemDict[itemId]['moving'])
   {
     g_ItemDict[itemId]['item_data']['x'] = x;
     g_ItemDict[itemId]['item_data']['y'] = y;
@@ -569,7 +582,7 @@ function resizeItem(itemId, x, y, width, height)
   var left = g_ItemDict[itemId]['item_data']['x'];
   var width = g_ItemDict[itemId]['item_data']['width'];
   var height = g_ItemDict[itemId]['item_data']['height'];
-  if (EDIT_VIEW)
+  if (c_EditView)
   {
     top    = viewToEditLength(top);
     left   = viewToEditLength(left);
@@ -614,7 +627,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
   var itemOuterContainerId = '#item-{0}-outer-container'.format(itemId);
   var itemInnerContainerId = "#item-{0}-inner-container".format(itemId);
 
-  if(!EDIT_VIEW && itemData["view_lock"])
+  if(!c_EditView && itemData["view_lock"])
   {
     return;
   }
@@ -927,7 +940,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
 
 function handleCanvasUpdate(itemId, history)
 {
-  if (EDIT_VIEW && g_ItemDict[itemId]["drawing"])
+  if (c_EditView && g_ItemDict[itemId]["drawing"])
   {
     return;
   }
@@ -947,7 +960,7 @@ function handleCanvasUpdate(itemId, history)
 
 function handleCanvasClear(itemId)
 {
-  if (EDIT_VIEW && g_ItemDict[itemId]["drawing"])
+  if (c_EditView && g_ItemDict[itemId]["drawing"])
   {
     return;
   }
@@ -984,20 +997,20 @@ function handleCanvasActionWithContext(context, itemId, action, actionData, acti
     return 
   }
 
-  context.lineWidth = EDIT_VIEW ? viewToEditLength(actionData["lineWidth"]) : actionData["lineWidth"];
+  context.lineWidth = c_EditView ? viewToEditLength(actionData["lineWidth"]) : actionData["lineWidth"];
   context.lineCap = 'round';
 
 
   context.beginPath()
 
   var p0 = new Point(actionData["points"][0][0], actionData["points"][0][1]);
-  if (EDIT_VIEW)
+  if (c_EditView)
     p0 = viewToEditPoint(p0)
   
   if (actionContinued)
   {
     p0 = g_ItemDict[itemId]["last_point"];
-    if (EDIT_VIEW)
+    if (c_EditView)
       p0 = viewToEditPoint(p0);
   }
 
@@ -1006,7 +1019,7 @@ function handleCanvasActionWithContext(context, itemId, action, actionData, acti
   for (var i = 0; i < actionData["points"].length; i++)
   {
     var p_i = new Point(actionData["points"][i][0], actionData["points"][i][1]);
-    if (EDIT_VIEW)
+    if (c_EditView)
       p_i = viewToEditPoint(p_i);
     context.lineTo(p_i.x, p_i.y);
   }
@@ -1025,7 +1038,7 @@ function handleTwitchChatMessage(msgData)
 {
   g_TwitchChatHistory.push(msgData);
 
-  while (g_TwitchChatHistory.length > g_TwitchChatHistoryLimit)
+  while (g_TwitchChatHistory.length > c_TwitchChatHistoryLimit)
   {
     g_TwitchChatHistory.shift();
   }
@@ -1033,7 +1046,7 @@ function handleTwitchChatMessage(msgData)
   addMessageToChatHistory($(".twitch-chat-history"), msgData);
 
   $(".twitch-chat-history").each((i, elem) => {
-    while ($(elem).find(".twitch-chat-message").length > g_TwitchChatHistoryLimit)
+    while ($(elem).find(".twitch-chat-message").length > c_TwitchChatHistoryLimit)
     {
       $(elem).find(".twitch-chat-message:first").remove();
     }
@@ -1075,7 +1088,7 @@ function getChatEmotes()
 {
   let ffz = [
     "https://api.betterttv.net/3/cached/frankerfacez/emotes/global",
-    "https://api.betterttv.net/3/cached/frankerfacez/users/twitch/{0}".format(twitchUID),
+    "https://api.betterttv.net/3/cached/frankerfacez/users/twitch/{0}".format(c_TwitchUID),
   ];
 
   ffz.forEach((url, i) => {
@@ -1083,10 +1096,10 @@ function getChatEmotes()
   });
 
   $.get("https://api.betterttv.net/3/cached/emotes/global", handleBTTVGlobalResp);
-  $.get("https://api.betterttv.net/3/cached/users/twitch/{0}".format(twitchUID), handleBTTVUserResp);
+  $.get("https://api.betterttv.net/3/cached/users/twitch/{0}".format(c_TwitchUID), handleBTTVUserResp);
 
   $.get("https://7tv.io/v3/emote-sets/global", handle7TVGlobalResp);
-  $.get("https://7tv.io/v3/users/twitch/{0}".format(twitchUID), handle7TVUserResp);
+  $.get("https://7tv.io/v3/users/twitch/{0}".format(c_TwitchUID), handle7TVUserResp);
 }
 
 function handleFFZResp(resp)

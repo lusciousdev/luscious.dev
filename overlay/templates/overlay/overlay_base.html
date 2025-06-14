@@ -21,6 +21,10 @@
 <script src="{% static 'overlay/overlay_templates.js' %}"></script>
 <script src="{% static 'overlay/util.js' %}"
         defer
+        data-overlayid="{{ collaborativeoverlay.id }}"
+        data-getitemsurl="{% url 'overlay:api_get_overlay_items' %}"
+        data-overlaywidth="{{ collaborativeoverlay.width }}"
+        data-overlayheight="{{ collaborativeoverlay.height }}"
         data-twitchuid="{{ twitchuid }}">
 </script>
 

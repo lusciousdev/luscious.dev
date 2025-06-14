@@ -518,6 +518,10 @@ body {
   text-indent: -2em;
 }
 
+.old-chat-message {
+  color: light-dark(var(--light-text-blocked), var(--dark-text-blocked));
+}
+
 #page-settings {
   width: 100%;
 }

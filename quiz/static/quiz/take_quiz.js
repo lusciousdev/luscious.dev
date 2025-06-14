@@ -62,7 +62,7 @@ function connectWebsocket()
 
   g_Websocket.onopen = (e) => { handleWebsocketOpen(e); };
   g_Websocket.onmessage = (e) => { handleWebsocketMessage(e); };
-  g_Websocket.onclose = (e) => { attemptReconnect(e); };
+  g_Websocket.onclose = (e) => { attemptWebSocketReconnect(e); };
 }
 
 function handleWebsocketOpen(e) 
@@ -119,7 +119,7 @@ function sendWebsocketMessage(cmd, objData)
   }
 }
 
-function attemptReconnect(e)
+function attemptWebSocketReconnect(e)
 {
   if (g_ReconnectInterval == undefined)
   {

@@ -1,34 +1,30 @@
-const data = document.currentScript.dataset;
+const editScriptData = document.currentScript.dataset;
 
 window.shiftheld = false;
 window.ctrlheld = false;
 
-const g_OverlayID = data.overlayid;
-const g_GetOverlayItemsURL  = data.getitemsurl;
-const g_AddOverlayItemsURL  = data.additemsurl;
-const g_EditOverlayItemURL = data.edititemurl;
-const g_EditOverlayItemsURL = data.edititemsurl;
-const g_DeleteOverlayItemURL = data.deleteitemurl;
-const g_OverlayOwner = data.overlayowner;
-const g_OverlayUserID = data.overlayuid;
-const g_NotificationURL = data.notificationurl;
+const c_AddOverlayItemsURL  = editScriptData.additemsurl;
+const c_EditOverlayItemURL = editScriptData.edititemurl;
+const c_EditOverlayItemsURL = editScriptData.edititemsurl;
+const c_DeleteOverlayItemURL = editScriptData.deleteitemurl;
+const c_OverlayOwner = editScriptData.overlayowner;
+const c_OverlayUserID = editScriptData.overlayuid;
+const c_NotificationURL = editScriptData.notificationurl;
 
-const EDIT_VIEW = true;
+const c_EditView = true;
 
 var g_ScaledOverlayWidth = -1;
 var g_ScaledOverlayHeight = -1;
-const OVERLAY_WIDTH = parseInt(data.overlaywidth, 10);
-const OVERLAY_HEIGHT = parseInt(data.overlayheight, 10);
 
-const DEFAULT_SIZE_PERCENT = 0.667;
+const c_DefaultSizePercent = 0.667;
 
 var g_CurrentScale = 1.0;
 var g_OverlayOffset = new Point(0, 0);
 
-const SCALE_CHANGE = 0.05;
-const MIN_SCALE = 0.05;
-const MAX_SCALE = 5.0;
-const SCROLL_AMOUNT = 50.0;
+const c_ScaleChange = 0.05;
+const c_MinScale = 0.05;
+const c_MaxScale = 5.0;
+const c_ScrollAmount = 50.0;
 
 var g_SelectedItem = undefined;
 var g_OtherSelectedItems = [];
@@ -36,14 +32,14 @@ var g_OtherSelectedItems = [];
 var g_SendEditChanges = {};
 var g_SendCanvasPoints = {};
 
-const MOUSE_MOVE_COOLDOWN = 2;
+const c_MouseMoveCooldown = 2;
 
-const WEBSOCKET_SEND_COOLDOWN = 50; // ms
+const c_WebsocketSendCooldown = 50; // ms
 var g_WebsocketEventQueue = []
 
 var g_StreamEmbed;
 
-const c_NotificationAudio = new Audio(g_NotificationURL);
+const c_NotificationAudio = new Audio(c_NotificationURL);
 c_NotificationAudio.load();
 
 // USER SETTINGS
@@ -298,7 +294,7 @@ function checkMousePosition()
 
 function userPresent(data) 
 {
-  if (data["uid"] == g_OverlayUserID)
+  if (data["uid"] == c_OverlayUserID)
     return;
 
   if (!(data["uid"] in g_EditorList))
@@ -321,7 +317,7 @@ function userPresent(data)
 
 function repositionMouse(data)
 {
-  if (data["uid"] == g_OverlayUserID)
+  if (data["uid"] == c_OverlayUserID)
     return;
 
   if ($("#{0}".format(data["uid"])).length == 0)
@@ -383,13 +379,13 @@ function handleWebsocketOpen(e)
   var getInterval = setInterval(function() { getOverlayItems(); }, 2500);
 
   getChatHistory();
-  var historyInterval = setInterval(function() { getChatHistory(); }, 2500);
+  var historyInterval = setInterval(function() { getChatHistory(); }, (1000 * 60 * 60));
 
-  setInterval(sendPing, WEBSOCKET_SEND_COOLDOWN * 100);
-  setInterval(checkMousePosition, WEBSOCKET_SEND_COOLDOWN);
-  setInterval(removeInactiveUsers, WEBSOCKET_SEND_COOLDOWN * 10);
-  setInterval(removeInactiveCursors, WEBSOCKET_SEND_COOLDOWN * 10);
-  setInterval(sendAllMessages, WEBSOCKET_SEND_COOLDOWN);
+  setInterval(sendPing, c_WebsocketSendCooldown * 100);
+  setInterval(checkMousePosition, c_WebsocketSendCooldown);
+  setInterval(removeInactiveUsers, c_WebsocketSendCooldown * 10);
+  setInterval(removeInactiveCursors, c_WebsocketSendCooldown * 10);
+  setInterval(sendAllMessages, c_WebsocketSendCooldown);
 }
 
 function handleAjaxError(data)
@@ -495,16 +491,27 @@ function repopulateChatHistory(messageArray)
 
   messageArray.forEach((msg, i) => {
     var msgDT = new Date(msg['epoch'] * 1000);
+    var nowDT = new Date();
+
+    let msgY = msgDT.getFullYear();
+    let msgM = msgDT.getMonth();
+    let msgD = msgDT.getDate();
+    
+    let nowY = nowDT.getFullYear();
+    let nowM = nowDT.getMonth();
+    let nowD = nowDT.getDate();
+    
 
     var timeStr = "{0}:{1}:{2}".format(String(msgDT.getHours()).padStart(2, "0"), String(msgDT.getMinutes()).padStart(2, "0"), String(msgDT.getSeconds()).padStart(2, "0"));
+    if ((msgY < nowY) || (msgY == nowY && msgM < nowM) || (msgY == nowY && msgM == nowM && msgD < nowD))
+    {
+      var timeStr = "{0}.{1}.{2}".format(String(msgDT.getFullYear()), String(msgDT.getMonth()).padStart(2, "0"), String(msgDT.getDate()).padStart(2, "0"));
+    }
 
-    historyElem.append("<div class=\"chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(timeStr, msg["username"], msg["message"]));
+    historyElem.append("<div class=\"chat-message old-chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(timeStr, msg["username"], msg["message"]));
   });
-  
-  if (atBottom)
-  {
-    historyElem.scrollTop(historyElem[0].scrollHeight);
-  }
+
+  historyElem.scrollTop(historyElem[0].scrollHeight);
 }
 
 function addChatMessages(msg)
@@ -527,7 +534,7 @@ function addChatMessages(msg)
     $("#chat-message-indicator").css({ "display": "flex" });
   }
   
-  if (msg.uid != g_OverlayUserID)
+  if (msg.uid != c_OverlayUserID)
   {
     c_NotificationAudio.play();
   }
@@ -538,16 +545,16 @@ function initialResize(event)
   var mcWidth = $("#main-container").width();
   var mcHeight = $("#main-container").height();
 
-  g_ScaledOverlayWidth = DEFAULT_SIZE_PERCENT * mcWidth;
+  g_ScaledOverlayWidth = c_DefaultSizePercent * mcWidth;
   g_ScaledOverlayHeight = 9.0 / 16.0 * g_ScaledOverlayWidth;
 
-  if (g_ScaledOverlayHeight > (DEFAULT_SIZE_PERCENT * mcHeight))
+  if (g_ScaledOverlayHeight > (c_DefaultSizePercent * mcHeight))
   {
     g_ScaledOverlayHeight = 0.667 * mcHeight;
     g_ScaledOverlayWidth = 16.0 / 9.0 * g_ScaledOverlayHeight;
   }
 
-  g_CurrentScale = g_ScaledOverlayWidth / OVERLAY_WIDTH;
+  g_CurrentScale = g_ScaledOverlayWidth / c_OverlayWidth;
 
   $("#overlay").width(g_ScaledOverlayWidth);
   $("#overlay").height(g_ScaledOverlayHeight);
@@ -599,16 +606,16 @@ function onScroll(event)
   {
     if (event.ctrlKey)
     {
-      changeScale(g_CurrentScale + SCALE_CHANGE);
+      changeScale(g_CurrentScale + c_ScaleChange);
     }
     else if (event.shiftKey)
     {
-      g_OverlayOffset.addX(SCROLL_AMOUNT);
+      g_OverlayOffset.addX(c_ScrollAmount);
       repositionOverlay();
     }
     else
     {
-      g_OverlayOffset.addY(SCROLL_AMOUNT);
+      g_OverlayOffset.addY(c_ScrollAmount);
       repositionOverlay();
     }
   }
@@ -616,16 +623,16 @@ function onScroll(event)
   {
     if (event.ctrlKey)
     {
-      changeScale(g_CurrentScale - SCALE_CHANGE);
+      changeScale(g_CurrentScale - c_ScaleChange);
     }
     else if (event.shiftKey)
     {
-      g_OverlayOffset.addX(-SCROLL_AMOUNT);
+      g_OverlayOffset.addX(-c_ScrollAmount);
       repositionOverlay();
     }
     else
     {
-      g_OverlayOffset.addY(-SCROLL_AMOUNT);
+      g_OverlayOffset.addY(-c_ScrollAmount);
       repositionOverlay();
     }
   }
@@ -635,20 +642,20 @@ function changeScale(newScale)
 {
   var oldScale = g_CurrentScale;
   g_CurrentScale = newScale;
-  if (g_CurrentScale < MIN_SCALE)
+  if (g_CurrentScale < c_MinScale)
   {
-    g_CurrentScale = MIN_SCALE;
+    g_CurrentScale = c_MinScale;
   }
-  else if (g_CurrentScale > MAX_SCALE)
+  else if (g_CurrentScale > c_MaxScale)
   {
-    g_CurrentScale = MAX_SCALE;
+    g_CurrentScale = c_MaxScale;
   }
 
   if (oldScale == g_CurrentScale)
     return;
 
-  g_ScaledOverlayWidth = g_CurrentScale * OVERLAY_WIDTH;
-  g_ScaledOverlayHeight = g_CurrentScale * OVERLAY_HEIGHT;
+  g_ScaledOverlayWidth = g_CurrentScale * c_OverlayWidth;
+  g_ScaledOverlayHeight = g_CurrentScale * c_OverlayHeight;
 
   $("#overlay").width(g_ScaledOverlayWidth);
   $("#overlay").height(g_ScaledOverlayHeight);
@@ -897,7 +904,7 @@ function handleItemLeftClick(e, elem)
   var enableMoveHandler = false;
   var mouseMoveTimeout = setInterval(() => {
     enableMoveHandler = true;
-  }, MOUSE_MOVE_COOLDOWN);
+  }, c_MouseMoveCooldown);
 
   function handleDragging(e)
   {
@@ -1410,7 +1417,7 @@ function setEditFormInputs(itemId, ignoreFocus = false)
 
   var itemData = g_ItemDict[g_SelectedItem]['item_data'];
 
-  $(formId).find("#id_overlay_id").prop('value', g_OverlayID);
+  $(formId).find("#id_overlay_id").prop('value', c_OverlayID);
   $(formId).find("#id_item_id").prop('value', itemId);
 
   for (var key in itemData)
@@ -1449,13 +1456,13 @@ function sendFileEdit(itemId, itemType, inputObj)
   }
   
   var itemFormData = new FormData();
-  itemFormData.set("overlay_id", g_OverlayID);
+  itemFormData.set("overlay_id", c_OverlayID);
   itemFormData.set("item_id", itemId);
   itemFormData.set("item_type", itemType);
 
   itemFormData.set(inputField, file);
 
-  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, g_EditOverlayItemURL, itemFormData, handleEditItemsSuccess, handleAjaxError));
+  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.POST_FORM, c_EditOverlayItemURL, itemFormData, handleEditItemsSuccess, handleAjaxError));
 }
 
 function inputToValue(inputObj)
@@ -1616,7 +1623,7 @@ function submitAddForm(form)
 
   var itemFormData = new FormData();
 
-  itemFormData.set("overlay_id", g_OverlayID);
+  itemFormData.set("overlay_id", c_OverlayID);
   itemFormData.set("item_type", itemType);
   
   for (const itemProp in itemData)
@@ -1624,7 +1631,7 @@ function submitAddForm(form)
     itemFormData.set(itemProp, itemData[itemProp]);
   }
 
-  AjaxFormPost(g_AddOverlayItemsURL, itemFormData, (e) => {}, handleAjaxError);
+  AjaxFormPost(c_AddOverlayItemsURL, itemFormData, (e) => {}, handleAjaxError);
 
   $("#close-add-item").click();
 }
@@ -1811,7 +1818,7 @@ function toggleEmbeddedTwitchStream()
   if (checked)
   {
     $("#twitch-embed").empty();
-    g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", g_OverlayOwner);
+    g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", c_OverlayOwner);
     
     if (!interactable)
     {
@@ -1948,7 +1955,7 @@ function setCanvasCursor()
 $(window).on('load', function() {
   initialResize();
 
-  connectWebsocket(g_OverlayID);
+  connectWebsocket();
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
   
