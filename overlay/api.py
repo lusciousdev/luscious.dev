@@ -111,7 +111,10 @@ def add_overlay_item(request : HttpRequest):
   for attr, val in request.POST.items():
     try:
       fieldtype = item_model._meta.get_field(attr).get_internal_type()
-      val = val if fieldtype != "BooleanField" else (val.lower() in ['true', '1', 'yes', 't', 'y'])
+      if fieldtype == "BooleanField":
+        val = (val.lower() in ['true', '1', 'yes', 't', 'y'])
+      elif fieldtype == "DateTimeField":
+        val = datetime.datetime.strptime(val, "%Y-%m-%dT%H:%M:%SZ")
       setattr(item_instance, attr, val)
     except FieldDoesNotExist:
       continue

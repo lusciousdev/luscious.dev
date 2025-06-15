@@ -335,7 +335,8 @@ class OverlayConsumer(TwitchConsumer):
     for attr, val in data.get("item_data", {}).items():
       try:
         fieldtype = item_model._meta.get_field(attr).get_internal_type()
-        # val = val if fieldtype != "BooleanField" else (val.lower() in ['true', '1', 'yes', 't', 'y'])
+        if (fieldtype == "DateTimeField"):
+          val = datetime.datetime.strptime(val, "%Y-%m-%dT%H:%M:%SZ")
         setattr(item_instance, attr, val)
       except FieldDoesNotExist:
         continue

@@ -1,4 +1,6 @@
+{% load tz %}
 
+{% localtime on %}
 <div class="form-container tabcontent" id="add-{{ form.Meta.model.get_simple_type }}">
   <form class="item-form add-form" id="add-{{ form.Meta.model.get_simple_type }}-form">
     <input type='hidden' id="id_item_type" name="item_type" value="{{ form.Meta.model.get_simple_type }}">
@@ -30,3 +32,4 @@
     </table>
   </form>
 </div>
+{% endlocaltime %}

@@ -254,7 +254,7 @@ function updateItemCallback(itemId, itemType)
 
   itemListEntry.html(`<span class="material-symbols-outlined">{0}</span><span>&nbsp;{1}</span>`.format(getItemIconName(itemType), item["item_data"]["name"]));
 
-  if (g_SelectedItem != undefined) 
+  if (g_SelectedItem != undefined && itemId == g_SelectedItem) 
   {
     setEditFormInputs(g_SelectedItem);
   }
@@ -1437,6 +1437,10 @@ function setEditFormInputs(itemId, ignoreFocus = false)
         break;
       case "file":
         break;
+      case "datetime-local":
+        let timeStr = UTC_ToLocal(itemData[key]);
+        input.prop("value", timeStr);
+        break;
       default:
         input.prop('value', itemData[key]);
         break;
@@ -1507,6 +1511,16 @@ function inputToValue(inputObj)
         else
         {
           return undefined;
+        }
+      case "datetime":
+        console.log(inputVal);
+        if (inputVal == "")
+        {
+          return undefined;
+        }
+        else
+        {
+          return LocalToUTC(inputVal);
         }
       case "text":
       default:

@@ -462,6 +462,31 @@ class StopwatchItem(AbstractTextItem):
   def is_displayed():
     return True
   
+class CountdownItem(AbstractTextItem):
+  name = models.CharField(max_length = 256, default = "My Countdown")
+  
+  timer_format = models.TextField(default = "{0}")
+  timer_end = models.DateTimeField(default = timezone.now, blank = True, null = True)
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d["timer_format"] = self.timer_format
+    d["timer_end"] = self.timer_end.strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    return d
+  
+  @staticmethod
+  def get_pretty_type():
+    return "Countdown"
+  
+  @staticmethod
+  def get_simple_type():
+    return "countdown"
+  
+  @staticmethod
+  def is_displayed():
+    return True
+  
 class CounterItem(AbstractTextItem):
   name = models.CharField(max_length = 256, default = "My Counter")
   
@@ -569,6 +594,7 @@ ITEM_TYPES = [
   TwitchVideoEmbedItem,
   TextItem,
   StopwatchItem,
+  CountdownItem,
   CounterItem,
   TwitchChatItem,
   TwitchPollItem,

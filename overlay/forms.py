@@ -9,6 +9,12 @@ logger = logging.getLogger("overlay")
 
 class RangeInput(forms.NumberInput):
   input_type = 'range'
+  
+class DateTimeLocalInput(forms.TextInput):
+  input_type = "datetime-local"
+
+class ColorInput(forms.TextInput):
+  input_type = "color"
 
 class CollaborativeOverlayForm(forms.ModelForm):
   class Meta:
@@ -194,7 +200,7 @@ BASE_WIDGETS = {
   'rotation': forms.NumberInput(attrs={ "field-type": "float", "title": "Item rotation (degrees)" }),
   'mirrored': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': 'Mirror item' }),
   'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': 'Enable background' }),
-  'background_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Background color" }),
+  'background_color': ColorInput(attrs = { "field-type": "text", 'title': "Background color" }),
   'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0", 'title': "Item opacity" }),
   'visibility': forms.Select(attrs={ "field-type": "integer", "title": "Item visibility" }),
   'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean", "title": "Completely hide from editors and overlay." }),
@@ -236,15 +242,15 @@ BASE_TEXT_WIDGETS = {
   'font': forms.Select(attrs = { "field-type": "text", 'title': "Font" }),
   'font_size': forms.NumberInput(attrs = { "field-type": "integer", 'title': "Font size" }),
   'font_weight': forms.Select(attrs = { "field-type": "text", 'title': "Font weight" }),
-  'color': forms.TextInput(attrs = { "field-type": "text", "title": "Text color" }),
+  'color': ColorInput(attrs = { "field-type": "text", "title": "Text color" }),
   'drop_shadow_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': "Enable drop shadow" }),
   'drop_shadow_offset_x': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, 'title': "Drop shadow X offset" }),
   'drop_shadow_offset_y': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, "title": "Drop shadow Y offset" }),
   'drop_shadow_blur_radius': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, 'title': 'Drop shadow blur radius' }),
-  'drop_shadow_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Drop shadow color" }),
+  'drop_shadow_color': ColorInput(attrs = { "field-type": "text", 'title': "Drop shadow color" }),
   'text_outline_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': "Enable text outline" }),
   'text_outline_width': forms.NumberInput(attrs = { "field-type": "float", 'title': "Text outline width" }),
-  'text_outline_color': forms.TextInput(attrs = { "field-type": "text", 'title': "Text outline color" }),
+  'text_outline_color': ColorInput(attrs = { "field-type": "text", 'title': "Text outline color" }),
   'text_alignment': forms.Select(attrs = { "field-type": "text", 'title': "Text alignment" })
 }
 
@@ -315,6 +321,11 @@ STOPWATCH_WIDGETS = {
   'paused': forms.HiddenInput(attrs={ "field-type": "boolean", "title": "Paused" }),
 }
 
+COUNTDOWN_WIDGETS = {
+  'timer_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'title': "Must include {0} as this gets replaced with the timer." }),
+  'timer_end': DateTimeLocalInput(attrs={ "field-type": "datetime", 'title': "When the countdown will reach 0", "step": 1 }),
+}
+
 COUNTER_WIDGETS = {
   'counter_format': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, 'title': "Must include {0} as this gets replaced with the timer." }),
   'count': forms.NumberInput(attrs={ "field-type": "integer", "title": "Count" }),
@@ -322,7 +333,7 @@ COUNTER_WIDGETS = {
 
 TWITCH_EVENT_WIDGETS = {
   'title_color': forms.TextInput(attrs = { "field-type": "text", "title": "Title color" }),
-  'bar_color': forms.TextInput(attrs = { "field-type": "text", "title": "Bar fill color" }),
+  'bar_color': ColorInput(attrs = { "field-type": "text", "title": "Bar fill color" }),
 }
 
 TWITCH_EVENT_WIDGET_ORDER = [
@@ -541,6 +552,22 @@ class EditStopwatchItem(AbstractEditText):
     widgets.update(BASE_TEXT_WIDGETS)
     widgets.update(STOPWATCH_WIDGETS)
     
+class EditCountdownItem(AbstractEditText):
+  timer_end = forms.DateTimeField(input_formats = ["%Y-%m-%dT%H:%M:%SZ"], widget = DateTimeLocalInput(attrs={ "field-type": "datetime", 'title': "When the countdown will reach 0", "step": 1 }))
+  
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
+  class Meta:
+    model = CountdownItem
+    exclude = EditItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(COUNTDOWN_WIDGETS)
+    
 class EditCounterItem(AbstractEditText):
   field_order = []
   field_order.extend(BASE_WIDGET_ORDER)
@@ -741,6 +768,25 @@ class AddStopwatchItem(AbstractAddText):
     widgets.update(BASE_TEXT_WIDGETS)
     widgets.update(STOPWATCH_WIDGETS)
     
+def initial_countdown_end():
+  return timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+class AddCountdownItem(AbstractAddText):
+  timer_end = forms.DateTimeField(initial = initial_countdown_end, input_formats = ["%Y-%m-%dT%H:%M:%SZ"], required = False, widget = DateTimeLocalInput(attrs={ "field-type": "datetime", 'title': "When the countdown will reach 0", "step": 1 }))
+  
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(BASE_TEXT_WIDGET_ORDER)
+  
+  class Meta:
+    model = CountdownItem
+    exclude = AddItemForm.Meta.exclude
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(BASE_TEXT_WIDGETS)
+    widgets.update(COUNTDOWN_WIDGETS)
+    
 class AddCounterItem(AbstractAddText):
   field_order = []
   field_order.extend(BASE_WIDGET_ORDER)
@@ -812,6 +858,7 @@ FORMS_MAP = {
     "TwitchVideoEmbedItem": EditTwitchVideoEmbedItem,
     "TextItem": EditTextItem,
     "StopwatchItem": EditStopwatchItem,
+    "CountdownItem": EditCountdownItem,
     "CounterItem": EditCounterItem,
     "TwitchChatItem": EditTwitchChatItem,
     "TwitchPollItem": EditTwitchPollItem,
@@ -827,6 +874,7 @@ FORMS_MAP = {
     "TwitchVideoEmbedItem": AddTwitchVideoEmbedItem,
     "TextItem": AddTextItem,
     "StopwatchItem": AddStopwatchItem,
+    "CountdownItem": AddCountdownItem,
     "CounterItem": AddCounterItem,
     "TwitchChatItem": AddTwitchChatItem,
     "TwitchPollItem": AddTwitchPollItem,

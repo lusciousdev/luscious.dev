@@ -1,8 +1,11 @@
 {% extends "overlay/overlay_base.html" %}
 
 {% load static %}
+{% load tz %}
 {% load socialaccount %}
 {% load util %}
+
+{% localtime on %}
 
 {% block stylesheets %}
 <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
@@ -141,3 +144,5 @@
   </body>
 </html>
 {% endblock %}
+
+{% endlocaltime %}

@@ -745,8 +745,14 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       case "stopwatch":
         $(itemInnerContainerId).append(TextTemplate.format(itemId));
         
-        let itemText = getStopwatchText(itemData);
-        setTextItemContent(overlayElement, itemId, itemText, itemType, itemData);
+        var stopwatchText = getStopwatchText(itemData);
+        setTextItemContent(overlayElement, itemId, stopwatchText, itemType, itemData);
+        break;
+      case "countdown":
+        $(itemInnerContainerId).append(TextTemplate.format(itemId));
+        
+        var countdownText = getCountdownText(itemData);
+        setTextItemContent(overlayElement, itemId, countdownText, itemType, itemData);
         break;
       case "counter":
         $(itemInnerContainerId).append(TextTemplate.format(itemId));
@@ -904,7 +910,11 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         setTextItemContent(overlayElement, itemId, itemData['text'], itemType, itemData);
         break;
       case "stopwatch":
-        let itemText = getStopwatchText(itemData);
+        var itemText = getStopwatchText(itemData);
+        setTextItemContent(overlayElement, itemId, itemText, itemType, itemData);
+        break
+      case "countdown":
+        var itemText = getCountdownText(itemData);
         setTextItemContent(overlayElement, itemId, itemText, itemType, itemData);
         break
       case "counter":
@@ -1701,6 +1711,54 @@ function getStopwatchText(idata)
   return idata["timer_format"].format(secondsToTimeFormat(elapsedTime));
 }
 
+function getCountdownText(idata)
+{
+  var endDt = new Date(idata["timer_end"]);
+  var nowDt = new Date();
+
+  var secondsLeft = 0;
+  if (nowDt < endDt)
+  {
+    secondsLeft = Math.round((endDt.getTime() - nowDt.getTime()) / 1000);
+  }
+
+  return idata["timer_format"].format(secondsToTimeFormat(secondsLeft));
+}
+
+function LocalToUTC(localStr)
+{
+  let iDT = new Date(localStr);
+  let year = iDT.getUTCFullYear();
+  let month = iDT.getUTCMonth() + 1;
+  let date = iDT.getUTCDate();
+  let hours = iDT.getUTCHours();
+  let minutes = iDT.getUTCMinutes();
+  let seconds = iDT.getUTCSeconds();
+  return "{0}-{1}-{2}T{3}:{4}:{5}Z".format(String(year), 
+                                           String(month).padStart(2, "0"), 
+                                           String(date).padStart(2, "0"), 
+                                           String(hours).padStart(2, "0"), 
+                                           String(minutes).padStart(2, "0"), 
+                                           String(seconds).padStart(2, "0"));
+}
+
+function UTC_ToLocal(utcStr)
+{
+  let idt = new Date(utcStr);
+  let year = idt.getFullYear();
+  let month = idt.getMonth() + 1;
+  let date = idt.getDate();
+  let hours = idt.getHours();
+  let minutes = idt.getMinutes();
+  let seconds = idt.getSeconds();
+  return "{0}-{1}-{2}T{3}:{4}:{5}".format(String(year), 
+                                          String(month).padStart(2, "0"), 
+                                          String(date).padStart(2, "0"), 
+                                          String(hours).padStart(2, "0"), 
+                                          String(minutes).padStart(2, "0"), 
+                                          String(seconds).padStart(2, "0"));
+}
+
 function updateTimerItems()
 {
   let overlayElem = $("#overlay");
@@ -1709,8 +1767,12 @@ function updateTimerItems()
     switch (itemObj["item_type"])
     {
       case "stopwatch":
-        let itemText = getStopwatchText(itemObj["item_data"]);
-        setTextItemContent(overlayElem, itemId, itemText, itemObj["item_type"], itemObj["item_data"]);
+        let stopwatchText = getStopwatchText(itemObj["item_data"]);
+        setTextItemContent(overlayElem, itemId, stopwatchText, itemObj["item_type"], itemObj["item_data"]);
+        break;
+      case "countdown":
+        let countdownText = getCountdownText(itemObj["item_data"]);
+        setTextItemContent(overlayElem, itemId, countdownText, itemObj["item_type"], itemObj["item_data"]);
         break;
       default:
         break;
