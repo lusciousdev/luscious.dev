@@ -30,7 +30,7 @@ var g_TwitchChatHistory = [];
 var g_EmoteMap = {};
 
 var g_ItemTimerUpdateInterval = undefined;
-const c_ItemTimerUpdateIntervalTimeout = 250;
+const c_ItemTimerUpdateIntervalTimeout = 100;
 const c_EventTimerUpdateIntervalTimeout = 250;
 
 var g_PollActive = false;
@@ -1361,6 +1361,11 @@ function handleTwitchPredictionLock(predData)
   g_PredictionActive = true;
   changePredictionVisibility();
 
+  setTimeout(() => { 
+    g_PredictionActive = false;
+    changePredictionVisibility();
+  }, 15000);
+
   $(".twitch-pred-title").html("Prediction: {0}".format(predData.title));
 
   $(".twitch-pred-outcome-container").empty();
@@ -1404,9 +1409,11 @@ function handleTwitchPredictionLock(predData)
 
 function handleTwitchPredictionEnd(predData)
 {
+  g_PredictionActive = true;
+  changePredictionVisibility();
   setTimeout(() => { 
     g_PredictionActive = false;
-    changePredictionVisibility()
+    changePredictionVisibility();
   }, 25000);
 
   $(".twitch-pred-title").html("Prediction: {0}".format(predData.title));
@@ -1801,6 +1808,9 @@ function getItemIconName(itemType)
       break;
     case "stopwatch":
       itemIcon = 'timer';
+      break;
+    case "countdown":
+      itemIcon = "alarm"
       break;
     case "counter":
       itemIcon = '123';

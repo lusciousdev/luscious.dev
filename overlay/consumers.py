@@ -162,6 +162,8 @@ class OverlayConsumer(TwitchConsumer):
       self.edit_overlay_item(data)
     elif command == "delete_overlay_item":
       self.delete_overlay_item(data)
+    elif command == "duplicate_overlay_item":
+      self.duplicate_overlay_item(data)
     elif command == "trigger_item_event":
       self.trigger_item_event(data)
     elif command == "record_canvas_event":
@@ -255,7 +257,7 @@ class OverlayConsumer(TwitchConsumer):
       "loopback": True,
       "data": {
         "uid": None if self.overlay_user is None else self.overlay_user.identifier,
-        "item_type": item_instance.item_type,
+        "item_type": item_instance.get_simple_type(),
         "is_displayed": item_instance.is_displayed(),
         "item_data": item_instance.to_data_dict(),
         "edited_data": item_data,
@@ -299,6 +301,52 @@ class OverlayConsumer(TwitchConsumer):
       "data": {
         "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_id": item_id, 
+      } 
+    })
+    
+  def duplicate_overlay_item(self, data : dict):
+    if not self.owner_or_editor():
+      self.queue_command("error", "Invalid user.")
+      return
+    
+    item_type = data.get("item_type", "")
+    item_id = data.get("item_id", "")
+    
+    if item_type == "" or item_id == "":
+      self.queue_command("error", "Improperly formatted request.")
+      return
+    
+    item_model = None
+    for t in ITEM_TYPES:
+      type_name = t.get_simple_type()
+      
+      if item_type.lower() == type_name.lower():
+        item_model = t
+        break
+    
+    if item_model is None:
+      self.queue_command("error", "Unrecognized item type.")
+      return
+    
+    try:
+      item_instance = item_model.objects.get(id = item_id)
+    except item_model.DoesNotExist:
+      self.queue_command("error", "That item does not exist.")
+      return
+    
+    item_instance.id = None
+    item_instance._state.adding = True
+    item_instance.save()
+    
+    self.queue_broadcast({ 
+      "command": "overlay_item_added",
+      "loopback": True,
+      "data": {
+        "uid": None if self.overlay_user is None else self.overlay_user.identifier,
+        "item_type": item_instance.get_simple_type(),
+        "is_displayed": item_instance.is_displayed(),
+        "item_data": item_instance.to_data_dict(),
+        "edited_data": item_instance.to_data_dict(),
       } 
     })
     

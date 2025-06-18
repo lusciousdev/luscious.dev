@@ -505,7 +505,7 @@ function repopulateChatHistory(messageArray)
     var timeStr = "{0}:{1}:{2}".format(String(msgDT.getHours()).padStart(2, "0"), String(msgDT.getMinutes()).padStart(2, "0"), String(msgDT.getSeconds()).padStart(2, "0"));
     if ((msgY < nowY) || (msgY == nowY && msgM < nowM) || (msgY == nowY && msgM == nowM && msgD < nowD))
     {
-      var timeStr = "{0}.{1}.{2}".format(String(msgDT.getFullYear()), String(msgDT.getMonth()).padStart(2, "0"), String(msgDT.getDate()).padStart(2, "0"));
+      var timeStr = "{0}.{1}.{2}".format(String(msgY), String(msgM + 1).padStart(2, "0"), String(msgD).padStart(2, "0"));
     }
 
     historyElem.append("<div class=\"chat-message old-chat-message\">[{0}] <b>{1}</b>: {2}</div>".format(timeStr, msg["username"], msg["message"]));
@@ -1665,6 +1665,21 @@ function onDeleteItem(e)
   }
 }
 
+function onDuplicateItem(e)
+{
+  if (g_SelectedItem === undefined)
+  {
+    return;
+  }
+
+  if (confirm("Duplicate {0}?".format(g_ItemDict[g_SelectedItem]['item_data']['name'])))
+  {
+    var itemType = g_ItemDict[g_SelectedItem]['item_type'];
+  
+    g_WebsocketEventQueue.push({ "command": "duplicate_overlay_item", "data": { "item_type": itemType, "item_id": g_SelectedItem } });
+  }
+}
+
 function onResetItem(e)
 {
   if (g_SelectedItem === undefined)
@@ -2060,6 +2075,10 @@ $(window).on('load', function() {
 
   $(".delete-item").click((e) => {
     onDeleteItem(e);
+  });
+
+  $(".duplicate-item").click((e) => {
+    onDuplicateItem(e);
   });
 
   $(".reset-item").click((e) => {
