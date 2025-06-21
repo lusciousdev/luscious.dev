@@ -419,7 +419,7 @@ class EditImageItem(EditItemForm):
 class EditCanvasItem(EditItemForm):
   drawing_mode = forms.ChoiceField(choices = CANVAS_ACTION_TYPES, widget = forms.Select(attrs={ "field-type": "text", "title": "Drawing mode", "prevent_send": 1 }))
   
-  color = forms.CharField(initial = "#000000", max_length = 512, widget = forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", "title": "Color", "prevent_send": 1 }))
+  color = forms.CharField(initial = "#000000FF", max_length = 512, widget = forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", "title": "Color", "prevent_send": 1 }))
   line_width = forms.DecimalField(label = "Line width", decimal_places = 1, step_size = 0.1, initial = 5.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Line width", "prevent_send": 1 }))
   
   field_order = []

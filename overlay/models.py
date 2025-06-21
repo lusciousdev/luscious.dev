@@ -91,7 +91,7 @@ class AbstractItem(NonConsecutiveModel):
   rotation = models.FloatField(default = 0)
   mirrored = models.BooleanField(default = False)
   background_enabled = models.BooleanField(default = False)
-  background_color = models.CharField(max_length = 255, default = "#000000")
+  background_color = models.CharField(max_length = 255, default = "#000000FF")
   opacity = models.FloatField(default = 100.0)
   visibility = models.IntegerField(default = 1)
   minimized = models.BooleanField(default = False)
@@ -380,15 +380,15 @@ class AbstractTextItem(AbstractItem):
   font = models.CharField(max_length=255, default="Roboto Mono")
   font_size = models.IntegerField(default = 32)
   font_weight = models.CharField(max_length=128, default = "normal")
-  color = models.CharField(max_length = 255, default = "#FFFFFF")
+  color = models.CharField(max_length = 255, default = "#FFFFFFFF")
   drop_shadow_enabled = models.BooleanField(default = False)
   drop_shadow_offset_x = models.FloatField(default = 0.0)
   drop_shadow_offset_y = models.FloatField(default = 0.0)
   drop_shadow_blur_radius = models.FloatField(default = 0.0)
-  drop_shadow_color = models.CharField(max_length = 255, default = "#000000")
+  drop_shadow_color = models.CharField(max_length = 255, default = "#000000FF")
   text_outline_enabled = models.BooleanField(default = False)
   text_outline_width = models.FloatField(default = 0.0)
-  text_outline_color = models.CharField(max_length = 255, default = "#000000")
+  text_outline_color = models.CharField(max_length = 255, default = "#000000FF")
   text_alignment = models.CharField(max_length = 128, default = "left")
   
   class Meta:
@@ -529,8 +529,8 @@ class TwitchChatItem(AbstractTextItem):
 class TwitchPollItem(AbstractTextItem):
   name = models.CharField(max_length = 256, default = "My Twitch Poll")
   
-  title_color = models.CharField(max_length = 255, default = "#FFFFFF")
-  bar_color = models.CharField(max_length = 255, default = "#EB5E28")
+  title_color = models.CharField(max_length = 255, default = "#FFFFFFFF")
+  bar_color = models.CharField(max_length = 255, default = "#EB5E28FF")
   
   def to_data_dict(self):
     d = super().to_data_dict()
@@ -553,8 +553,8 @@ class TwitchPollItem(AbstractTextItem):
 class TwitchPredictionItem(AbstractTextItem):
   name = models.CharField(max_length = 256, default = "My Twitch Prediction")
   
-  title_color = models.CharField(max_length = 255, default = "#FFFFFF")
-  bar_color = models.CharField(max_length = 255, default = "#EB5E28")
+  title_color = models.CharField(max_length = 255, default = "#FFFFFFFF")
+  bar_color = models.CharField(max_length = 255, default = "#EB5E28FF")
   
   def to_data_dict(self):
     d = super().to_data_dict()
