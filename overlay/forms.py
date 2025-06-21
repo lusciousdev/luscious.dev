@@ -190,6 +190,8 @@ CANVAS_ACTION_TYPES = (
   ("erase", "Eraser"),
 )
 
+jsColorData = "{ format: 'any', backgroundColor: 'light-dark(var(--light-background), var(--dark-background))' }"
+
 BASE_WIDGETS = {
   'name': forms.TextInput(attrs={ "field-type": "text", "title": "Item name" }),
   'x': forms.NumberInput(attrs={ "field-type": "integer", "title": "X offset" }),
@@ -200,7 +202,7 @@ BASE_WIDGETS = {
   'rotation': forms.NumberInput(attrs={ "field-type": "float", "title": "Item rotation (degrees)" }),
   'mirrored': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': 'Mirror item' }),
   'background_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': 'Enable background' }),
-  'background_color': ColorInput(attrs = { "field-type": "text", 'title': "Background color" }),
+  'background_color': forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", 'title': "Background color" }),
   'opacity': RangeInput(attrs = { "field-type": "float", "min": "0.0", "max": "100.0", 'title': "Item opacity" }),
   'visibility': forms.Select(attrs={ "field-type": "integer", "title": "Item visibility" }),
   'minimized': forms.CheckboxInput(attrs={ "field-type": "boolean", "title": "Completely hide from editors and overlay." }),
@@ -242,15 +244,15 @@ BASE_TEXT_WIDGETS = {
   'font': forms.Select(attrs = { "field-type": "text", 'title': "Font" }),
   'font_size': forms.NumberInput(attrs = { "field-type": "integer", 'title': "Font size" }),
   'font_weight': forms.Select(attrs = { "field-type": "text", 'title': "Font weight" }),
-  'color': ColorInput(attrs = { "field-type": "text", "title": "Text color" }),
+  'color': forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", "title": "Text color" }),
   'drop_shadow_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': "Enable drop shadow" }),
   'drop_shadow_offset_x': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, 'title': "Drop shadow X offset" }),
   'drop_shadow_offset_y': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, "title": "Drop shadow Y offset" }),
   'drop_shadow_blur_radius': forms.NumberInput(attrs = { "field-type": "float", "tabindex": 1, 'title': 'Drop shadow blur radius' }),
-  'drop_shadow_color': ColorInput(attrs = { "field-type": "text", 'title': "Drop shadow color" }),
+  'drop_shadow_color': forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", 'title': "Drop shadow color" }),
   'text_outline_enabled': forms.CheckboxInput(attrs = { "field-type": "boolean", 'title': "Enable text outline" }),
   'text_outline_width': forms.NumberInput(attrs = { "field-type": "float", 'title': "Text outline width" }),
-  'text_outline_color': ColorInput(attrs = { "field-type": "text", 'title': "Text outline color" }),
+  'text_outline_color': forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", 'title': "Text outline color" }),
   'text_alignment': forms.Select(attrs = { "field-type": "text", 'title': "Text alignment" })
 }
 
@@ -333,7 +335,7 @@ COUNTER_WIDGETS = {
 
 TWITCH_EVENT_WIDGETS = {
   'title_color': forms.TextInput(attrs = { "field-type": "text", "title": "Title color" }),
-  'bar_color': ColorInput(attrs = { "field-type": "text", "title": "Bar fill color" }),
+  'bar_color': forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", "title": "Bar fill color" }),
 }
 
 TWITCH_EVENT_WIDGET_ORDER = [
@@ -417,7 +419,7 @@ class EditImageItem(EditItemForm):
 class EditCanvasItem(EditItemForm):
   drawing_mode = forms.ChoiceField(choices = CANVAS_ACTION_TYPES, widget = forms.Select(attrs={ "field-type": "text", "title": "Drawing mode", "prevent_send": 1 }))
   
-  color = forms.CharField(initial = "#000000", max_length = 512, widget = forms.TextInput(attrs = { "field-type": "text", "title": "Color", "prevent_send": 1 }))
+  color = forms.CharField(initial = "#000000", max_length = 512, widget = forms.TextInput(attrs = { "data-jscolor": jsColorData, "field-type": "text", "title": "Color", "prevent_send": 1 }))
   line_width = forms.DecimalField(label = "Line width", decimal_places = 1, step_size = 0.1, initial = 5.0, widget = forms.NumberInput(attrs = { "field-type": "float", "title": "Line width", "prevent_send": 1 }))
   
   field_order = []

@@ -15,6 +15,14 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'jscolor.min.js' %}"></script>
+<script>
+jscolor.presets.default = {
+  palette: [
+    "#000000FF", "#808080FF", "#FFFFFFFF", "#FF0000FF", "#00FF00FF", "#0000FFFF", "#EB5E28FF", "#9146FFFF"
+  ]
+}
+</script>
 <script src="{% static 'overlay/edit.js' %}"
         defer
         data-additemsurl="{% url 'overlay:api_add_overlay_item' %}"

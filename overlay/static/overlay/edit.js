@@ -1441,6 +1441,12 @@ function setEditFormInputs(itemId, ignoreFocus = false)
         let timeStr = UTC_ToLocal(itemData[key]);
         input.prop("value", timeStr);
         break;
+      case "text":
+        if (input.attr("data-jscolor") !== undefined)
+        {
+          input[0].jscolor.fromString(itemData[key]);
+        }
+        break;
       default:
         input.prop('value', itemData[key]);
         break;
