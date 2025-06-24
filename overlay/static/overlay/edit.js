@@ -1446,6 +1446,10 @@ function setEditFormInputs(itemId, ignoreFocus = false)
         {
           input[0].jscolor.fromString(itemData[key]);
         }
+        else
+        {
+          input.prop('value', itemData[key]);
+        }
         break;
       default:
         input.prop('value', itemData[key]);
