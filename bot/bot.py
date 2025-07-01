@@ -50,6 +50,10 @@ def chatter_to_dict(chatter : twitchio.Chatter) -> dict[str, str]:
     "login": chatter.name,
     "display_name": chatter.display_name,
     "color": "#737373" if chatter.color is None else chatter.color.html,
+    "subscriber": chatter.subscriber,
+    "vip": chatter.subscriber,
+    "moderator": chatter.moderator,
+    "broadcaster": chatter.broadcaster,
   }
   
 def emote_to_dict(emote : twitchio.ChatMessageEmote) -> dict[str, str]:
@@ -205,6 +209,7 @@ class LusciousBot(twitchio_commands.Bot):
     }
     
     celery_app.send_task("bot.tasks.handle_chat_message", kwargs = msg_data)
+    celery_app.send_task("overlay.tasks.handle_chat_message", kwargs = msg_data)
     await self.send_user_group_message(payload.broadcaster.id, "chat_message", msg_data)
     
   async def event_poll_begin(self, payload : twitchio.ChannelPollBegin) -> None:

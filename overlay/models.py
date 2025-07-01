@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 
 import logging
 
+from bot.enums import TwitchUserLevels
 from lusciousdev.util.modelutil import *
 
 logger = logging.getLogger("overlay")
@@ -600,3 +601,44 @@ ITEM_TYPES = [
   TwitchPollItem,
   TwitchPredictionItem,
 ]
+
+def default_action_data():
+  return { "actions": [] }
+
+class AbstractTrigger(NonConsecutiveModel):
+  overlay = models.ForeignKey(CollaborativeOverlay, null = True, on_delete = models.CASCADE)
+  
+  name = models.CharField(max_length = 256, default = "My Action")
+  cooldown = models.IntegerField(default = 60)
+  last_trigger = models.DateTimeField(default = datetime.datetime(year = 1971, month = 1, day = 1, hour = 0, minute = 0, second = 1, tzinfo = datetime.timezone.utc))
+  
+  action_data = models.JSONField(default = default_action_data)
+  
+  class Meta:
+    abstract = True
+  
+  @staticmethod
+  def get_description():
+    return "Abstract trigger"
+  
+  @staticmethod
+  def get_simple_type():
+    return "abstract_trigger"
+  
+class ChatTrigger(AbstractTrigger):
+  trigger_phrase = models.CharField(max_length = 500)
+  
+  required_user_level = models.IntegerField(choices = TwitchUserLevels, default = 0)
+  occurances = models.IntegerField(default = 1)
+  occurance_window = models.IntegerField(default = 15)
+  
+  last_occurance = models.DateTimeField(default = datetime.datetime(year = 1971, month = 1, day = 1, hour = 0, minute = 0, second = 1, tzinfo = datetime.timezone.utc))
+  occurance_count = models.IntegerField(default = 0)
+  
+  @staticmethod
+  def get_description():
+    return "Trigger on chat messages"
+  
+  @staticmethod
+  def get_simple_type():
+    return "chat_trigger"
