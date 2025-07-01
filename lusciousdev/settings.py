@@ -205,6 +205,18 @@ DATABASES = {
     }
 }
 
+# Cache
+REDIS_CACHE_DB = os.getenv("REDIS_CACHE_DATABASE", 0)
+CACHES = {
+  "default": {
+    "BACKEND": "django_redis.cache.RedisCache",
+    "LOCATION": f"{REDIS_BASE_URL}/{REDIS_CACHE_DB}",
+    "OPTIONS": {
+        "CLIENT_CLASS": "django_redis.client.DefaultClient",
+    }
+  }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

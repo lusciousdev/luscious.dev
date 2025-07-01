@@ -1,15 +1,6 @@
-from celery import Celery, shared_task
-from celery.schedules import crontab
-import requests
-import json
-import typing
-import datetime
-import asyncio
-from asgiref.sync import async_to_sync, sync_to_async
-import logging
-import twitchio
+from celery import shared_task
 from django.db import models
-from django.contrib.auth.models import User
+from django.core.cache import cache
 from allauth.socialaccount.models import SocialAccount
 
 from django.conf import settings
@@ -67,31 +58,32 @@ def handle_chat_message(uuid : str, broadcaster : dict, chatter : dict, message 
   elif chatter.get("subscriber", False):
     user_level = TwitchUserLevels.SUBSCRIBER
   
-  overlay : CollaborativeOverlay
-  for overlay in broadcaster_user.collaborativeoverlay_set.all():
-    chat_trigger : ChatTrigger
-    for chat_trigger in overlay.chattrigger_set.all():
-      if user_level < chat_trigger.required_user_level:
-        continue
-      
-      if chat_trigger.trigger_phrase == message:
-        time_since_last_trigger = timezone.now() - chat_trigger.last_trigger
-        if time_since_last_trigger.total_seconds() < chat_trigger.cooldown:
+  with cache.lock(key = "overlay_chat_message", timeout = 2, blocking = True, blocking_timeout = 10):
+    overlay : CollaborativeOverlay
+    for overlay in broadcaster_user.collaborativeoverlay_set.all():
+      chat_trigger : ChatTrigger
+      for chat_trigger in overlay.chattrigger_set.all():
+        if user_level < chat_trigger.required_user_level:
           continue
         
-        time_since_last_occurance = timezone.now() - chat_trigger.last_occurance
-        chat_trigger.last_occurance = timezone.now()
-        
-        if time_since_last_occurance.total_seconds() > chat_trigger.occurance_window:
-          chat_trigger.occurance_count = 1
-        else:
-          chat_trigger.occurance_count += 1
+        if chat_trigger.trigger_phrase == message:
+          time_since_last_trigger = timezone.now() - chat_trigger.last_trigger
+          if time_since_last_trigger.total_seconds() < chat_trigger.cooldown:
+            continue
           
-        if chat_trigger.occurance_count >= chat_trigger.occurances:
-          trigger_actions(uuid, broadcaster, chatter, message, emotes, chat_trigger.action_data)
+          time_since_last_occurance = timezone.now() - chat_trigger.last_occurance
+          chat_trigger.last_occurance = timezone.now()
           
-          chat_trigger.occurance_count = 0
-          chat_trigger.last_trigger = timezone.now()
-          
-        chat_trigger.save()
+          if time_since_last_occurance.total_seconds() > chat_trigger.occurance_window:
+            chat_trigger.occurance_count = 1
+          else:
+            chat_trigger.occurance_count += 1
+            
+          if chat_trigger.occurance_count >= chat_trigger.occurances:
+            trigger_actions(uuid, broadcaster, chatter, message, emotes, chat_trigger.action_data)
+            
+            chat_trigger.occurance_count = 0
+            chat_trigger.last_trigger = timezone.now()
+            
+          chat_trigger.save()
   

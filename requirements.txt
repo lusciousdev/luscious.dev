@@ -6,6 +6,7 @@ channels[daphne]
 django
 django-allauth
 django-cleanup
+django-redis
 websocket
 channels_redis
 google_api_python_client
