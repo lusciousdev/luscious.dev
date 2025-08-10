@@ -550,8 +550,7 @@ class OverlayConsumer(TwitchConsumer):
       return
     
     if item_model.get_simple_type() == "horse_game" and data["event"] == "reset_item":
-      print("incrementing seed")
-      item_instance.seed += 1
+      item_instance.seed = (item_instance.seed + 1) & 0x7FFF_FFFF
       item_instance.save()
       
       self.queue_broadcast({
