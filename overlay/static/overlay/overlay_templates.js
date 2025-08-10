@@ -1,4 +1,5 @@
 const PlayerTemplate = `<div id="item-{0}-player" class="overlay-item-child noselect nopointer" />`;
+const GameTemplate = `<div id="item-{0}-game" class="overlay-item-child noselect nopointer game-container" />`;
 const TextTemplate = "<pre id='item-{0}-text' class='overlay-item-child noselect nopointer' />";
 
 const TwitchChatMessageTemplate = "<div class='twitch-chat-message'><b style='color: {0};'>{1}:</b> {2}</div>";

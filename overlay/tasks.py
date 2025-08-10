@@ -19,7 +19,7 @@ def increment_counter(item_id : str, delta = 1):
   counter_item.count += delta
   counter_item.save()
 
-def trigger_actions(uuid : str, broadcaster : dict, chatter : dict, message : str, emotes : dict, action_data : dict):
+def trigger_actions(action_data : dict):
   action : dict
   for action in action_data.get("actions", []):
     action_type : str|None = action.get("type", None)
@@ -80,10 +80,37 @@ def handle_chat_message(uuid : str, broadcaster : dict, chatter : dict, message 
             chat_trigger.occurance_count += 1
             
           if chat_trigger.occurance_count >= chat_trigger.occurances:
-            trigger_actions(uuid, broadcaster, chatter, message, emotes, chat_trigger.action_data)
+            trigger_actions(chat_trigger.action_data)
             
             chat_trigger.occurance_count = 0
             chat_trigger.last_trigger = timezone.now()
             
           chat_trigger.save()
   
+@shared_task
+def handle_stream_start(broadcaster : dict):
+  broadcaster_id = broadcaster.get("id", None)
+  
+  if broadcaster_id is None:
+    return
+
+  try:
+    broadcaster_account : SocialAccount = SocialAccount.objects.get(provider = "twitch", uid = broadcaster_id)
+    broadcaster_user = broadcaster_account.user
+  except SocialAccount.DoesNotExist:
+    return
+  
+  with cache.lock(key = "overlay_stream_start", timeout = 2, blocking = True, blocking_timeout = 10):
+    overlay : CollaborativeOverlay
+    for overlay in broadcaster_user.collaborativeoverlay_set.all():
+      stream_start_trigger : StreamStartTrigger
+      for stream_start_trigger in overlay.streamstarttrigger_set.all():
+        time_since_last_trigger = timezone.now() - stream_start_trigger.last_trigger
+        
+        if time_since_last_trigger.total_seconds() < stream_start_trigger.cooldown:
+          return
+        
+        trigger_actions(stream_start_trigger.action_data)
+        
+        stream_start_trigger.last_trigger = timezone.now()
+        stream_start_trigger.save()

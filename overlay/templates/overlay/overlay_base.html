@@ -14,6 +14,8 @@
 
 <script src="https://embed.twitch.tv/embed/v1.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://pixijs.download/release/pixi.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/planck@1.4.2/dist/planck.js"></script>
 
 <script src="{% static 'util.js' %}"></script>
 <script src="{% static 'ajaxhelpers.js' %}"></script>
@@ -27,6 +29,10 @@
         data-overlaywidth="{{ collaborativeoverlay.width }}"
         data-overlayheight="{{ collaborativeoverlay.height }}"
         data-twitchuid="{{ twitchuid }}">
+</script>
+<script src="{% static 'overlay/horse_game.js' %}"
+  defer
+  data-jsonpath="{% static 'overlay/shapes.json' %}">
 </script>
 
 {% block scripts %}{% endblock %}

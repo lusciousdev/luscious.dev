@@ -131,12 +131,20 @@ VISIBILITY_CHOICES = (
   (2, "Visible"),
 )
 
-TWITCH_EVENT_VISIBILITY_CHOICES = {
+TWITCH_EVENT_VISIBILITY_CHOICES = (
   (0, "Hidden"),
   (1, "Visible to editors"),
   (2, "Visible"),
   (3, "Visible while ongoing"),
-}
+)
+
+HORSE_GAME_RACERS = (
+  (2, "2"),
+  (3, "3"),
+  (4, "4"),
+  (5, "5"),
+  (6, "6")
+)
 
 FONT_CHOICES = (
   ("Roboto Mono", "Roboto Mono"),
@@ -312,6 +320,10 @@ TWITCH_VIDEO_WIDGETS = {
   'start_time': forms.NumberInput(attrs = { "field-type": "integer", "title": "Video start time (hit reset to seek to this time)" }),
 }
 
+HORSE_GAME_WIDGETS = {
+  "racers": forms.Select(attrs={ "field-type": "integer", "title": "Number of racers (2-6)" })
+}
+
 TEXT_WIDGETS = {
   'text': forms.Textarea(attrs={ "field-type": "text", 'rows': 3, "title": "Text" }),
 }
@@ -471,7 +483,8 @@ class EditYouTubeEmbedItem(EditItemForm):
   
   class Meta:
     model = YouTubeEmbedItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -486,7 +499,8 @@ class EditTwitchStreamEmbedItem(EditItemForm):
   
   class Meta:
     model = TwitchStreamEmbedItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -501,12 +515,30 @@ class EditTwitchVideoEmbedItem(EditItemForm):
   
   class Meta:
     model = TwitchVideoEmbedItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_VIDEO_WIDGETS)
     widgets.update(TWITCH_VIDEO_WIDGETS)
+    
+class EditHorseGameItem(EditItemForm):
+  racers = forms.ChoiceField(choices = HORSE_GAME_RACERS)
+  
+  field_order = []
+  field_order.extend(BASE_WIDGET_ORDER)
+  field_order.extend(["racers"])
+  
+  class Meta:
+    model = HorseGameItem
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
+    exclude.append("seed")
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(HORSE_GAME_WIDGETS)
     
 class AbstractEditText(EditItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
@@ -533,7 +565,8 @@ class EditTextItem(AbstractEditText):
   
   class Meta:
     model = TextItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -547,7 +580,8 @@ class EditStopwatchItem(AbstractEditText):
   
   class Meta:
     model = StopwatchItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -563,7 +597,8 @@ class EditCountdownItem(AbstractEditText):
   
   class Meta:
     model = CountdownItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -577,7 +612,8 @@ class EditCounterItem(AbstractEditText):
   
   class Meta:
     model = CounterItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -591,7 +627,8 @@ class EditTwitchChatItem(AbstractEditText):
   
   class Meta:
     model = TwitchChatItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -606,7 +643,8 @@ class EditTwitchPollItem(AbstractEditText):
   
   class Meta:
     model = TwitchPollItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -622,7 +660,8 @@ class EditTwitchPredictionItem(AbstractEditText):
   
   class Meta:
     model = TwitchPredictionItem
-    exclude = EditItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(EditItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -688,7 +727,8 @@ class AddAudioItem(AddNoDisplayItemForm):
 class AddEmbedItem(AddItemForm):
   class Meta:
     model = EmbedItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -697,7 +737,8 @@ class AddEmbedItem(AddItemForm):
 class AddYouTubeEmbedItem(AddItemForm):
   class Meta:
     model = YouTubeEmbedItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -707,7 +748,8 @@ class AddYouTubeEmbedItem(AddItemForm):
 class AddTwitchStreamEmbedItem(AddItemForm):
   class Meta:
     model = TwitchStreamEmbedItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -717,12 +759,26 @@ class AddTwitchStreamEmbedItem(AddItemForm):
 class AddTwitchVideoEmbedItem(AddItemForm):
   class Meta:
     model = TwitchVideoEmbedItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
     widgets.update(BASE_VIDEO_WIDGETS)
     widgets.update(TWITCH_VIDEO_WIDGETS)
+    
+class AddHorseGameItem(AddItemForm):
+  racers = forms.ChoiceField(choices = HORSE_GAME_RACERS)
+  
+  class Meta:
+    model = HorseGameItem
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
+    exclude.append("seed")
+    
+    widgets = {}
+    widgets.update(BASE_WIDGETS)
+    widgets.update(HORSE_GAME_WIDGETS)
     
 class AbstractAddText(AddItemForm):
   font = forms.ChoiceField(choices = FONT_CHOICES)
@@ -763,7 +819,8 @@ class AddStopwatchItem(AbstractAddText):
   
   class Meta:
     model = StopwatchItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -782,7 +839,8 @@ class AddCountdownItem(AbstractAddText):
   
   class Meta:
     model = CountdownItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -796,7 +854,8 @@ class AddCounterItem(AbstractAddText):
   
   class Meta:
     model = CounterItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -810,7 +869,8 @@ class AddTwitchChatItem(AbstractAddText):
   
   class Meta:
     model = TwitchChatItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -825,7 +885,8 @@ class AddTwitchPollItem(AbstractAddText):
   
   class Meta:
     model = TwitchPollItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -841,7 +902,8 @@ class AddTwitchPredictionItem(AbstractAddText):
   
   class Meta:
     model = TwitchPredictionItem
-    exclude = AddItemForm.Meta.exclude
+    exclude = []
+    exclude.extend(AddItemForm.Meta.exclude)
     
     widgets = {}
     widgets.update(BASE_WIDGETS)
@@ -858,6 +920,7 @@ FORMS_MAP = {
     "YouTubeEmbedItem": EditYouTubeEmbedItem,
     "TwitchStreamEmbedItem": EditTwitchStreamEmbedItem,
     "TwitchVideoEmbedItem": EditTwitchVideoEmbedItem,
+    "HorseGameItem": EditHorseGameItem,
     "TextItem": EditTextItem,
     "StopwatchItem": EditStopwatchItem,
     "CountdownItem": EditCountdownItem,
@@ -874,6 +937,7 @@ FORMS_MAP = {
     "YouTubeEmbedItem": AddYouTubeEmbedItem,
     "TwitchStreamEmbedItem": AddTwitchStreamEmbedItem,
     "TwitchVideoEmbedItem": AddTwitchVideoEmbedItem,
+    "HorseGameItem": AddHorseGameItem,
     "TextItem": AddTextItem,
     "StopwatchItem": AddStopwatchItem,
     "CountdownItem": AddCountdownItem,

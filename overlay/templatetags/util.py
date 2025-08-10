@@ -27,3 +27,7 @@ def model_edit_form_template(model_name):
 @register.filter
 def model_add_form_template(model_name):
   return f"overlay/forms/add/{ model_name }.html"
+
+@register.filter
+def button_type_to_name(button_type : str) -> str:
+  return button_type.replace("_", " ").capitalize()

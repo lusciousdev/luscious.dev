@@ -272,31 +272,31 @@ if not DEBUG:
     "disable_existing_loggers": False,
     "handlers": {
       "django_file": {
-        "level": "DEBUG",
+        "level": "WARNING",
         "class": "logging.FileHandler",
         "filename": "./logs/django.log",
         "encoding": "utf-8",
       },
       "overlay_file": {
-        "level": "DEBUG",
+        "level": "WARNING",
         "class": "logging.FileHandler",
         "filename": "./logs/overlay.log",
         "encoding": "utf-8",
       },
       "lastfm_file": {
-        "level": "DEBUG",
+        "level": "WARNING",
         "class": "logging.FileHandler",
         "filename": "./logs/lastfm.log",
         "encoding": "utf-8",
       },
       "quiz_file": {
-        "level": "DEBUG",
+        "level": "WARNING",
         "class": "logging.FileHandler",
         "filename": "./logs/quiz.log",
         "encoding": "utf-8",
       },
       "bot_file": {
-        "level": "DEBUG",
+        "level": "WARNING",
         "class": "logging.FileHandler",
         "filename": "./logs/bot.log",
         "encoding": "utf-8",
@@ -310,27 +310,27 @@ if not DEBUG:
     "loggers": {
       "django": {
         "handlers": ["django_file"],
-        "level": "DEBUG",
+        "level": "WARNING",
         "propagate": True,
       },
       "overlay": {
         "handlers": ["overlay_file"],
-        "level": "DEBUG",
+        "level": "WARNING",
         "propagate": True,
       },
       "lastfm": {
         "handlers": ["lastfm_file"],
-        "level": "DEBUG",
+        "level": "WARNING",
         "propagate": True,
       },
       "quiz": {
         "handlers": ["quiz_file"],
-        "level": "DEBUG",
+        "level": "WARNING",
         "propagate": True,
       },
       "bot": {
         "handlers": ["bot_file"],
-        "level": "DEBUG",
+        "level": "WARNING",
         "propagate": True,
       },
     },

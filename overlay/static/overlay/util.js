@@ -146,6 +146,9 @@ function handleWebsocketCommand(command, data)
       break;
     case "twitch_redemption_update":
       break
+    case "seed_changed":
+      handleSeedChange(data);
+      break;
     case "pong":
       break;
     case "redirect":
@@ -421,6 +424,9 @@ function resetItem(itemId)
     case "twitch_video":
       resetTwitchVideoEmbed(itemId);
       break;
+    case "horse_game":
+      resetHorseGame(itemId);
+      break;
     default:
       break;
   }
@@ -434,6 +440,9 @@ function playItem(itemId)
   {
     case "audio":
       playAudioItem(itemId);
+      break;
+    case "horse_game":
+      playHorseGame(itemId);
       break;
     default:
       break;
@@ -449,13 +458,12 @@ function pauseItem(itemId)
     case "audio":
       pauseAudioItem(itemId);
       break;
+    case "horse_game":
+      pauseHorseGame(itemId);
+      break;
     default:
       break;
   }
-}
-
-const escapeHtml = (unsafe) => {
-  return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 }
 
 function setItemPosition(itemId, top, left, width, height, z, rotation)
@@ -738,6 +746,17 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
 
         $(playerId).css(getDefaultCSS(itemType, itemData));
         break;
+      case "horse_game":
+        var gameContainerId = "#item-{0}-game".format(itemId);
+
+        $(itemInnerContainerId).append(GameTemplate.format(itemId));
+
+        g_ItemDict[itemId]['game'] = new HorseGame(g_ItemDict[itemId].item_data.seed, Math.max(2, Math.min(6, g_ItemDict[itemId].item_data.racers)));
+
+        g_ItemDict[itemId]['game'].setup().then(() => horseGameSetupDone(itemId));
+
+        $(gameContainerId).css(getDefaultCSS(itemType, itemData));
+        break;
       case "text":
         $(itemInnerContainerId).append(TextTemplate.format(itemId));
         setTextItemContent(overlayElement, itemId, itemData['text'], itemType, itemData);
@@ -905,6 +924,14 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         }
 
         $(playerId).css(getDefaultCSS(itemType, itemData));
+        break;
+      case "horse_game":
+        var gameContainerId = "#item-{0}-game".format(itemId);
+
+        g_ItemDict[itemId]['game'].setRacerCount(Math.max(2, Math.min(6, g_ItemDict[itemId].item_data.racers)));
+        g_ItemDict[itemId]['game'].setSeed(g_ItemDict[itemId].item_data.seed);
+
+        $(gameContainerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "text":
         setTextItemContent(overlayElement, itemId, itemData['text'], itemType, itemData);
@@ -1784,6 +1811,48 @@ function updateTimerItems()
       default:
         break;
     }
+  }
+}
+
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+///           GAMES
+///
+///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+function horseGameSetupDone(itemId)
+{
+  console.log("horse game initialized " + itemId);
+  g_ItemDict[itemId]['game'].addCanvas($("#item-{0}-game".format(itemId)));
+}
+
+function resetHorseGame(itemId)
+{
+  g_ItemDict[itemId]['game'].reset();
+}
+
+function playHorseGame(itemId)
+{
+  g_ItemDict[itemId]['game'].paused = false;
+}
+
+function pauseHorseGame(itemId)
+{
+  g_ItemDict[itemId]['game'].paused = true;
+}
+
+function handleSeedChange(data)
+{
+  var itemId = data["item_id"];
+  var itemType = data["item_type"];
+  var seed = data["seed"];
+
+  switch (itemType)
+  {
+    case "horse_game":
+      g_ItemDict[itemId]["game"].setSeed(seed);
+      break;
+    default:
+      break;
   }
 }
 

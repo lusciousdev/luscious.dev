@@ -1053,26 +1053,33 @@ function handleItemLeftClick(e, elem)
       newWidth = Math.max(viewToEditLength(25), newWidth);
       newHeight = Math.max(viewToEditLength(25), newHeight);
 
-      if (g_ItemDict[elemId].item_type == "image")
+      var itemType = g_ItemDict[elemId].item_type;
+      if (itemType == "image" || itemType == "horse_game")
       {
         if (window.shiftheld)
         {
-          var imgTag = $("#item-{0}-img".format(g_SelectedItem));
-          var imgNaturalWidth = imgTag.get(0).naturalWidth;
-          var imgNaturalHeight = imgTag.get(0).naturalHeight;
+          var naturalWidth = 1280;
+          var naturalHeight = 720;
 
-          var widthScale = newWidth / imgNaturalWidth;
-          var heightScale = newHeight / imgNaturalHeight;
+          if (itemType == "image")
+          {
+            var imgTag = $("#item-{0}-img".format(g_SelectedItem));
+            var naturalWidth = imgTag.get(0).naturalWidth;
+            var naturalHeight = imgTag.get(0).naturalHeight;
+          }
+
+          var widthScale = newWidth / naturalWidth;
+          var heightScale = newHeight / naturalHeight;
 
           var correctedWidth = newWidth;
           var correctedHeight = newHeight;
           if (heightScale >= widthScale)
           {
-            correctedWidth = imgNaturalWidth * heightScale;
+            correctedWidth = naturalWidth * heightScale;
           }
           else
           {
-            correctedHeight = imgNaturalHeight * widthScale;
+            correctedHeight = naturalHeight * widthScale;
           }
 
           newWidth = correctedWidth;
@@ -1714,6 +1721,7 @@ function onResetItem(e)
     case "twitch_stream":
     case "twitch_video":
     case "audio":
+    case "horse_game":
       g_WebsocketEventQueue.push({"command": "trigger_item_event", "data": { "item_id": g_SelectedItem, "item_type": itemType, "event": "reset_item" }});
       break;
     default:
@@ -1735,6 +1743,7 @@ function onPlayItem(e)
   switch (itemType)
   {
     case "audio":
+    case "horse_game":
       g_WebsocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": g_SelectedItem, "item_type": itemType, "event": "play_item" }});
       break;
     default:
@@ -1779,6 +1788,7 @@ function onPauseItem(e)
       g_WebsocketEventQueue.push({ "command": "edit_overlay_item", "data": { "item_id": g_SelectedItem, "item_type": itemType, "item_data": editData } });
       break;
     case "audio":
+    case "horse_game":
       g_WebsocketEventQueue.push({ "command": "trigger_item_event", "data": { "item_id": g_SelectedItem, "item_type": itemType, "event": "pause_item" } });
       break;
     default:
@@ -1827,6 +1837,25 @@ function onClearItem(e)
         "item_type": itemType,
         "event": "clear"
       });
+      break;
+    default:
+      break;
+  }
+}
+
+function onPredictItem(e)
+{
+  if (g_SelectedItem === undefined)
+  {
+    return;
+  }
+
+  var itemType = g_ItemDict[g_SelectedItem]["item_type"];
+
+  switch (itemType)
+  {
+    case "horse_game":
+      g_WebsocketEventQueue.push({ "command": "start_prediction", "data": { "title": "Who will win?", "outcomes": g_ItemDict[g_SelectedItem]["game"].activeRacers.map((v, i) => v.name) }});
       break;
     default:
       break;
@@ -2101,6 +2130,10 @@ $(window).on('load', function() {
 
   $(".play-item").click((e) => {
     onPlayItem(e);
+  });
+
+  $(".predict-item").click((e) => {
+    onPredictItem(e);
   });
 
   $(".undo-item").click((e) => { onUndoItem(e); });

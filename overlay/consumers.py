@@ -393,7 +393,6 @@ class OverlayConsumer(TwitchConsumer):
     
     return item_instance
     
-    
   def move_overlay_item(self, data : dict):
     item_instance = self.update_overlay_item(data)
     
@@ -404,7 +403,7 @@ class OverlayConsumer(TwitchConsumer):
         "item_id": item_instance.id,
         "x": item_instance.x,
         "y": item_instance.y, 
-      } 
+      }
     })
     
   def resize_overlay_item(self, data : dict):
@@ -550,8 +549,25 @@ class OverlayConsumer(TwitchConsumer):
       self.queue_command("error", "That item does not exist.")
       return
     
+    if item_model.get_simple_type() == "horse_game" and data["event"] == "reset_item":
+      print("incrementing seed")
+      item_instance.seed += 1
+      item_instance.save()
+      
+      self.queue_broadcast({
+        "command": "seed_changed",
+        "loopback": True,
+        "data": {
+          "uid": None if self.overlay_user is None else self.overlay_user.identifier,
+          "item_id": item_instance.id,
+          "item_type": item_instance.get_simple_type(),
+          "seed": item_instance.seed,
+        }
+      })
+    
     self.queue_broadcast({ 
-      "command": "item_event_triggered", 
+      "command": "item_event_triggered",
+      "loopback": True,
       "data": {
         "uid": None if self.overlay_user is None else self.overlay_user.identifier,
         "item_id": item_instance.id,

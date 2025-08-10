@@ -15,3 +15,4 @@ luscioustwitch
 markdown
 pillow
 requests
+twitchio

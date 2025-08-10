@@ -158,6 +158,11 @@
   grid-column-start: 1;
 }
 
+.game-container canvas {
+  width: 100%;
+  height: 100%;
+}
+
 @-moz-keyframes leftRightScrollAnim {
   from {
     -moz-transform: translateX(-100%);

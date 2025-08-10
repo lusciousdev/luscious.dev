@@ -232,3 +232,6 @@ def create_overlay(request):
       return HttpResponseRedirect(reverse("overlay:home"))
     
   return render(request, "overlay/createoverlay.html", { "form": form, "action": "create" })
+
+class TestHorseGameView(generic.TemplateView):
+  template_name="overlay/test_horse_game.html"

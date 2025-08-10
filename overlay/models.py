@@ -7,6 +7,7 @@ from django.utils.timezone import now
 from django.contrib.auth.models import User
 
 import logging
+import random
 
 from bot.enums import TwitchUserLevels
 from lusciousdev.util.modelutil import *
@@ -377,6 +378,33 @@ class TwitchVideoEmbedItem(AbstractItem):
   def is_displayed():
     return True
   
+def generate_seed():
+  return random.randint(0, 2**31)
+
+class HorseGameItem(AbstractItem):
+  name = models.CharField(max_length = 256, default = "My Horse Game")
+  
+  seed = models.IntegerField(default = generate_seed)
+  racers = models.IntegerField(default = 4)
+  
+  def to_data_dict(self):
+    d = super().to_data_dict()
+    d['seed']   = self.seed
+    d['racers'] = self.racers
+    return d
+  
+  @staticmethod
+  def get_pretty_type():
+    return "Horse game"
+  
+  @staticmethod
+  def get_simple_type():
+    return "horse_game"
+  
+  @staticmethod
+  def is_displayed():
+    return True
+  
 class AbstractTextItem(AbstractItem):
   font = models.CharField(max_length=255, default="Roboto Mono")
   font_size = models.IntegerField(default = 32)
@@ -593,6 +621,7 @@ ITEM_TYPES = [
   YouTubeEmbedItem,
   TwitchStreamEmbedItem,
   TwitchVideoEmbedItem,
+  HorseGameItem,
   TextItem,
   StopwatchItem,
   CountdownItem,
@@ -642,3 +671,21 @@ class ChatTrigger(AbstractTrigger):
   @staticmethod
   def get_simple_type():
     return "chat_trigger"
+  
+class StreamStartTrigger(AbstractTrigger):
+  @staticmethod
+  def get_description():
+    return "Trigger on stream start"
+  
+  @staticmethod
+  def get_simple_type():
+    return "stream_start_trigger"
+  
+class StreamEndTrigger(AbstractTrigger):
+  @staticmethod
+  def get_description():
+    return "Trigger on stream end"
+  
+  @staticmethod
+  def get_simple_type():
+    return "stream_end_trigger"

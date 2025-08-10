@@ -1,0 +1,24 @@
+{% extends "overlay/overlay_base.html" %}
+
+{% load static %}
+{% load tz %}
+{% load socialaccount %}
+{% load util %}
+
+{% block stylesheets %}
+<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+<link rel="stylesheet" href="{% static 'global.css' %}">
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'jscolor.min.js' %}"></script>
+<script>
+jscolor.presets.default = {
+  palette: [
+    "#000000FF", "#808080FF", "#FFFFFFFF", "#FF0000FF", "#00FF00FF", "#0000FFFF", "#EB5E28FF", "#9146FFFF"
+  ]
+}
+</script>
+
+<script src="{% static 'overlay/test_horse_game.js' %}"></script>
+{% endblock %}
