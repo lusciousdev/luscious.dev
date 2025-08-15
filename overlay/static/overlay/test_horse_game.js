@@ -197,7 +197,7 @@ window.addEventListener('load', function(windowLoadEvent) {
 
   (async () => {
     g_HorseGame = new HorseGame(423, 6); // Math.floor(1000 * Math.random() + 1));
-    
+
     await g_HorseGame.setup();
 
     g_HorseGame.addCanvas($("#horse-game"));
