@@ -1,5 +1,5 @@
 const scriptData = document.currentScript.dataset;
-const jsonPath = scriptData.jsonpath;
+const dataPath = scriptData.datapath;
 
 const g_PixelsPerMeter = 10.0;
 const g_MetersPerPixel = 1.0 / g_PixelsPerMeter;
@@ -36,15 +36,15 @@ function createShapesFromJson(jsonData)
 {
   var shapeArray = [];
 
-  for (var i = 0; i < jsonData.shapes.length; i++)
+  for (var i = 0; i < jsonData.fixtures.length; i++)
   {
-    if (jsonData.shapes[i].type == "polygon")
+    if (jsonData.fixtures[i].type == "polygon")
     {
-      shapeArray.push(constructPolygon(jsonData.shapes[i].points.map((pair, idx) => pair.map((v, vIdx) => v + jsonData.offset))));
+      shapeArray.push(constructPolygon(jsonData.fixtures[i].points.map((pair, idx) => pair.map((v, vIdx) => v + jsonData.offset))));
     }
-    else if (jsonData.shapes[i].type == "circle")
+    else if (jsonData.fixtures[i].type == "circle")
     {
-      shapeArray.push(constructCircle(jsonData.shapes[i].points.map((v, idx) => v - jsonData.offset)));
+      shapeArray.push(constructCircle(jsonData.fixtures[i].points.map((v, idx) => v - jsonData.offset)));
     }
   }
 
@@ -481,60 +481,92 @@ class HorseGame
 
   async preload()
   {
-    await fetch(jsonPath).then(response => {
+    await fetch(dataPath).then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     }).then(data => {
-      this.shapeData = data;
+      this.itemData = data;
     });
 
-    const assets = [
-      { alias: "red",     src: "/static/overlay/sprites/red.png", },
-      { alias: "orange",  src: "/static/overlay/sprites/orange.png", },
-      { alias: "yellow",  src: "/static/overlay/sprites/yellow.png", },
-      { alias: "green",   src: "/static/overlay/sprites/green.png", },
-      { alias: "cyan",    src: "/static/overlay/sprites/cyan.png", },
-      { alias: "blue",    src: "/static/overlay/sprites/blue.png", },
-      { alias: "purple",  src: "/static/overlay/sprites/purple.png", },
-      { alias: "pink",    src: "/static/overlay/sprites/pink.png", },
-      { alias: "rainbow", src: "/static/overlay/sprites/rainbow.png", },
-      
-      { alias: "glorp",  src: "/static/overlay/sprites/glorp.png", },
-      { alias: "garf",   src: "/static/overlay/sprites/garf.png", },
+    var assets = [];
+    var shapes = {};
+    for (const [itemType, typeData] of Object.entries(this.itemData))
+    {
+      shapes[itemType] = {};
 
-      { alias: "goal",   src: "/static/overlay/sprites/goal.png", },
+      for (const [itemKey, itemValue] of Object.entries(typeData["items"]))
+      {
+        assets.push({ alias: itemType + "/" + itemKey, src: "/static/overlay/horse/" + itemValue["sprite"] });
+      }
 
-      { alias: "map1",   src: "/static/overlay/sprites/map1.png", },
-      { alias: "map2",   src: "/static/overlay/sprites/map2.png", },
-      { alias: "map3",   src: "/static/overlay/sprites/map3.png", },
-    ]
+      for (const [itemKey, shapeData] of Object.entries(typeData["shapes"]))
+      {
+        shapes[itemType][itemKey] = createShapesFromJson(shapeData);
+      }
+    }
+
     this.assets = await PIXI.Assets.load(assets);
 
-    var horseShapes = createShapesFromJson(this.shapeData["horse"]);
-    this.racers = [
-      new Racer("red",     this, this.assets["red"],     this.world, horseShapes, 10, 15.0, 17.50, 50.0),
-      new Racer("orange",  this, this.assets["orange"],  this.world, horseShapes, 10, 15.0, 20.00, 45.0),
-      new Racer("yellow",  this, this.assets["yellow"],  this.world, horseShapes, 10, 15.0, 15.00, 60.0),
-      new Racer("green",   this, this.assets["green"],   this.world, horseShapes, 10, 15.0, 12.50, 65.0),
-      new Racer("cyan",    this, this.assets["cyan"],    this.world, horseShapes, 10, 15.0, 25.00, 40.0),
-      new Racer("blue",    this, this.assets["blue"],    this.world, horseShapes, 10, 15.0, 12.50, 65.0),
-      new Racer("purple",  this, this.assets["purple"],  this.world, horseShapes, 10, 15.0, 10.00, 75.0),
-      new Racer("pink",    this, this.assets["pink"],    this.world, horseShapes, 10, 10.0, 25.00, 60.0),
-      new Racer("rainbow", this, this.assets["rainbow"], this.world, horseShapes, 10, 25.0,  5.00, 35.0),
-    ];
+    this.racers = [];
+    this.specialRacers = {};
+    for (const [racerKey, racerData] of Object.entries(this.itemData["racers"]["items"]))
+    {
+      var shapeKey = racerData["shape"];
+      var racer = new Racer(racerKey, 
+                            this, 
+                            this.assets["racers/"+racerKey], 
+                            this.world, 
+                            shapes["racers"][shapeKey], 
+                            racerData["weight"], 
+                            racerData["baseSpeed"], 
+                            racerData["acceleration"], 
+                            racerData["maxSpeed"]);
 
-    this.glorp = new Racer("glorp",  this, this.assets["glorp"],  this.world, createShapesFromJson(this.shapeData["glorp"]), 10, 15.0, 12.50, 65.0);
-    this.garf  = new Racer("garf",   this, this.assets["garf"],   this.world, createShapesFromJson(this.shapeData["garf"]),  10, 15.0, 22.50, 45.0);
+      if (!racerData["special"])
+      {
+        this.racers.push(racer);
+      }
+      else
+      {
+        this.specialRacers[racerKey] = racer;
+      }
+    }
 
-    this.goal = new Goal("goal", this, this.assets["goal"], this.world, createShapesFromJson(this.shapeData["goal"]), 0, 'static');
+    this.goals = [];
+    this.specialGoals = {};
+    for (const [goalKey, goalData] of Object.entries(this.itemData["goals"]["items"]))
+    {
+      var shapeKey = goalData["shape"];
+      var goal = new Goal(goalKey, this, this.assets["goals/"+goalKey],  this.world, shapes["goals"][shapeKey], 0, "static");
 
-    this.maps = [ 
-      new Course(this, this.shapeData["map1"]["spawn_points"], this.shapeData["map1"]["goal_points"], createShapesFromJson(this.shapeData["map1"]), this.assets["map1"]),
-      new Course(this, this.shapeData["map2"]["spawn_points"], this.shapeData["map2"]["goal_points"], createShapesFromJson(this.shapeData["map2"]), this.assets['map2']),
-      new Course(this, this.shapeData["map3"]["spawn_points"], this.shapeData["map3"]["goal_points"], createShapesFromJson(this.shapeData["map3"]), this.assets['map3']),
-    ];
+      if (!goalData["special"])
+      {
+        this.goals.push(goal);
+      }
+      else
+      {
+        this.specialGoals[goalKey] = goal;
+      }
+    }
+
+    this.maps = [];
+    this.specialMaps = {};
+    for (const [mapKey, mapData] of Object.entries(this.itemData["maps"]["items"]))
+    {
+      var shapeKey = mapData["shape"];
+      var course = new Course(this, mapData["spawnPoints"], mapData["goalPoints"], shapes["maps"][shapeKey], this.assets["maps/"+mapKey]);
+
+      if (!mapData["special"])
+      {
+        this.maps.push(course);
+      }
+      else
+      {
+        this.specialMaps[mapKey] = course;
+      }
+    }
   }
 
   async setup()
@@ -565,6 +597,8 @@ class HorseGame
   {
     this.map = this.rng.choice(this.maps);
     this.map.stage();
+
+    this.goal = this.rng.choice(this.goals);
 
     var goalLoc = this.rng.choice(this.map.goalPoints);
     this.goal.spawn(goalLoc[0], goalLoc[1]);
@@ -626,11 +660,11 @@ class HorseGame
     {
       if (this.activeRacers[i].name == "green" && this.rng.random() < 0.05)
       {
-        this.activeRacers[i] = this.glorp;
+        this.activeRacers[i] = this.specialRacers["glorp"];
       }
       if (this.activeRacers[i].name == "orange" && this.rng.random() < 0.25)
       {
-        this.activeRacers[i] = this.garf;
+        this.activeRacers[i] = this.specialRacers["garf"];
       }
       this.activeRacers[i].spawn(startingPoints[i][0], startingPoints[i][1]);
 

@@ -22,3 +22,28 @@ jscolor.presets.default = {
 
 <script src="{% static 'overlay/test_horse_game.js' %}"></script>
 {% endblock %}
+
+{% block content %}
+<div id="map-editor" style="margin-left: 20px; margin-bottom: 100px;">
+  <div id="position-container">
+    <input type="radio" id="rectangle" name="shape_type" value="rectangle"><label for="rectangle">rectangle</label>
+    <input type="radio" id="polygon" name="shape_type" value="polygon"><label for="polygon">polygon</label>
+    <input type="radio" id="circle" name="shape_type" value="circle"><label for="circle">circle</label>
+    <button name="remove-last" id="remove-last-shape">remove</button>
+    <button name="finish-polygon" id="finish-polygon">end polygon</button>
+    <br>
+    <label for="circle-radius">circle radius: </label><input type="number" id="circle-radius">
+    <br>
+    <input name="background-path" id="background-path-input" /><button name="update-background" id="update-background">update background</button>
+    <br>
+    <button name="to-image" id="to-image">export</button>
+    <br>
+    <span id="position-label">Mouse position: </span><span id="position-value">0, 0</span>
+  </div>
+  <div id="canvas-container" style="padding: 100px; background: #333;">
+    <canvas id="map-editor-canvas" width="1280" height="720" style="background: #FFF;"></canvas>
+  </div>
+  <div id="map-export"></div>
+</div>
+<div id="horse-game"></div>
+{% endblock %}
