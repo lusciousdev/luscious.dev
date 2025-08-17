@@ -528,7 +528,7 @@ class EditHorseGameItem(EditItemForm):
   
   field_order = []
   field_order.extend(BASE_WIDGET_ORDER)
-  field_order.extend(["racers"])
+  field_order.extend(["racers", "prediction_duration"])
   
   class Meta:
     model = HorseGameItem

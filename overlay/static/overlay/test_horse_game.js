@@ -196,13 +196,16 @@ window.addEventListener('load', function(windowLoadEvent) {
   renderCanvas();
 
   (async () => {
-    g_HorseGame = new HorseGame(423, 6); // Math.floor(1000 * Math.random() + 1));
+    g_HorseGame = new HorseGame(Math.floor(1000 * Math.random() + 1), 6);
+    g_HorseGame.renderFrames = false;
 
     await g_HorseGame.setup();
 
     g_HorseGame.addCanvas($("#horse-game"));
+    g_HorseGame.drawFixtures = false;
 
-    g_HorseGame.drawFixtures = true;
+    g_HorseGame.paused = false;
+    g_HorseGame.countdown = 0;
 
   })();
 

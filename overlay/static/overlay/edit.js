@@ -1855,7 +1855,7 @@ function onPredictItem(e)
   switch (itemType)
   {
     case "horse_game":
-      g_WebsocketEventQueue.push({ "command": "start_prediction", "data": { "title": "Who will win?", "outcomes": g_ItemDict[g_SelectedItem]["game"].activeRacers.map((v, i) => v.name) }});
+      g_WebsocketEventQueue.push({ "command": "start_prediction", "data": { "duration": g_ItemDict[g_SelectedItem]["prediction_duration"], "title": "Who will win?", "outcomes": g_ItemDict[g_SelectedItem]["game"].activeRacers.map((v, i) => v.name) }});
       break;
     default:
       break;

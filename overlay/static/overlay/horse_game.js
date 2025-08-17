@@ -459,13 +459,14 @@ class HorseGame
     this.uiLayer.addChild(this.winText);
 
     this.world = planck.World({ gravity: planck.Vec2(0, 0) });
-    this.world.on('post-solve', this.handleContact.bind(this));
+    this.world.on('pre-solve', this.handleContact.bind(this));
 
     this.gameTime = 0;
     this.frameCounter = 0;
     this.countdown = 10;
     this.lastTime = undefined;
     this.accumulator = 0;
+    this.renderFrames = true;
 
     this.paused = true;
     this.completed = false;
@@ -678,48 +679,11 @@ class HorseGame
 
   step(t)
   {
-    // while(!this.completed)
-    // {
-    //   for (let i = 0; i < this.activeRacers.length; i++)
-    //   {
-    //     this.activeRacers[i].update(g_DeltaTime);
-    //   }
-
-    //   this.goal.update(g_DeltaTime);
-
-    //   this.world.step(g_DeltaTime, 32, 12);
-    //   this.gameTime += g_Timestep;
-    //   this.frameCounter += 1;
-
-    //   this.handleContacts();
-    // }
-
-    // this.reset();
-    // setTimeout(() => this.step(0), 100);
-
-    requestAnimationFrame(this.step.bind(this));
-    
-    if (this.lastTime !== undefined)
+    if (!this.renderFrames)
     {
-      var frameTime = t - this.lastTime;
-      this.lastTime = t;
+      if (this.iterCount === undefined) this.iterCount = 0;
 
-      if (this.paused || this.completed)
-      {
-        this.render(0);
-        return;
-      }
-
-      if (this.countdown > 0)
-      {
-        this.countdown -= (frameTime / 1000);
-        this.render(0);
-        return;
-      }
-
-      this.accumulator += frameTime;
-
-      while (this.accumulator >= g_Timestep)
+      while(!this.completed)
       {
         for (let i = 0; i < this.activeRacers.length; i++)
         {
@@ -729,17 +693,77 @@ class HorseGame
         this.goal.update(g_DeltaTime);
 
         this.world.step(g_DeltaTime, 16, 6);
+        this.gameTime += g_Timestep;
+        this.frameCounter += 1;
 
         this.handleContacts();
-
-        this.gameTime += g_Timestep;
-        this.accumulator -= g_Timestep;
-        this.frameCounter += 1;
       }
 
-      this.render(this.accumulator / g_Timestep);
-    }
+      this.iterCount += 1;
+      if (this.longestLap === undefined) this.longestLap = 0;
+      this.longestLap = Math.max(this.longestLap, this.frameCounter);
+      if (this.shortestLap === undefined) this.shortestLap = 1000000;
+      this.shortestLap = Math.min(this.shortestLap, this.frameCounter);
 
+      if (this.totalFrames === undefined) this.totalFrames = 0;
+      this.totalFrames += this.frameCounter;
+
+      if (this.iterCount < 100)
+      {
+        this.setSeed(Math.floor(1_000_000 * Math.random() + 1));
+        this.reset();
+        setTimeout(() => this.step(0), 100);
+      }
+      else
+      {
+        console.log("Longest: " + (this.longestLap * g_DeltaTime) + "s, Shortest: " + (this.shortestLap * g_DeltaTime) + "s, Average: " + (this.totalFrames / this.iterCount * g_DeltaTime) + "s");
+      }
+    }
+    else
+    {
+      requestAnimationFrame(this.step.bind(this));
+
+      if (this.lastTime !== undefined)
+      {
+        var frameTime = t - this.lastTime;
+        this.lastTime = t;
+
+        if (this.paused || this.completed)
+        {
+          this.render(0);
+          return;
+        }
+
+        if (this.countdown > 0)
+        {
+          this.countdown -= (frameTime / 1000);
+          this.render(0);
+          return;
+        }
+
+        this.accumulator += frameTime;
+
+        while (this.accumulator >= g_Timestep)
+        {
+          for (let i = 0; i < this.activeRacers.length; i++)
+          {
+            this.activeRacers[i].update(g_DeltaTime);
+          }
+
+          this.goal.update(g_DeltaTime);
+
+          this.world.step(g_DeltaTime, 16, 6);
+
+          this.handleContacts();
+
+          this.gameTime += g_Timestep;
+          this.accumulator -= g_Timestep;
+          this.frameCounter += 1;
+        }
+
+        this.render(this.accumulator / g_Timestep);
+      }
+    }
     this.lastTime = t;
   }
 
@@ -787,17 +811,15 @@ class HorseGame
   deflectRacer(i_racerBody)
   {
     var linVel = i_racerBody.getLinearVelocity();
-    
-    if (this.randomizeBounces)
-    {
-      var maxDeflection = 60.0 * Math.PI / 180.0;
-      var def1 = this.rng.randFloat(0, maxDeflection);
-      var def2 = this.rng.randFloat(0, maxDeflection);
-      var def3 = this.rng.randFloat(0, maxDeflection);
-      var def4 = this.rng.randFloat(0, maxDeflection);
-      var def5 = this.rng.randFloat(0, maxDeflection);
 
-      var deflection = Math.min(def1, def2, def3, def4, def5);
+    if (this.randomizeBounces && (this.rng.random() < 0.25))
+    {
+      var minDeflection = 15.0 * Math.PI / 180.0;
+      var maxDeflection = 75.0 * Math.PI / 180.0;
+      var def1 = this.rng.randFloat(minDeflection, maxDeflection);
+      var def2 = this.rng.randFloat(minDeflection, maxDeflection);
+
+      var deflection = Math.min(def1, def2);
       deflection = (this.rng.randBool()) ? deflection : -deflection;
 
       var rot = new planck.Rot(deflection);
@@ -808,9 +830,9 @@ class HorseGame
       var deflection = 0;
       var newLinearVel = linVel;
     }
-    
-    newLinearVel = planck.Vec2.normalize(newLinearVel);
-    newLinearVel = planck.Vec2.mul(newLinearVel, i_racerBody.getUserData().baseSpeed);
+
+    // newLinearVel = planck.Vec2.normalize(newLinearVel);
+    // newLinearVel = planck.Vec2.mul(newLinearVel, i_racerBody.getUserData().baseSpeed);
 
     i_racerBody.setLinearVelocity(newLinearVel);
 
@@ -825,12 +847,12 @@ class HorseGame
     for (var i = this.contactList.length - 1; i >= 0; i--)
     {
       var racerBody = this.contactList[i];
-      
+
       var defl = this.deflectRacer(racerBody);
 
       racerList.push(racerBody.getUserData().name);
       racerList.push(this.gameTime);
-    
+
       this.contactList.pop();
     }
 
@@ -845,23 +867,66 @@ class HorseGame
     var objectTypeA = bA.getUserData().objectType;
     var objectTypeB = bB.getUserData().objectType;
 
-    if ((objectTypeA == 'goal' || objectTypeB == 'goal') && (objectTypeA == 'racer' || objectTypeB == 'racer'))
+    var racerBody1 = undefined;
+    var racerBody2 = undefined;
+    if (objectTypeA == 'racer' && objectTypeB == 'racer')
     {
-      var racerBody = (objectTypeA == 'racer') ? bA : bB;
+      racerBody1 = bA;
+      racerBody2 = bB;
+    }
+    else if (objectTypeA == 'racer')
+    {
+      racerBody1 = bA;
+    }
+    else if (objectTypeB == 'racer')
+    {
+      racerBody1 = bB;
+    }
 
-      this.winner = racerBody;
+    var goalBody = (objectTypeA == 'goal') ? bA : ((objectTypeB  == 'goal') ? bB : undefined);
+    var courseBody = (objectTypeA == 'course') ? bA : ((objectTypeB == 'course') ? bB : undefined);
+
+    if (racerBody1 !== undefined && goalBody !== undefined)
+    {
+      this.winner = racerBody1;
       this.completed = true;
 
-      console.log("RNG Counter: " + this.rng.counter + ", Winner: " + racerBody.getUserData().name + " @ " + racerBody.getLinearVelocity().x + ", " + racerBody.getLinearVelocity().y + " in " + this.frameCounter + " frames (" + (this.frameCounter * g_DeltaTime) + " seconds)");
+      console.log("RNG Counter: " + this.rng.counter + ", Winner: " + racerBody1.getUserData().name + " @ " + racerBody1.getLinearVelocity().x + ", " + racerBody1.getLinearVelocity().y + " in " + this.frameCounter + " frames (" + (this.frameCounter * g_DeltaTime) + " seconds)");
     }
 
-    if (objectTypeA == 'racer' && !this.contactList.includes(bA))
+    if (racerBody1 !== undefined && courseBody !== undefined)
     {
-      this.contactList.push(bA);
+      var vel = racerBody1.getLinearVelocity();
+      var baseSpeed = racerBody1.getUserData().baseSpeed;
+
+      var velMag = planck.Vec2.lengthOf(vel);
+      var newRest = Math.max(0.05, Math.min(1, (baseSpeed / velMag)));
+
+      i_contact.setRestitution(newRest);
+
+      this.contactList.push(racerBody1);
     }
-    if (objectTypeB == 'racer' && !this.contactList.includes(bB))
+
+    if (racerBody1 !== undefined && racerBody2 !== undefined)
     {
-      this.contactList.push(bB);
+      var vel1 = racerBody1.getLinearVelocity();
+      var vel2 = racerBody2.getLinearVelocity();
+
+      var baseSpeed1 = racerBody1.getUserData().baseSpeed;
+      var baseSpeed2 = racerBody2.getUserData().baseSpeed;
+
+      var velMag1 = planck.Vec2.lengthOf(vel1);
+      var velMag2 = planck.Vec2.lengthOf(vel2);
+
+      var ratio1 = (baseSpeed1 / velMag1);
+      var ratio2 = (baseSpeed2 / velMag2);
+
+      var newRest = Math.max(0.05, Math.min(1, (ratio1 + ratio2) / 2));
+
+      i_contact.setRestitution(newRest);
+
+      this.contactList.push(racerBody1);
+      this.contactList.push(racerBody2);
     }
   }
 }

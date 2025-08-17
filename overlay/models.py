@@ -386,11 +386,13 @@ class HorseGameItem(AbstractItem):
   
   seed = models.IntegerField(default = generate_seed)
   racers = models.IntegerField(default = 4)
+  prediction_duration = models.IntegerField(default = 30)
   
   def to_data_dict(self):
     d = super().to_data_dict()
     d['seed']   = self.seed
     d['racers'] = self.racers
+    d['prediction_duration'] = self.prediction_duration
     return d
   
   @staticmethod
