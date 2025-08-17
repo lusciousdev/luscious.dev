@@ -44,7 +44,8 @@ function createShapesFromJson(jsonData)
     }
     else if (jsonData.fixtures[i].type == "circle")
     {
-      shapeArray.push(constructCircle(jsonData.fixtures[i].points.map((v, idx) => v - jsonData.offset)));
+      var fix = jsonData.fixtures[i];
+      shapeArray.push(constructCircle([fix.points[0] + jsonData.offset, fix.points[1] + jsonData.offset, fix.points[2]]));
     }
   }
 
@@ -659,14 +660,19 @@ class HorseGame
 
     for (var i = 0; i < i_numRacers; i++)
     {
-      if (this.activeRacers[i].name == "green" && this.rng.random() < 0.05)
+      if (this.activeRacers[i].name == "green" && this.rng.random() < 0.0833)
       {
         this.activeRacers[i] = this.specialRacers["glorp"];
       }
-      if (this.activeRacers[i].name == "orange" && this.rng.random() < 0.25)
+      if (this.activeRacers[i].name == "orange" && this.rng.random() < 0.1667)
       {
         this.activeRacers[i] = this.specialRacers["garf"];
       }
+      if (this.activeRacers[i].name == "red" && this.rng.random() < 0.125)
+      {
+        this.activeRacers[i] = this.specialRacers["shoop"];
+      }
+
       this.activeRacers[i].spawn(startingPoints[i][0], startingPoints[i][1]);
 
       var linVel = new planck.Vec2(this.activeRacers[i].baseSpeed, 0);

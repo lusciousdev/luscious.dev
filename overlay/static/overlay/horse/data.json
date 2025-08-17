@@ -99,6 +99,15 @@
         "acceleration": 12.0,
         "maxSpeed": 24.0,
         "special": true
+      },
+      "shoop": {
+        "sprite": "shoop.png",
+        "shape": "shoop",
+        "weight": 0,
+        "baseSpeed": 10.0,
+        "acceleration": 8.0,
+        "maxSpeed": 34.0,
+        "special": true
       }
     },
     "shapes": {
@@ -133,6 +142,15 @@
           { "type": "polygon", "points": [[10, 43], [14, 52], [16, 50], [14, 35]] },
           { "type": "polygon", "points": [[35, 38], [32, 45], [32, 50], [34, 52], [36, 51], [39, 38]] },
           { "type": "polygon", "points": [[40, 38], [46, 52], [48, 52], [49, 50], [47, 40], [45, 38]] }
+        ]
+      },
+      "shoop": {
+        "offset": -28,
+        "fixtures": [
+          {"type":"polygon","points":[[20,7],[10,26],[11,46],[14,50],[29,57],[35,53],[34,43]]},
+          {"type":"polygon","points":[[21,8],[34,42],[45,22],[43,18],[29,9],[23,7]]},
+          {"type":"circle","points":[28,5,5]},
+          {"type":"circle","points":[43,14,5]}
         ]
       }
     }

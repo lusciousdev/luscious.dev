@@ -197,7 +197,7 @@ window.addEventListener('load', function(windowLoadEvent) {
 
   (async () => {
     g_HorseGame = new HorseGame(Math.floor(1000 * Math.random() + 1), 6);
-    g_HorseGame.renderFrames = false;
+    g_HorseGame.renderFrames = true;
 
     await g_HorseGame.setup();
 
