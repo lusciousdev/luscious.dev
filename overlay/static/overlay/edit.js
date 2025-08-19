@@ -143,6 +143,7 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var isDisplayed = item["is_displayed"];
     var itemData = item["item_data"];
     var itemId = itemData['id'];
+    var newItem = false;
 
     var prevItemData = null;
     if (itemId in g_ItemDict)
@@ -157,6 +158,8 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     }
     else
     {
+      newItem = true;
+
       g_ItemDict[itemId] = {
         "item_type": itemType,
         "item_data": itemData,
@@ -169,12 +172,25 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var width  = viewToEditLength(g_ItemDict[itemId]['item_data']['width']);
     var height = viewToEditLength(g_ItemDict[itemId]['item_data']['height']);
 
-    var z = itemData['z'];
-    var rotation = itemData['rotation'];
+    var newDiv = addOrUpdateItem(selfEdit, "#overlay", itemId, itemType, isDisplayed, top, left, width, height, itemData);
 
-    addOrUpdateItem(selfEdit, "#overlay", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, prevItemData,
-      () => { addItemCallback(itemId, itemType); },
-      () => { updateItemCallback(itemId, itemType); });
+    if (newDiv)
+    {
+      getItemDiv(itemId).on("mousedown touchstart", onMousedownItem);
+      addGrabbers(itemId);
+
+      if (g_SelectedItem == itemId)
+        getItemDiv(itemId).removeClass("unselected").addClass("selected");
+    }
+
+    if (newItem)
+    {
+      addItemCallback(itemId, itemType);
+    }
+    else
+    {
+      updateItemCallback(itemId, itemType);
+    }
   }
 
   if (fullItemList)
@@ -221,24 +237,17 @@ function updateItems(data, fullItemList = true, selfEdit = false)
 
 function addItemCallback(itemId, itemType)
 {
-  getItemDiv(itemId).on("mousedown touchstart", onMousedownItem);
-  addGrabbers(itemId);
-
   var item = g_ItemDict[itemId]
 
-  $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}" itemType="{3}">
-    <span class="material-symbols-outlined">{1}</span>&nbsp;{2}
-  </div>`.format(itemId, getItemIconName(itemType), item["item_data"]["name"], item["item_type"]));
+  var itemListEntryId = "#item-{0}-list-entry".format(itemId);
 
-  $("#item-{0}-list-entry".format(itemId)).mousedown((e) => onMouseDownItemList(e, itemId));
+  if ($(itemListEntryId).length == 0)
+  {
+    $("#item-select-list").append(`<div class="item-list-entry" id="item-{0}-list-entry" itemId="{0}" itemName="{2}" itemType="{3}">
+      <span class="material-symbols-outlined">{1}</span>&nbsp;{2}
+    </div>`.format(itemId, getItemIconName(itemType), item["item_data"]["name"], item["item_type"]));
 
-  if (item["item_data"]["position_lock"])
-  {
-    getItemDiv(itemId).addClass("position-locked");
-  }
-  else
-  {
-    getItemDiv(itemId).removeClass("position-locked");
+    $(itemListEntryId).mousedown((e) => onMouseDownItemList(e, itemId));
   }
 
   setCanvasCursor();
@@ -257,15 +266,6 @@ function updateItemCallback(itemId, itemType)
   if (g_SelectedItem != undefined && itemId == g_SelectedItem) 
   {
     setEditFormInputs(g_SelectedItem);
-  }
-
-  if (item["item_data"]["position_lock"])
-  {
-    getItemDiv(itemId).addClass("position-locked");
-  }
-  else
-  {
-    getItemDiv(itemId).removeClass("position-locked");
   }
 
   setCanvasCursor();
@@ -672,6 +672,11 @@ function setAllItemPositions()
   {
     var itemData = g_ItemDict[prop]['item_data'];
     var itemId = itemData['id'];
+
+    if (itemData["minimized"])
+    {
+      continue;
+    }
 
     var left   = viewToEditLength(itemData['x']);
     var top    = viewToEditLength(itemData['y']);

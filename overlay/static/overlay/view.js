@@ -16,7 +16,8 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var isDisplayed = item["is_displayed"];
     var itemData = item["item_data"];
     var itemId = itemData['id'];
-    
+    var newItem = false;
+
     var prevItemData = null;
     if (itemId in g_ItemDict)
     {
@@ -26,6 +27,8 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     }
     else
     {
+      newItem = true;
+
       g_ItemDict[itemData['id']] = {
         "item_type": itemType,
         "item_data": itemData,
@@ -36,12 +39,17 @@ function updateItems(data, fullItemList = true, selfEdit = false)
     var left = itemData['x'];
     var width = itemData['width'];
     var height = itemData['height'];
-    var z = itemData['z'];
-    var rotation = itemData['rotation'];
-    
-    addOrUpdateItem(false, "body", itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, prevItemData,
-      () => { addItemCallback(itemId, itemType); },
-      () => { updateItemCallback(itemId, itemType); });
+
+    addOrUpdateItem(false, "body", itemId, itemType, isDisplayed, top, left, width, height, itemData);
+
+    if (newItem)
+    {
+      addItemCallback(itemId, itemType);
+    }
+    else
+    {
+      updateItemCallback(itemId, itemType); 
+    }
   }
 
   if (fullItemList)

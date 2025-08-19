@@ -469,7 +469,7 @@ function pauseItem(itemId)
 function setItemPosition(itemId, top, left, width, height, z, rotation)
 {
   var borderWidth = parseFloat($("#item-{0}".format(itemId)).css("border-left-width"));
-  $("#item-{0}".format(itemId)).css({
+  getItemDiv(itemId).css({
     "top": "{0}px".format(top - borderWidth),
     "left": "{0}px".format(left - borderWidth),
     "width": "{0}px".format(width),
@@ -629,38 +629,44 @@ function resizeItem(itemId, x, y, width, height)
   }
 }
 
-function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, z, rotation, itemData, prevItemData, afterAdditionCallback, afterEditCallback)
+function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed, top, left, width, height, itemData)
 {
-  var itemElemId = '#item-{0}'.format(itemId);
+  var itemElem = getItemDiv(itemId);
   var itemOuterContainerId = '#item-{0}-outer-container'.format(itemId);
   var itemInnerContainerId = "#item-{0}-inner-container".format(itemId);
 
+  var divCreated = false;
+
   if(!c_EditView && itemData["view_lock"])
   {
-    return;
+    return divCreated;
   }
 
-  if ($(itemElemId).length == 0)
+  if (itemData["minimized"])
   {
-    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item {1}-item unselected'><div id='item-{0}-outer-container' itemId='{0}' class='overlay-item-container'><div id='item-{0}-inner-container' itemId='{0}' class='overlay-item-container'></div></div></div>".format(itemId, itemType))
-  
-    setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemOuterContainerId).css(getDefaultContainerCSS(itemType, itemData));
-    $(itemInnerContainerId).css(getDefaultInnerContainerCSS(itemType, itemData));
+    if (itemElem.length > 0)
+    {
+      itemElem.remove();
+    }
 
-    $(itemElemId).css({
-      "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
-    });
+    return divCreated;
+  }
+
+  if (itemElem.length == 0)
+  {
+    $(overlayElement).append("<div id='item-{0}' itemId='{0}' class='overlay-item {1}-item unselected'><div id='item-{0}-outer-container' itemId='{0}' class='overlay-item-container'><div id='item-{0}-inner-container' itemId='{0}' class='overlay-item-container'></div></div></div>".format(itemId, itemType));
+    divCreated = true;
 
     switch (itemType)
     {
       case "image":
-        imageUrl = itemData['url'];
+        var imageUrl = itemData['url'];
         if (imageUrl == "")
         {
           imageUrl = itemData['image_url'];
         }
 
+        console.log(imageUrl);
         $(itemInnerContainerId).append("<img id='item-{0}-img' class='noselect nopointer' src='{1}' width='{2}px' height='{3}px' draggable='false'>".format(itemId, imageUrl, width, height));
 
         var imgElemId = "#item-{0}-img".format(itemId);
@@ -716,7 +722,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         if (g_ItemDict[itemId].item_data.channel != "")
         {
           g_ItemDict[itemId]['player'] = createTwitchStreamPlayer("item-{0}-player".format(itemId), g_ItemDict[itemId].item_data.channel);
-  
+
           updateTwitchStreamPlayer(itemId);
         }
         else
@@ -736,7 +742,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           g_ItemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
                                                                g_ItemDict[itemId].item_data.video_id, 
                                                                startTimeToTwitchVideoTime(g_ItemDict[itemId].item_data.start_timeh));
-  
+
           updateTwitchVideoPlayer(itemId);
         }
         else
@@ -806,23 +812,13 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       default:
         break;
     }
-
-    afterAdditionCallback();
   }
   else
   {
-    setItemPosition(itemId, top, left, width, height, z, rotation);
-    $(itemOuterContainerId).css(getDefaultContainerCSS(itemType, itemData));
-    $(itemInnerContainerId).css(getDefaultInnerContainerCSS(itemType, itemData));
-
-    $(itemElemId).css({
-      "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
-    });
-    
     switch (itemType)
     {
       case "image":
-        imageUrl = itemData['url'];
+        var imageUrl = itemData['url'];
         if (imageUrl == "")
         {
           imageUrl = itemData['image_url'];
@@ -845,7 +841,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         var canvasTag = $(canvasId);
 
         canvasTag.css(getDefaultCSS(itemType, itemData));
-        
+
         if (!g_ItemDict[itemId]["drawing"])
         {
           if (Math.abs(width - canvasTag.width()) > 1) canvasTag.attr('width', "{0}px".format(width));
@@ -884,7 +880,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           {
             createYouTubePlayer(itemId);
           }
-          
+
           if (g_ItemDict[itemId]['player_ready'])
           {
             updateYouTubePlayer(itemId);
@@ -916,10 +912,10 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
           if (g_ItemDict[itemId]['player'] == null)
           {
             g_ItemDict[itemId]["player"] = createTwitchVideoPlayer("item-{0}-player".format(itemId), 
-                                                                 g_ItemDict[itemId].item_data.video_id, 
-                                                                 startTimeToTwitchVideoTime(g_ItemDict[itemId].item_data.start_timeh));
+                                                                   g_ItemDict[itemId].item_data.video_id, 
+                                                                   startTimeToTwitchVideoTime(g_ItemDict[itemId].item_data.start_timeh));
           }
-  
+
           updateTwitchVideoPlayer(itemId);
         }
 
@@ -965,9 +961,28 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
       default:
         break;
     }
-
-    afterEditCallback();
   }
+
+  var z = itemData["z"];
+  var rotation = itemData["rotation"];
+  setItemPosition(itemId, top, left, width, height, z, rotation);
+  $(itemOuterContainerId).css(getDefaultContainerCSS(itemType, itemData));
+  $(itemInnerContainerId).css(getDefaultInnerContainerCSS(itemType, itemData));
+
+  itemElem.css({
+    "visibility": (isDisplayed && !itemData['minimized']) ? "visible" : "hidden",
+  });
+
+  if (itemData["position_lock"])
+  {
+    getItemDiv(itemId).addClass("position-locked");
+  }
+  else
+  {
+    getItemDiv(itemId).removeClass("position-locked");
+  }
+
+  return divCreated;
 }
 
 ///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -983,6 +998,9 @@ function handleCanvasUpdate(itemId, history)
   }
 
   const canvas = $("#item-{0}-canvas".format(itemId)).get(0);
+
+  if (canvas === undefined) return;
+
   const context = canvas.getContext('2d');
 
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
