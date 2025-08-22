@@ -769,13 +769,13 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         break;
       case "stopwatch":
         $(itemInnerContainerId).append(TextTemplate.format(itemId));
-        
+
         var stopwatchText = getStopwatchText(itemData);
         setTextItemContent(overlayElement, itemId, stopwatchText, itemType, itemData);
         break;
       case "countdown":
         $(itemInnerContainerId).append(TextTemplate.format(itemId));
-        
+
         var countdownText = getCountdownText(itemData);
         setTextItemContent(overlayElement, itemId, countdownText, itemType, itemData);
         break;
@@ -787,12 +787,12 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         break;
       case "twitch_chat":
         $(itemInnerContainerId).append("<div id='item-{0}-text' class='twitch-chat-history-container overlay-item-child noselect nopointer'><div class='twitch-chat-history'></div></div>".format(itemId));
-        
+
         let historyElem = $("#item-{0}-text".format(itemId));
         g_TwitchChatHistory.forEach((msg, i) => {
           addMessageToChatHistory(historyElem, msg);
         });
-        
+
         setTextItemCSS(overlayElement, itemId, itemType, itemData);
         break;
       case "twitch_poll":
@@ -927,6 +927,8 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         g_ItemDict[itemId]['game'].setRacerCount(Math.max(2, Math.min(6, g_ItemDict[itemId].item_data.racers)));
         g_ItemDict[itemId]['game'].setSeed(g_ItemDict[itemId].item_data.seed);
 
+        g_ItemDict[itemId]['game'].setVolume((g_ItemDict[itemId].item_data.volume / 100));
+        g_ItemDict[itemId]['game'].setGallopVolume((g_ItemDict[itemId].item_data.gallop_volume / 100));
         $(gameContainerId).css(getDefaultCSS(itemType, itemData));
         break;
       case "text":
@@ -1839,8 +1841,10 @@ function updateTimerItems()
 
 function horseGameSetupDone(itemId)
 {
-  console.log("horse game initialized " + itemId);
   g_ItemDict[itemId]['game'].addCanvas($("#item-{0}-game".format(itemId)));
+
+  g_ItemDict[itemId]['game'].setVolume((g_ItemDict[itemId].item_data['volume'] / 100));
+  g_ItemDict[itemId]['game'].setGallopVolume((g_ItemDict[itemId].item_data['gallop_volume'] / 100));
 }
 
 function resetHorseGame(itemId)
@@ -1850,12 +1854,12 @@ function resetHorseGame(itemId)
 
 function playHorseGame(itemId)
 {
-  g_ItemDict[itemId]['game'].paused = false;
+  g_ItemDict[itemId]['game'].play();
 }
 
 function pauseHorseGame(itemId)
 {
-  g_ItemDict[itemId]['game'].paused = true;
+  g_ItemDict[itemId]['game'].pause();
 }
 
 function handleSeedChange(data)

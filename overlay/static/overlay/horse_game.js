@@ -1,5 +1,6 @@
 const scriptData = document.currentScript.dataset;
 const dataPath = scriptData.datapath;
+const soundPath = scriptData.soundpath;
 
 const g_PixelsPerMeter = 10.0;
 const g_MetersPerPixel = 1.0 / g_PixelsPerMeter;
@@ -9,6 +10,8 @@ const g_Timestep = 1000 / g_PhysicsSteps;
 const g_DeltaTime = g_Timestep / 1000;
 
 planck.Settings.maxPolygonVertices = 24;
+
+PIXI.sound.disableAutoPause = true;
 
 function p2mVec2(x, y)
 {
@@ -479,6 +482,9 @@ class HorseGame
     this.contactList = [];
 
     this.collisionList = [];
+
+    this.volume = 1.0;
+    this.gallopVolume = 1.0;
   }
 
   async preload()
@@ -490,6 +496,15 @@ class HorseGame
       return response.json();
     }).then(data => {
       this.itemData = data;
+    });
+
+    await fetch(soundPath).then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    }).then(data => {
+      this.soundData = data;
     });
 
     var assets = [];
@@ -569,6 +584,21 @@ class HorseGame
         this.specialMaps[mapKey] = course;
       }
     }
+
+    this.soundEffects = {};
+
+    for (const [soundKey, soundFile] of Object.entries(this.soundData))
+    {
+      if (typeof soundFile === 'string')
+      {
+        this.soundEffects[soundKey] = PIXI.sound.Sound.from({ url: "/static/overlay/horse/" + soundFile, preload: true });
+      }
+      else if (Array.isArray(soundFile))
+      {
+        this.soundEffects[soundKey] = [];
+        soundFile.forEach((v, i) => this.soundEffects[soundKey].push(PIXI.sound.Sound.from({ url: "/static/overlay/horse/" + v, preload: true })));
+      }
+    }
   }
 
   async setup()
@@ -638,9 +668,52 @@ class HorseGame
     this.populate();
   }
 
-  start()
+  togglePause()
   {
-    this.paused = false;
+    if (this.paused) this.play();
+    else this.pause();
+  }
+
+  play()
+  {
+    if (this.paused)
+    {
+      this.paused = false;
+      PIXI.sound.resumeAll();
+    }
+  }
+
+  pause()
+  {
+    if (!this.paused)
+    {
+      this.paused = true;
+      PIXI.sound.pauseAll();
+    }
+  }
+
+  setVolume(i_volume)
+  {
+    this.volume = i_volume;
+
+    for (const [soundKey, sounds] of Object.entries(this.soundEffects))
+    {
+      var newVolume = this.volume;
+      if (soundKey == "gallops")
+        newVolume *= this.gallopVolume;
+
+      if (Array.isArray(sounds))
+        this.soundEffects[soundKey].forEach((v, i) => v.volume = newVolume);
+      else
+        this.soundEffects[soundKey].volume = newVolume;
+    }
+  }
+
+  setGallopVolume(i_volume)
+  {
+    this.gallopVolume = i_volume;
+
+    this.soundEffects["gallops"].forEach((v, i) => v.volume = (this.volume * this.gallopVolume));
   }
 
   setSeed(i_seed)
@@ -680,6 +753,7 @@ class HorseGame
 
       linVel = planck.Rot.mulVec2(angle, linVel);
       this.activeRacers[i].body.setLinearVelocity(linVel);
+      this.activeRacers[i].body.m_userData["number"] = i;
     }
   }
 
@@ -738,6 +812,11 @@ class HorseGame
         {
           this.render(0);
           return;
+        }
+
+        if (this.countdown == 10.0)
+        {
+          this.soundEffects["start"].play();
         }
 
         if (this.countdown > 0)
@@ -887,6 +966,11 @@ class HorseGame
     else if (objectTypeB == 'racer')
     {
       racerBody1 = bB;
+    }
+
+    if (racerBody1 !== undefined)
+    {
+      this.soundEffects["gallops"][racerBody1.getUserData().number].play({ loop: false, singleInstance: true });
     }
 
     var goalBody = (objectTypeA == 'goal') ? bA : ((objectTypeB  == 'goal') ? bB : undefined);

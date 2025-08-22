@@ -386,12 +386,16 @@ class HorseGameItem(AbstractItem):
   
   seed = models.IntegerField(default = generate_seed)
   racers = models.IntegerField(default = 4)
+  volume = models.FloatField(default = 100.0)
+  gallop_volume = models.FloatField(default = 100.0)
   prediction_duration = models.IntegerField(default = 30)
   
   def to_data_dict(self):
     d = super().to_data_dict()
     d['seed']   = self.seed
     d['racers'] = self.racers
+    d['volume'] = self.volume
+    d['gallop_volume'] = self.gallop_volume
     d['prediction_duration'] = self.prediction_duration
     return d
   

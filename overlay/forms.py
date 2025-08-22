@@ -321,7 +321,9 @@ TWITCH_VIDEO_WIDGETS = {
 }
 
 HORSE_GAME_WIDGETS = {
-  "racers": forms.Select(attrs={ "field-type": "integer", "title": "Number of racers (2-6)" })
+  "racers": forms.Select(attrs={ "field-type": "integer", "title": "Number of racers (2-6)" }),
+  'volume': RangeInput(attrs = { "field-type": "float", "min": 0.0, "max": 100.0, "title": "Volume" }),
+  'gallop_volume': RangeInput(attrs = { "field-type": "float", "min": 0.0, "max": 100.0, "title": "Gallop Volume" }),
 }
 
 TEXT_WIDGETS = {

@@ -119,7 +119,7 @@ window.addEventListener('load', function(windowLoadEvent) {
   }
 
   $("#play-pause-game").click((e) => {
-    g_HorseGame.paused = !g_HorseGame.paused;
+    g_HorseGame.togglePause();
 
     if (g_HorseGame.paused)
     {
@@ -140,6 +140,18 @@ window.addEventListener('load', function(windowLoadEvent) {
     var numRacers = parseInt($("#racer-count").val());
 
     g_HorseGame.setRacerCount(numRacers);
+  });
+
+  $("#volume-input").change((e) => {
+    var val = parseFloat($("#volume-input").val());
+
+    g_HorseGame.setVolume(val);
+  });
+
+  $("#gallop-volume-input").change((e) => {
+    var val = parseFloat($("#gallop-volume-input").val());
+
+    g_HorseGame.setGallopVolume(val);
   });
 
   $("#predict-game").click((e) => {

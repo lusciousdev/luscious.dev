@@ -15,6 +15,7 @@
 <script src="https://embed.twitch.tv/embed/v1.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://pixijs.download/release/pixi.js"></script>
+<script src="https://unpkg.com/@pixi/sound/dist/pixi-sound.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/planck@1.4.2/dist/planck.js"></script>
 
 <script src="{% static 'util.js' %}"></script>
@@ -32,7 +33,8 @@
 </script>
 <script src="{% static 'overlay/horse_game.js' %}"
   defer
-  data-datapath="{% static 'overlay/horse/data.json' %}">
+  data-datapath="{% static 'overlay/horse/data.json' %}"
+  data-soundpath="{% static 'overlay/horse/sound.json' %}">
 </script>
 
 {% block scripts %}{% endblock %}
