@@ -233,5 +233,21 @@ def create_overlay(request):
     
   return render(request, "overlay/createoverlay.html", { "form": form, "action": "create" })
 
+class HorseDemoView(generic.TemplateView):
+  template_name = "overlay/horse_demo.html"
+  
+  def get_context_data(self, **kwargs):
+    context = super(HorseDemoView, self).get_context_data(**kwargs)
+
+    context['twitchuid'] = None
+
+    try:
+      twitchaccount : SocialAccount = self.request.user.socialaccount_set.get(provider="twitch")
+      context['twitchuid'] = twitchaccount.uid
+    except Exception as e:
+      pass
+    
+    return context
+
 class TestHorseGameView(generic.TemplateView):
   template_name="overlay/test_horse_game.html"

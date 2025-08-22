@@ -1,0 +1,74 @@
+{% extends "overlay/overlay_base.html" %}
+
+{% load static %}
+{% load tz %}
+{% load socialaccount %}
+{% load util %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{% static 'global.css' %}">
+<link rel="stylesheet" href="{% static 'base.css' %}">
+<link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+<link rel="stylesheet" href="{% static 'global.css' %}" />
+<link rel="stylesheet" href="{% static 'overlay/horse.css' %}" />
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'jscolor.min.js' %}"></script>
+<script>
+jscolor.presets.default = {
+  palette: [
+    "#000000FF", "#808080FF", "#FFFFFFFF", "#FF0000FF", "#00FF00FF", "#0000FFFF", "#EB5E28FF", "#9146FFFF"
+  ]
+}
+</script>
+
+<script src="{% static 'overlay/horse_demo.js' %}"
+  defer
+  {% if twitchuid is not None %}data-twitchuid="{{ twitchuid }}"{% endif %}></script>
+{% endblock %}
+
+{% block content %}
+<div class="horse-demo-container">
+  <div id="header">
+    <h1 id="page-title">That Horse Game</h1>
+
+    {% if not user.is_authenticated %}
+    <div id="account-button-container">
+      <a class="button-link" href="{% url "account_login" %}?next={% url "overlay:horse_demo" %}"><span class="material-symbols-outlined inline-symbol">login</span> Log in</a>
+      <a class="button-link" href="{% url "account_signup" %}?next={% url "overlay:horse_demo" %}">Sign up</a>
+    </div>
+    {% else %}
+    <div id="account-button-container">
+      <a class="button-link" href="{% url "overlay:profile" %}"><span class="material-symbols-outlined inline-symbol">person</span> Profile</a>
+      <form action="{% url 'account_logout' %}?next={% url 'overlay:home' %}" method="post" style="display: inline-block">
+        {% csrf_token %}
+        <button class="small-button" id="logout-button" type="submit">
+          <span class="material-symbols-outlined inline-symbol">logout</span> Log out
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+
+  <div id="horse-game-container">
+    <div id="horse-game"></div>
+    <div id="horse-game-controls">
+      <span id="racer-count-container">
+        <label for="racers">Racers: </label>
+        <select name="racers" id="racer-count">
+          <option value="2">2</div>
+          <option value="3">3</div>
+          <option value="4">4</div>
+          <option value="5">5</div>
+          <option value="6" selected>6</div>
+        </select>
+      </span>
+      <div class="medium-button" id="play-pause-game">Play</div>
+      <div class="medium-button" id="reset-game">Reset</div>
+      <div class="medium-button" id="predict-game" style="display: none;">Predict</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
