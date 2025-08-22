@@ -29,56 +29,65 @@ jscolor.presets.default = {
 {% endblock %}
 
 {% block content %}
-<div class="horse-demo-container">
-  <div id="header">
-    <h1 id="page-title">That Horse Game</h1>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horse Race Demo</title>
+  </head>
+  <body>
+    <div class="horse-demo-container">
+      <div id="header">
+        <h1 id="page-title">That Horse Game</h1>
 
-    {% if not user.is_authenticated %}
-    <div id="account-button-container">
-      <a class="button-link" href="{% url "account_login" %}?next={% url "overlay:horse_demo" %}"><span class="material-symbols-outlined inline-symbol">login</span> Log in</a>
-      <a class="button-link" href="{% url "account_signup" %}?next={% url "overlay:horse_demo" %}">Sign up</a>
-    </div>
-    {% else %}
-    <div id="account-button-container">
-      <a class="button-link" href="{% url "overlay:profile" %}"><span class="material-symbols-outlined inline-symbol">person</span> Profile</a>
-      <form action="{% url 'account_logout' %}?next={% url 'overlay:home' %}" method="post" style="display: inline-block">
-        {% csrf_token %}
-        <button class="small-button" id="logout-button" type="submit">
-          <span class="material-symbols-outlined inline-symbol">logout</span> Log out
-        </button>
-      </form>
-    </div>
-    {% endif %}
-  </div>
+        {% if not user.is_authenticated %}
+        <div id="account-button-container">
+          <a class="button-link" href="{% url "account_login" %}?next={% url "overlay:horse_demo" %}"><span class="material-symbols-outlined inline-symbol">login</span> Log in</a>
+          <a class="button-link" href="{% url "account_signup" %}?next={% url "overlay:horse_demo" %}">Sign up</a>
+        </div>
+        {% else %}
+        <div id="account-button-container">
+          <a class="button-link" href="{% url "overlay:profile" %}"><span class="material-symbols-outlined inline-symbol">person</span> Profile</a>
+          <form action="{% url 'account_logout' %}?next={% url 'overlay:home' %}" method="post" style="display: inline-block">
+            {% csrf_token %}
+            <button class="small-button" id="logout-button" type="submit">
+              <span class="material-symbols-outlined inline-symbol">logout</span> Log out
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
 
 
-  <div id="horse-game-container">
-    <div id="horse-game"></div>
-    <div id="horse-game-controls">
-      <div id="horse-game-buttons">
-        <span id="racer-count-container">
-          <label for="racers">Racers: </label>
-          <select name="racers" id="racer-count">
-            <option value="2">2</div>
-            <option value="3">3</div>
-            <option value="4">4</div>
-            <option value="5">5</div>
-            <option value="6" selected>6</div>
-          </select>
-        </span>
-        <div class="medium-button" id="play-pause-game">Play</div>
-        <div class="medium-button" id="reset-game">Reset</div>
-        <div class="medium-button" id="predict-game" style="display: none;">Predict</div>
-      </div>
-      <div id="volume-container">
-        <label for="volume">Volume: </label>
-        <input type="range" name="volume" id="volume-input" min="0" max="1" step="0.05" value="1" />
-      </div>
-      <div id="gallop-volume-container">
-        <label for="gallop-volume">Gallop Volume: </label>
-        <input type="range" name="gallop-volume" id="gallop-volume-input" min="0" max="1" step="0.05" value="1" />
+      <div id="horse-game-container">
+        <div id="horse-game"></div>
+        <div id="horse-game-controls">
+          <div id="horse-game-buttons">
+            <span id="racer-count-container">
+              <label for="racers">Racers: </label>
+              <select name="racers" id="racer-count">
+                <option value="2">2</div>
+                <option value="3">3</div>
+                <option value="4">4</div>
+                <option value="5">5</div>
+                <option value="6" selected>6</div>
+              </select>
+            </span>
+            <div class="medium-button" id="play-pause-game">Play</div>
+            <div class="medium-button" id="reset-game">Reset</div>
+            <div class="medium-button" id="predict-game" style="display: none;">Predict</div>
+          </div>
+          <div id="volume-container">
+            <label for="volume">Volume: </label>
+            <input type="range" name="volume" id="volume-input" min="0" max="1" step="0.05" value="1" />
+          </div>
+          <div id="gallop-volume-container">
+            <label for="gallop-volume">Gallop Volume: </label>
+            <input type="range" name="gallop-volume" id="gallop-volume-input" min="0" max="1" step="0.05" value="1" />
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
+  </body>
+</html>
 {% endblock %}
