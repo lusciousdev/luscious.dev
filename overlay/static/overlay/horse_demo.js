@@ -43,7 +43,7 @@ function handleWebsocketCommand(command, data)
     case "twitch_broadcaster_type":
       g_TwitchConnected = true;
       g_TwitchBroadcasterType = data.broadcaster_type;
-      if (g_TwitchBroadcasterType > 1) $("#predict-game").style({ "display": "inline-block" });
+      if (g_TwitchBroadcasterType > 0) $("#predict-game").style({ "display": "inline-block" });
       break;
     case "error":
       console.warn(data);
