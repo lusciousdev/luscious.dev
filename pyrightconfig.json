@@ -1,0 +1,10 @@
+{
+  "verboseOutput": true,
+  "venvPath": ".",
+  "venv": ".venv",
+  "reportAttributeAccessIssue": false,
+  "reportAny": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownMemberType": false,
+  "typeCheckingMode": "recommended"
+}
