@@ -90,20 +90,17 @@ class LusciousBot(twitchio_commands.Bot):
             prefix="?",
         )
 
-    @typing.override
     async def close(self, **options: typing.Any) -> None:
         if self.bot_channel_task is not None:
             _ = self.bot_channel_task.cancel()
         await self.channel_layer.group_discard(self.bot_group_name, self.channel_name)
 
-    @typing.override
     async def setup_hook(self) -> None:
         await self.add_component(LusciousBotComponent(self))
 
         self.channel_name = await self.channel_layer.new_channel()
         await self.channel_layer.group_add(self.bot_group_name, self.channel_name)
 
-    @typing.override
     async def add_token(
         self, token: str, refresh: str
     ) -> twitchio.authentication.ValidateTokenPayload:
@@ -144,7 +141,6 @@ class LusciousBot(twitchio_commands.Bot):
 
         return resp
 
-    @typing.override
     async def load_tokens(self, path: str | None = None) -> None:
         bot_account = await SocialAccount.objects.aget(
             provider="twitch_chatbot", uid=self.bot_id
@@ -251,7 +247,6 @@ class LusciousBot(twitchio_commands.Bot):
 
         self.bot_channel_task = asyncio.create_task(self.check_bot_channel())
 
-    @typing.override
     async def event_message(self, payload: twitchio.ChatMessage) -> None:
         msg_data = {
             "uuid": payload.id,
@@ -422,7 +417,6 @@ class LusciousBot(twitchio_commands.Bot):
             payload.broadcaster.id, "prediction_end", prediction_data
         )
 
-    @typing.override
     async def event_custom_redemption_add(
         self, payload: twitchio.ChannelPointsRedemptionAdd
     ) -> None:
@@ -446,7 +440,6 @@ class LusciousBot(twitchio_commands.Bot):
             payload.broadcaster.id, "redemption_add", redemption_data
         )
 
-    @typing.override
     async def event_custom_redemption_update(
         self, payload: twitchio.ChannelPointsRedemptionUpdate
     ) -> None:
