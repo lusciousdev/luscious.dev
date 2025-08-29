@@ -1,0 +1,20 @@
+{
+  "sounds": {
+    "start": "start.mp3",
+    "gallops": [
+      "gallop1.mp3",
+      "gallop2.mp3",
+      "gallop3.mp3",
+      "gallop4.mp3",
+      "gallop5.mp3",
+      "gallop6.mp3"
+    ]
+  },
+  "images": {
+    "fireworks1": "fireworks1.gif",
+    "fireworks2": "fireworks2.gif",
+    "fireworks3": "fireworks3.gif",
+    "fireworks4": "fireworks4.gif",
+    "horse": "horse.gif"
+  }
+}

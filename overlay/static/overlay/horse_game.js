@@ -1,6 +1,6 @@
 const scriptData = document.currentScript.dataset;
 const dataPath = scriptData.datapath;
-const soundPath = scriptData.soundpath;
+const extrasPath = scriptData.extraspath;
 
 const g_PixelsPerMeter = 10.0;
 const g_MetersPerPixel = 1.0 / g_PixelsPerMeter;
@@ -13,66 +13,70 @@ planck.Settings.maxPolygonVertices = 24;
 
 PIXI.sound.disableAutoPause = true;
 
-function p2mVec2(x, y)
-{
+function p2mVec2(x, y) {
   return new planck.Vec2(x, y).mul(g_MetersPerPixel);
 }
 
-function constructPolygon(vertexArray)
-{
-  var vectorArray = []
+function constructPolygon(vertexArray) {
+  var vectorArray = [];
 
-  for (var i = 0; i < vertexArray.length; i++)
-  {
+  for (var i = 0; i < vertexArray.length; i++) {
     vectorArray[i] = p2mVec2(vertexArray[i][0], vertexArray[i][1]);
   }
 
   return new planck.Polygon(vectorArray);
 }
 
-function constructCircle(vals)
-{
-  return new planck.Circle(p2mVec2(vals[0], vals[1]), vals[2] * g_MetersPerPixel)
+function constructCircle(vals) {
+  return new planck.Circle(
+    p2mVec2(vals[0], vals[1]),
+    vals[2] * g_MetersPerPixel,
+  );
 }
 
-function createShapesFromJson(jsonData)
-{
+function createShapesFromJson(jsonData) {
   var shapeArray = [];
 
-  for (var i = 0; i < jsonData.fixtures.length; i++)
-  {
-    if (jsonData.fixtures[i].type == "polygon")
-    {
-      shapeArray.push(constructPolygon(jsonData.fixtures[i].points.map((pair, idx) => pair.map((v, vIdx) => v + jsonData.offset))));
-    }
-    else if (jsonData.fixtures[i].type == "circle")
-    {
+  for (var i = 0; i < jsonData.fixtures.length; i++) {
+    if (jsonData.fixtures[i].type == "polygon") {
+      shapeArray.push(
+        constructPolygon(
+          jsonData.fixtures[i].points.map((pair, idx) =>
+            pair.map((v, vIdx) => v + jsonData.offset),
+          ),
+        ),
+      );
+    } else if (jsonData.fixtures[i].type == "circle") {
       var fix = jsonData.fixtures[i];
-      shapeArray.push(constructCircle([fix.points[0] + jsonData.offset, fix.points[1] + jsonData.offset, fix.points[2]]));
+      shapeArray.push(
+        constructCircle([
+          fix.points[0] + jsonData.offset,
+          fix.points[1] + jsonData.offset,
+          fix.points[2],
+        ]),
+      );
     }
   }
 
   return shapeArray;
 }
 
-function angleBetween(vec1, vec2)
-{
-  var dotProd = (vec1.x * vec2.x) + (vec1.y * vec2.y);
-  var determ = (vec1.x * vec2.y) - (vec1.y * vec2.x);
+function angleBetween(vec1, vec2) {
+  var dotProd = vec1.x * vec2.x + vec1.y * vec2.y;
+  var determ = vec1.x * vec2.y - vec1.y * vec2.x;
 
-  var angle = ((2 * Math.PI) - Math.atan2(determ, dotProd)) % (2 * Math.PI);
-  
+  var angle = (2 * Math.PI - Math.atan2(determ, dotProd)) % (2 * Math.PI);
+
   return angle;
 }
 
-class RNG 
-{
+class RNG {
   static n = 624;
   static m = 397;
   static w = 32;
   static r = 31;
-  static UMASK = (0xffffffff << RNG.r);
-  static LMASK = (0xffffffff >>> (RNG.w - RNG.r));
+  static UMASK = 0xffffffff << RNG.r;
+  static LMASK = 0xffffffff >>> (RNG.w - RNG.r);
   static a = 0x9908b0df;
   static u = 11;
   static s = 7;
@@ -82,24 +86,21 @@ class RNG
   static c = 0xefc60000;
   static f = 1812433253;
 
-  constructor (i_seed)
-  {
+  constructor(i_seed) {
     this.seed = i_seed;
     this.stateArray = Array(RNG.n);
 
     this.stateArray[0] = this.seed;
-    for (var i = 1; i < RNG.n; i++)
-    {
+    for (var i = 1; i < RNG.n; i++) {
       this.seed = RNG.f * (this.seed ^ (this.seed >>> (RNG.w - 2))) + i;
       this.stateArray[i] = this.seed;
     }
 
-    this.stateIndex = 0
+    this.stateIndex = 0;
     this.counter = 0;
   }
 
-  randUInt()
-  {
+  randUInt() {
     var k = this.stateIndex;
     var j = k - (RNG.n - 1);
     if (j < 0) j += RNG.n;
@@ -118,53 +119,46 @@ class RNG
     if (k >= RNG.n) k = 0;
     this.stateIndex = k;
 
-    var y = x ^ ( x >>> RNG.u);
-        y = y ^ ((y << RNG.s) & RNG.b);
-        y = y ^ ((y << RNG.t) & RNG.c);
+    var y = x ^ (x >>> RNG.u);
+    y = y ^ ((y << RNG.s) & RNG.b);
+    y = y ^ ((y << RNG.t) & RNG.c);
 
     var z = y ^ (y >>> RNG.l);
 
     this.counter++;
 
-    return (z >>> 0);
+    return z >>> 0;
   }
 
-  random()
-  {
-    return (this.randUInt() / (2 ** RNG.w));
+  random() {
+    return this.randUInt() / 2 ** RNG.w;
   }
 
-  randFloat(min, max)
-  {
+  randFloat(min, max) {
     return (max - min) * this.random() + min;
   }
 
-  randInt(min, max)
-  {
+  randInt(min, max) {
     return Math.floor(this.randFloat(min, max + 1));
   }
 
-  randBool()
-  {
-    return (this.random() > 0.5);
+  randBool() {
+    return this.random() > 0.5;
   }
 
-  choice(i_list)
-  {
+  choice(i_list) {
     return i_list[this.randInt(0, i_list.length - 1)];
   }
 
-  sample(i_list, i_num = 1)
-  {
+  sample(i_list, i_num = 1) {
     if (i_num < 1) return [];
-    if (i_num == 1) return [ this.choice(i_list) ];
+    if (i_num == 1) return [this.choice(i_list)];
 
     i_num = Math.min(i_num, i_list.length);
     var listCopy = Array.from(i_list);
     var output = [];
-    for (var i = 0; i < i_num; i++)
-    {
-      var idx = this.randInt(0, listCopy.length - 1)
+    for (var i = 0; i < i_num; i++) {
+      var idx = this.randInt(0, listCopy.length - 1);
       output.push(listCopy[idx]);
       listCopy.splice(idx, 1);
     }
@@ -172,16 +166,21 @@ class RNG
     return output;
   }
 
-  shuffle(i_list)
-  {
+  shuffle(i_list) {
     return this.sample(i_list, i_list.length);
   }
 }
 
-class GameObject
-{
-  constructor(i_name, i_game, i_texture, i_world, i_shapes, i_weight, i_bodyType = 'dynamic')
-  {
+class GameObject {
+  constructor(
+    i_name,
+    i_game,
+    i_texture,
+    i_world,
+    i_shapes,
+    i_weight,
+    i_bodyType = "dynamic",
+  ) {
     this.name = i_name;
     this.game = i_game;
     this.world = i_world;
@@ -196,9 +195,8 @@ class GameObject
     this.x = 0;
     this.y = 0;
   }
-  
-  spawn(i_x, i_y)
-  {
+
+  spawn(i_x, i_y) {
     this.x = i_x;
     this.y = i_y;
 
@@ -208,26 +206,26 @@ class GameObject
     this.body = this.world.createBody({
       type: this.bodyType,
       fixedRotation: true,
-      position: { x: this.x * g_MetersPerPixel, y: this.y * g_MetersPerPixel},
+      position: { x: this.x * g_MetersPerPixel, y: this.y * g_MetersPerPixel },
       userData: this.getUserData(),
     });
 
-    this.sprite  = new PIXI.Sprite({ texture: this.texture });
+    this.sprite = new PIXI.Sprite({ texture: this.texture });
     this.sprite.anchor.set(0.5);
 
-    for (var i = 0; i < this.shapes.length; i++)
-    {
-      this.body.createFixture(
-        {
-          shape: this.shapes[i],
-          density: this.weight,
-          friction: 0,
-          restitution: 0.99,
-        }
-      );
+    for (var i = 0; i < this.shapes.length; i++) {
+      this.body.createFixture({
+        shape: this.shapes[i],
+        density: this.weight,
+        friction: 0,
+        restitution: 0.99,
+      });
     }
 
-    this.container.pivot.set(this.container.width / 2, this.container.height / 2);
+    this.container.pivot.set(
+      this.container.width / 2,
+      this.container.height / 2,
+    );
     this.container.x = this.x;
     this.container.y = this.y;
     this.container.addChild(this.sprite);
@@ -238,36 +236,46 @@ class GameObject
     this.game.debugLayer.addChildAt(this.debug);
   }
 
-  update(i_deltaTime)
-  {
+  update(i_deltaTime) {}
 
-  }
-
-  integrate(i_alpha)
-  {
-    this.debug.x = this.container.x = this.body.getPosition().x * g_PixelsPerMeter;
-    this.debug.y = this.container.y = this.body.getPosition().y * g_PixelsPerMeter;
+  integrate(i_alpha) {
+    this.debug.x = this.container.x =
+      this.body.getPosition().x * g_PixelsPerMeter;
+    this.debug.y = this.container.y =
+      this.body.getPosition().y * g_PixelsPerMeter;
     this.container.rotation = this.body.getAngle();
 
     this.debug.clear();
-    if (this.game.drawFixtures)
-    {
-      this.debug.lineStyle(1,0x00ff2a,1);
-      for (var fixture = this.body.getFixtureList(); fixture; fixture = fixture.getNext())
-      {
-        if (fixture.getShape().getType() == "circle")
-        {
+    if (this.game.drawFixtures) {
+      this.debug.lineStyle(1, 0x00ff2a, 1);
+      for (
+        var fixture = this.body.getFixtureList();
+        fixture;
+        fixture = fixture.getNext()
+      ) {
+        if (fixture.getShape().getType() == "circle") {
           var r = fixture.getShape().m_radius;
-          this.debug.drawCircle(fixture.getShape().m_p.x * g_PixelsPerMeter, fixture.getShape().m_p.y * g_PixelsPerMeter, r * g_PixelsPerMeter);
-        }
-        else if (fixture.getShape().getType() == "polygon")
-        {
+          this.debug.drawCircle(
+            fixture.getShape().m_p.x * g_PixelsPerMeter,
+            fixture.getShape().m_p.y * g_PixelsPerMeter,
+            r * g_PixelsPerMeter,
+          );
+        } else if (fixture.getShape().getType() == "polygon") {
           var shape = fixture.getShape(); // we do make an assumption that there's just one fixture; keep this in mind if you add more.
-          this.debug.moveTo(shape.m_vertices[0].x * g_PixelsPerMeter, shape.m_vertices[0].y * g_PixelsPerMeter);
-          for(var v = 1; v < shape.m_vertices.length; v++) {
-            this.debug.lineTo(shape.m_vertices[v].x * g_PixelsPerMeter, shape.m_vertices[v].y * g_PixelsPerMeter);
+          this.debug.moveTo(
+            shape.m_vertices[0].x * g_PixelsPerMeter,
+            shape.m_vertices[0].y * g_PixelsPerMeter,
+          );
+          for (var v = 1; v < shape.m_vertices.length; v++) {
+            this.debug.lineTo(
+              shape.m_vertices[v].x * g_PixelsPerMeter,
+              shape.m_vertices[v].y * g_PixelsPerMeter,
+            );
           }
-          this.debug.lineTo(shape.m_vertices[0].x * g_PixelsPerMeter, shape.m_vertices[0].y * g_PixelsPerMeter);
+          this.debug.lineTo(
+            shape.m_vertices[0].x * g_PixelsPerMeter,
+            shape.m_vertices[0].y * g_PixelsPerMeter,
+          );
         }
 
         this.debug.endFill();
@@ -275,22 +283,34 @@ class GameObject
     }
   }
 
-  destroy()
-  {
+  destroy() {
     this.world.destroyBody(this.body);
 
     this.game.debugLayer.removeChild(this.debug);
     this.game.spriteLayer.removeChild(this.container);
   }
 
-  objectType() { return "gameObject"; }
-  getUserData() { return { name: this.name, objectType: this.objectType() }}
+  objectType() {
+    return "gameObject";
+  }
+  getUserData() {
+    return { name: this.name, objectType: this.objectType() };
+  }
 }
 
-class Racer extends GameObject
-{
-  constructor(i_name, i_game, i_texture, i_world, i_shape, i_weight, i_baseSpeed, i_accel, i_maxSpeed, i_bodyType = 'dynamic')
-  {
+class Racer extends GameObject {
+  constructor(
+    i_name,
+    i_game,
+    i_texture,
+    i_world,
+    i_shape,
+    i_weight,
+    i_baseSpeed,
+    i_accel,
+    i_maxSpeed,
+    i_bodyType = "dynamic",
+  ) {
     super(i_name, i_game, i_texture, i_world, i_shape, i_weight, i_bodyType);
 
     this.baseSpeed = i_baseSpeed;
@@ -298,14 +318,12 @@ class Racer extends GameObject
     this.maxSpeed = i_maxSpeed;
   }
 
-  update(i_deltaTime)
-  {
+  update(i_deltaTime) {
     super.update(i_deltaTime);
 
     var linVel = this.body.getLinearVelocity();
 
-    if (linVel.length() < this.maxSpeed)
-    {
+    if (linVel.length() < this.maxSpeed) {
       var angle = angleBetween(linVel, new planck.Vec2(1, 0));
 
       var speedIncrease = this.accel * i_deltaTime;
@@ -314,8 +332,7 @@ class Racer extends GameObject
 
       var newVel = planck.Vec2.add(linVel, accelVec);
 
-      if (newVel.length() > this.maxSpeed)
-      {
+      if (newVel.length() > this.maxSpeed) {
         newVel = planck.Vec2.mul(planck.Vec2.normalize(newVel), this.maxSpeed);
       }
 
@@ -325,28 +342,29 @@ class Racer extends GameObject
     this.body.m_userData.collided = false;
   }
 
-  objectType() { return "racer"; }
+  objectType() {
+    return "racer";
+  }
 
-  getUserData()
-  {
+  getUserData() {
     return {
       name: this.name,
       objectType: this.objectType(),
       baseSpeed: this.baseSpeed,
       acceleration: this.accel,
       collided: false,
-    }
+    };
   }
 }
 
-class Goal extends GameObject
-{
-  objectType() { return "goal"; }
+class Goal extends GameObject {
+  objectType() {
+    return "goal";
+  }
 }
 
 class Course {
-  constructor(i_game, i_startingPoints, i_goalPoints, i_shapes, i_texture)
-  {
+  constructor(i_game, i_startingPoints, i_goalPoints, i_shapes, i_texture) {
     this.game = i_game;
 
     this.startingPoints = i_startingPoints;
@@ -359,8 +377,7 @@ class Course {
     });
   }
 
-  stage()
-  {
+  stage() {
     this.debug = new PIXI.Graphics();
     this.game.debugLayer.addChildAt(this.debug);
 
@@ -371,47 +388,55 @@ class Course {
     this.game.mapLayer.addChild(this.sprite);
 
     this.body = this.game.world.createBody({
-      type: 'static',
+      type: "static",
       fixedRotation: true,
-      position: { x: 0, y: 0},
-      userData: { name: 'course', objectType: 'course' }
+      position: { x: 0, y: 0 },
+      userData: { name: "course", objectType: "course" },
     });
 
-    for (var i = 0; i < this.shapes.length; i++)
-    {
-      this.body.createFixture(
-        {
-          shape: this.shapes[i], 
-          friction: 0,
-          restitution: 0.99,
-        }
-      );
+    for (var i = 0; i < this.shapes.length; i++) {
+      this.body.createFixture({
+        shape: this.shapes[i],
+        friction: 0,
+        restitution: 0.99,
+      });
     }
   }
 
-  integrate(i_alpha)
-  {
+  integrate(i_alpha) {
     this.debug.clear();
-    if (this.game.drawFixtures)
-    {
+    if (this.game.drawFixtures) {
       this.debug.x = 0;
       this.debug.y = 0;
-      this.debug.lineStyle(1,0x00ff2a,1);
-      for (var fixture = this.body.getFixtureList(); fixture; fixture = fixture.getNext())
-      {
-        if (fixture.getShape().getType() == "circle")
-        {
+      this.debug.lineStyle(1, 0x00ff2a, 1);
+      for (
+        var fixture = this.body.getFixtureList();
+        fixture;
+        fixture = fixture.getNext()
+      ) {
+        if (fixture.getShape().getType() == "circle") {
           var r = fixture.getShape().m_radius;
-          this.debug.drawCircle(fixture.getShape().m_p.x * g_PixelsPerMeter, fixture.getShape().m_p.y * g_PixelsPerMeter, r * g_PixelsPerMeter);
-        }
-        else if (fixture.getShape().getType() == "polygon")
-        {
+          this.debug.drawCircle(
+            fixture.getShape().m_p.x * g_PixelsPerMeter,
+            fixture.getShape().m_p.y * g_PixelsPerMeter,
+            r * g_PixelsPerMeter,
+          );
+        } else if (fixture.getShape().getType() == "polygon") {
           var shape = fixture.getShape(); // we do make an assumption that there's just one fixture; keep this in mind if you add more.
-          this.debug.moveTo(shape.m_vertices[0].x * g_PixelsPerMeter, shape.m_vertices[0].y * g_PixelsPerMeter);
-          for(var v = 1; v < shape.m_vertices.length; v++) {
-            this.debug.lineTo(shape.m_vertices[v].x * g_PixelsPerMeter, shape.m_vertices[v].y * g_PixelsPerMeter);
+          this.debug.moveTo(
+            shape.m_vertices[0].x * g_PixelsPerMeter,
+            shape.m_vertices[0].y * g_PixelsPerMeter,
+          );
+          for (var v = 1; v < shape.m_vertices.length; v++) {
+            this.debug.lineTo(
+              shape.m_vertices[v].x * g_PixelsPerMeter,
+              shape.m_vertices[v].y * g_PixelsPerMeter,
+            );
           }
-          this.debug.lineTo(shape.m_vertices[0].x * g_PixelsPerMeter, shape.m_vertices[0].y * g_PixelsPerMeter);
+          this.debug.lineTo(
+            shape.m_vertices[0].x * g_PixelsPerMeter,
+            shape.m_vertices[0].y * g_PixelsPerMeter,
+          );
         }
 
         this.debug.endFill();
@@ -419,8 +444,7 @@ class Course {
     }
   }
 
-  destroy()
-  {
+  destroy() {
     this.game.world.destroyBody(this.body);
 
     this.game.debugLayer.removeChild(this.debug);
@@ -428,10 +452,8 @@ class Course {
   }
 }
 
-class HorseGame
-{
-  constructor(i_seed, i_numRacers = 4)
-  {
+class HorseGame {
+  constructor(i_seed, i_numRacers = 4) {
     this.seed = i_seed;
     this.rng = new RNG(this.seed);
 
@@ -452,18 +474,39 @@ class HorseGame
     this.boundaryGraphics = new PIXI.Graphics();
     this.debugLayer.addChild(this.boundaryGraphics);
 
-    this.countdownText = new PIXI.HTMLText({ text: 'Race begins in: \n10 seconds', style: { fill: '#FFFFFF', stroke: { color: '#000000', width: 6 }, fontFamily: 'Arial', fontSize: 72, align: 'center' } });
+    this.celebrationLayer = new PIXI.Container();
+    this.uiLayer.addChild(this.celebrationLayer);
+
+    this.countdownText = new PIXI.HTMLText({
+      text: "Race begins in: \n10 seconds",
+      style: {
+        fill: "#FFFFFF",
+        stroke: { color: "#000000", width: 9 },
+        fontFamily: "Arial",
+        fontSize: 96,
+        align: "center",
+      },
+    });
     this.countdownText.anchor.x = 0.5;
     this.countdownText.anchor.y = 0.5;
     this.uiLayer.addChild(this.countdownText);
 
-    this.winText = new PIXI.HTMLText({ text: '', style: { fill: '#FFFFFF', stroke: { color: '#000000', width: 6 }, fontFamily: 'Arial', fontSize: 72, align: 'center' } });
+    this.winText = new PIXI.HTMLText({
+      text: "",
+      style: {
+        fill: "#FFFFFF",
+        stroke: { color: "#000000", width: 12 },
+        fontFamily: "Arial",
+        fontSize: 108,
+        align: "center",
+      },
+    });
     this.winText.anchor.x = 0.5;
     this.winText.anchor.y = 0.5;
     this.uiLayer.addChild(this.winText);
 
     this.world = planck.World({ gravity: planck.Vec2(0, 0) });
-    this.world.on('pre-solve', this.handleContact.bind(this));
+    this.world.on("pre-solve", this.handleContact.bind(this));
 
     this.gameTime = 0;
     this.frameCounter = 0;
@@ -487,123 +530,163 @@ class HorseGame
     this.gallopVolume = 1.0;
   }
 
-  async preload()
-  {
-    await fetch(dataPath).then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    }).then(data => {
-      this.itemData = data;
-    });
+  async preload() {
+    await fetch(dataPath)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        this.itemData = data;
+      });
 
-    await fetch(soundPath).then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    }).then(data => {
-      this.soundData = data;
-    });
+    await fetch(extrasPath)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        this.extrasData = data;
+      });
 
     var assets = [];
     var shapes = {};
-    for (const [itemType, typeData] of Object.entries(this.itemData))
-    {
+    for (const [itemType, typeData] of Object.entries(this.itemData)) {
       shapes[itemType] = {};
 
-      for (const [itemKey, itemValue] of Object.entries(typeData["items"]))
-      {
-        assets.push({ alias: itemType + "/" + itemKey, src: "/static/overlay/horse/" + itemValue["sprite"] });
+      for (const [itemKey, itemValue] of Object.entries(typeData["items"])) {
+        assets.push({
+          alias: itemType + "/" + itemKey,
+          src: "/static/overlay/horse/" + itemValue["sprite"],
+        });
       }
 
-      for (const [itemKey, shapeData] of Object.entries(typeData["shapes"]))
-      {
+      for (const [itemKey, shapeData] of Object.entries(typeData["shapes"])) {
         shapes[itemType][itemKey] = createShapesFromJson(shapeData);
       }
+    }
+
+    for (const [imageKey, imageFile] of Object.entries(
+      this.extrasData.images,
+    )) {
+      assets.push({
+        alias: "images/" + imageKey,
+        src: "/static/overlay/horse/" + imageFile,
+      });
     }
 
     this.assets = await PIXI.Assets.load(assets);
 
     this.racers = [];
     this.specialRacers = {};
-    for (const [racerKey, racerData] of Object.entries(this.itemData["racers"]["items"]))
-    {
+    for (const [racerKey, racerData] of Object.entries(
+      this.itemData["racers"]["items"],
+    )) {
       var shapeKey = racerData["shape"];
-      var racer = new Racer(racerKey, 
-                            this, 
-                            this.assets["racers/"+racerKey], 
-                            this.world, 
-                            shapes["racers"][shapeKey], 
-                            racerData["weight"], 
-                            racerData["baseSpeed"], 
-                            racerData["acceleration"], 
-                            racerData["maxSpeed"]);
+      var racer = new Racer(
+        racerKey,
+        this,
+        this.assets["racers/" + racerKey],
+        this.world,
+        shapes["racers"][shapeKey],
+        racerData["weight"],
+        racerData["baseSpeed"],
+        racerData["acceleration"],
+        racerData["maxSpeed"],
+      );
 
-      if (!racerData["special"])
-      {
+      if (!racerData["special"]) {
         this.racers.push(racer);
-      }
-      else
-      {
+      } else {
         this.specialRacers[racerKey] = racer;
       }
     }
 
     this.goals = [];
     this.specialGoals = {};
-    for (const [goalKey, goalData] of Object.entries(this.itemData["goals"]["items"]))
-    {
+    for (const [goalKey, goalData] of Object.entries(
+      this.itemData["goals"]["items"],
+    )) {
       var shapeKey = goalData["shape"];
-      var goal = new Goal(goalKey, this, this.assets["goals/"+goalKey],  this.world, shapes["goals"][shapeKey], 0, "static");
+      var goal = new Goal(
+        goalKey,
+        this,
+        this.assets["goals/" + goalKey],
+        this.world,
+        shapes["goals"][shapeKey],
+        0,
+        "static",
+      );
 
-      if (!goalData["special"])
-      {
+      if (!goalData["special"]) {
         this.goals.push(goal);
-      }
-      else
-      {
+      } else {
         this.specialGoals[goalKey] = goal;
       }
     }
 
     this.maps = [];
     this.specialMaps = {};
-    for (const [mapKey, mapData] of Object.entries(this.itemData["maps"]["items"]))
-    {
+    for (const [mapKey, mapData] of Object.entries(
+      this.itemData["maps"]["items"],
+    )) {
       var shapeKey = mapData["shape"];
-      var course = new Course(this, mapData["spawnPoints"], mapData["goalPoints"], shapes["maps"][shapeKey], this.assets["maps/"+mapKey]);
+      var course = new Course(
+        this,
+        mapData["spawnPoints"],
+        mapData["goalPoints"],
+        shapes["maps"][shapeKey],
+        this.assets["maps/" + mapKey],
+      );
 
-      if (!mapData["special"])
-      {
+      if (!mapData["special"]) {
         this.maps.push(course);
-      }
-      else
-      {
+      } else {
         this.specialMaps[mapKey] = course;
       }
     }
 
+    var w = this.app.screen.width;
+    var h = this.app.screen.height;
+    this.fireworks1 = new PIXI.GifSprite({ source: this.assets["images/fireworks1"], anchor: 0.5, x: 0.25*w, y: 0.25*h, scale: 1.0 });
+    this.fireworks2 = new PIXI.GifSprite({ source: this.assets["images/fireworks2"], anchor: 0.5, x: 0.75*w, y: 0.25*h, scale: 2.0 });
+    this.fireworks3 = new PIXI.GifSprite({ source: this.assets["images/fireworks3"], anchor: 0.5, x: 0.75*w, y: 0.75*h, scale: 1.0 });
+    this.fireworks4 = new PIXI.GifSprite({ source: this.assets["images/fireworks4"], anchor: 0.5, x: 0.25*w, y: 0.75*h, scale: 2.0 });
+    this.horseGif   = new PIXI.GifSprite({ source: this.assets["images/horse"],      anchor: 0.5, x: 0.50*w, y: 0.30*h, scale: 3.0 });
     this.soundEffects = {};
-
-    for (const [soundKey, soundFile] of Object.entries(this.soundData))
-    {
-      if (typeof soundFile === 'string')
-      {
-        this.soundEffects[soundKey] = PIXI.sound.Sound.from({ url: "/static/overlay/horse/" + soundFile, preload: true });
-      }
-      else if (Array.isArray(soundFile))
-      {
+    for (const [soundKey, soundFile] of Object.entries(
+      this.extrasData.sounds,
+    )) {
+      if (typeof soundFile === "string") {
+        this.soundEffects[soundKey] = PIXI.sound.Sound.from({
+          url: "/static/overlay/horse/" + soundFile,
+          preload: true,
+        });
+      } else if (Array.isArray(soundFile)) {
         this.soundEffects[soundKey] = [];
-        soundFile.forEach((v, i) => this.soundEffects[soundKey].push(PIXI.sound.Sound.from({ url: "/static/overlay/horse/" + v, preload: true })));
+        soundFile.forEach((v, i) =>
+          this.soundEffects[soundKey].push(
+            PIXI.sound.Sound.from({
+              url: "/static/overlay/horse/" + v,
+              preload: true,
+            }),
+          ),
+        );
       }
     }
   }
 
-  async setup()
-  {
-    await this.app.init({ background: "#FFF", width: 1280, height: 720, autoStart: false });
+  async setup() {
+    await this.app.init({
+      background: "#FFF",
+      width: 1280,
+      height: 720,
+      autoStart: false,
+    });
 
     this.countdownText.x = this.winText.x = this.app.screen.width / 2;
     this.countdownText.y = this.winText.y = this.app.screen.height / 2;
@@ -613,20 +696,29 @@ class HorseGame
     let w = this.app.screen.width * g_MetersPerPixel;
     let h = this.app.screen.height * g_MetersPerPixel;
 
-    this.ground = this.world.createBody({ userData: { name: 'boundary', objectType: 'boundary' }});
+    this.ground = this.world.createBody({
+      userData: { name: "boundary", objectType: "boundary" },
+    });
 
-    this.ground.createFixture(planck.Edge(planck.Vec2(0, 0), planck.Vec2(w, 0)));
-    this.ground.createFixture(planck.Edge(planck.Vec2(w, 0), planck.Vec2(w, h)));
-    this.ground.createFixture(planck.Edge(planck.Vec2(w, h), planck.Vec2(0, h)));
-    this.ground.createFixture(planck.Edge(planck.Vec2(0, h), planck.Vec2(0, 0)));
+    this.ground.createFixture(
+      planck.Edge(planck.Vec2(0, 0), planck.Vec2(w, 0)),
+    );
+    this.ground.createFixture(
+      planck.Edge(planck.Vec2(w, 0), planck.Vec2(w, h)),
+    );
+    this.ground.createFixture(
+      planck.Edge(planck.Vec2(w, h), planck.Vec2(0, h)),
+    );
+    this.ground.createFixture(
+      planck.Edge(planck.Vec2(0, h), planck.Vec2(0, 0)),
+    );
 
-    this.populate()
+    this.populate();
 
     requestAnimationFrame(this.step.bind(this));
   }
 
-  populate()
-  {
+  populate() {
     this.map = this.rng.choice(this.maps);
     this.map.stage();
 
@@ -635,13 +727,14 @@ class HorseGame
     var goalLoc = this.rng.choice(this.map.goalPoints);
     this.goal.spawn(goalLoc[0], goalLoc[1]);
 
-    this.activeRacers = []
+    this.activeRacers = [];
 
     this.spawnRacers(this.numRacers);
   }
 
-  reset()
-  {
+  reset() {
+    this.celebrationLayer.removeChildren();
+
     this.map.destroy();
     this.map = undefined;
 
@@ -668,88 +761,76 @@ class HorseGame
     this.populate();
   }
 
-  togglePause()
-  {
+  togglePause() {
     if (this.paused) this.play();
     else this.pause();
   }
 
-  play()
-  {
-    if (this.paused)
-    {
+  play() {
+    if (this.paused) {
       this.paused = false;
       PIXI.sound.resumeAll();
     }
   }
 
-  pause()
-  {
-    if (!this.paused)
-    {
+  pause() {
+    if (!this.paused) {
       this.paused = true;
       PIXI.sound.pauseAll();
     }
   }
 
-  setVolume(i_volume)
-  {
+  setVolume(i_volume) {
     this.volume = i_volume;
 
-    for (const [soundKey, sounds] of Object.entries(this.soundEffects))
-    {
+    for (const [soundKey, sounds] of Object.entries(this.soundEffects)) {
       var newVolume = this.volume;
-      if (soundKey == "gallops")
-        newVolume *= this.gallopVolume;
+      if (soundKey == "gallops") newVolume *= this.gallopVolume;
 
       if (Array.isArray(sounds))
-        this.soundEffects[soundKey].forEach((v, i) => v.volume = newVolume);
-      else
-        this.soundEffects[soundKey].volume = newVolume;
+        this.soundEffects[soundKey].forEach((v, i) => (v.volume = newVolume));
+      else this.soundEffects[soundKey].volume = newVolume;
     }
   }
 
-  setGallopVolume(i_volume)
-  {
+  setGallopVolume(i_volume) {
     this.gallopVolume = i_volume;
 
-    this.soundEffects["gallops"].forEach((v, i) => v.volume = (this.volume * this.gallopVolume));
+    this.soundEffects["gallops"].forEach(
+      (v, i) => (v.volume = this.volume * this.gallopVolume),
+    );
   }
 
-  setSeed(i_seed)
-  {
+  setSeed(i_seed) {
     this.seed = i_seed;
   }
 
-  setRacerCount(i_count)
-  {
+  setRacerCount(i_count) {
     this.numRacers = i_count;
   }
 
-  spawnRacers(i_numRacers)
-  {
+  spawnRacers(i_numRacers) {
     this.activeRacers = this.rng.sample(this.racers, i_numRacers);
     var startingPoints = this.rng.sample(this.map.startingPoints, i_numRacers);
 
-    for (var i = 0; i < i_numRacers; i++)
-    {
-      if (this.activeRacers[i].name == "green" && this.rng.random() < 0.0833)
-      {
+    for (var i = 0; i < i_numRacers; i++) {
+      if (this.activeRacers[i].name == "green" && this.rng.random() < 0.0833) {
         this.activeRacers[i] = this.specialRacers["glorp"];
       }
-      if (this.activeRacers[i].name == "orange" && this.rng.random() < 0.1667)
-      {
+      if (this.activeRacers[i].name == "orange" && this.rng.random() < 0.1667) {
         this.activeRacers[i] = this.specialRacers["garf"];
       }
-      if (this.activeRacers[i].name == "red" && this.rng.random() < 0.125)
-      {
+      if (this.activeRacers[i].name == "red" && this.rng.random() < 0.125) {
         this.activeRacers[i] = this.specialRacers["shoop"];
+      }
+      if (this.activeRacers[i].name == "pink" && this.rng.random() < 0.125) {
+        this.activeRacers[i] = this.specialRacers["kirbeter"];
       }
 
       this.activeRacers[i].spawn(startingPoints[i][0], startingPoints[i][1]);
 
       var linVel = new planck.Vec2(this.activeRacers[i].baseSpeed, 0);
-      var angle = new planck.Rot(startingPoints[i][2] * Math.PI / 180.0);
+      var angle = new planck.Rot((startingPoints[i][2] * Math.PI) / 180.0);
 
       linVel = planck.Rot.mulVec2(angle, linVel);
       this.activeRacers[i].body.setLinearVelocity(linVel);
@@ -757,16 +838,12 @@ class HorseGame
     }
   }
 
-  step(t)
-  {
-    if (!this.renderFrames)
-    {
+  step(t) {
+    if (!this.renderFrames) {
       if (this.iterCount === undefined) this.iterCount = 0;
 
-      while(!this.completed)
-      {
-        for (let i = 0; i < this.activeRacers.length; i++)
-        {
+      while (!this.completed) {
+        for (let i = 0; i < this.activeRacers.length; i++) {
           this.activeRacers[i].update(g_DeltaTime);
         }
 
@@ -788,50 +865,47 @@ class HorseGame
       if (this.totalFrames === undefined) this.totalFrames = 0;
       this.totalFrames += this.frameCounter;
 
-      if (this.iterCount < 100)
-      {
+      if (this.iterCount < 100) {
         this.setSeed(Math.floor(1_000_000 * Math.random() + 1));
         this.reset();
         setTimeout(() => this.step(0), 100);
+      } else {
+        console.log(
+          "Longest: " +
+            this.longestLap * g_DeltaTime +
+            "s, Shortest: " +
+            this.shortestLap * g_DeltaTime +
+            "s, Average: " +
+            (this.totalFrames / this.iterCount) * g_DeltaTime +
+            "s",
+        );
       }
-      else
-      {
-        console.log("Longest: " + (this.longestLap * g_DeltaTime) + "s, Shortest: " + (this.shortestLap * g_DeltaTime) + "s, Average: " + (this.totalFrames / this.iterCount * g_DeltaTime) + "s");
-      }
-    }
-    else
-    {
+    } else {
       requestAnimationFrame(this.step.bind(this));
 
-      if (this.lastTime !== undefined)
-      {
+      if (this.lastTime !== undefined) {
         var frameTime = t - this.lastTime;
         this.lastTime = t;
 
-        if (this.paused || this.completed)
-        {
+        if (this.paused || this.completed) {
           this.render(0);
           return;
         }
 
-        if (this.countdown == 10.0)
-        {
+        if (this.countdown == 10.0) {
           this.soundEffects["start"].play();
         }
 
-        if (this.countdown > 0)
-        {
-          this.countdown -= (frameTime / 1000);
+        if (this.countdown > 0) {
+          this.countdown -= frameTime / 1000;
           this.render(0);
           return;
         }
 
         this.accumulator += frameTime;
 
-        while (this.accumulator >= g_Timestep)
-        {
-          for (let i = 0; i < this.activeRacers.length; i++)
-          {
+        while (this.accumulator >= g_Timestep) {
+          for (let i = 0; i < this.activeRacers.length; i++) {
             this.activeRacers[i].update(g_DeltaTime);
           }
 
@@ -852,85 +926,68 @@ class HorseGame
     this.lastTime = t;
   }
 
-  render(i_alpha)
-  {
+  render(i_alpha) {
     this.map.integrate(i_alpha);
 
-    for (let i = 0; i < this.activeRacers.length; i++)
-    {
+    for (let i = 0; i < this.activeRacers.length; i++) {
       this.activeRacers[i].integrate(i_alpha);
     }
 
     this.goal.integrate(i_alpha);
 
-    if (this.countdown >= 10.0)
-    {
-      this.countdownText.text = "Race starting soon..."
-    }
-    else if (this.countdown > 0)
-    {
-      this.countdownText.text = "Race begins in: \n" + this.countdown.toFixed(0) + " seconds";
-    }
-    else
-    {
-      this.countdownText.text = '';
+    if (this.countdown >= 10.0) {
+      this.countdownText.text = "Race starting soon...";
+    } else if (this.countdown > 0) {
+      this.countdownText.text =
+        "Race begins in: \n" + this.countdown.toFixed(0) + " seconds";
+    } else {
+      this.countdownText.text = "";
     }
 
-    if (this.completed)
-    {
+    if (this.completed) {
       this.winText.text = this.winner.getUserData().name + " wins!";
-    }
-    else
-    {
-      this.winText.text = '';
+    } else {
+      this.winText.text = "";
     }
 
     this.app.renderer.render(this.app.stage);
   }
 
-  addCanvas(element)
-  {
+  addCanvas(element) {
     element.html(this.app.canvas);
   }
 
-  deflectRacer(i_racerBody)
-  {
+  deflectRacer(i_racerBody) {
     var linVel = i_racerBody.getLinearVelocity();
 
-    if (this.randomizeBounces && (this.rng.random() < 0.25))
-    {
-      var minDeflection = 15.0 * Math.PI / 180.0;
-      var maxDeflection = 75.0 * Math.PI / 180.0;
+    if (this.randomizeBounces && this.rng.random() < 0.5) {
+      var minDeflection = (5.0 * Math.PI) / 180.0;
+      var maxDeflection = (75.0 * Math.PI) / 180.0;
       var def1 = this.rng.randFloat(minDeflection, maxDeflection);
       var def2 = this.rng.randFloat(minDeflection, maxDeflection);
 
       var deflection = Math.min(def1, def2);
-      deflection = (this.rng.randBool()) ? deflection : -deflection;
+      deflection = this.rng.randBool() ? deflection : -deflection;
 
       var rot = new planck.Rot(deflection);
       var newLinearVel = planck.Rot.mulVec2(rot, linVel);
-    }
-    else
-    {
+    } else {
       var deflection = 0;
       var newLinearVel = linVel;
     }
-
-    // newLinearVel = planck.Vec2.normalize(newLinearVel);
-    // newLinearVel = planck.Vec2.mul(newLinearVel, i_racerBody.getUserData().baseSpeed);
 
     i_racerBody.setLinearVelocity(newLinearVel);
 
     return deflection;
   }
 
-  handleContacts()
-  {
-    this.contactList.sort((a, b) => a.getUserData().name.localeCompare(b.getUserData().name));
+  handleContacts() {
+    this.contactList.sort((a, b) =>
+      a.getUserData().name.localeCompare(b.getUserData().name),
+    );
 
     var racerList = [];
-    for (var i = this.contactList.length - 1; i >= 0; i--)
-    {
+    for (var i = this.contactList.length - 1; i >= 0; i--) {
       var racerBody = this.contactList[i];
 
       var defl = this.deflectRacer(racerBody);
@@ -944,61 +1001,83 @@ class HorseGame
     if (racerList.length > 0) this.collisionList.push(racerList);
   }
 
-  handleContact(i_contact, i_impulse)
+  handleVictory(i_victor)
   {
-    var fA = i_contact.getFixtureA(), bA = fA.getBody();
-    var fB = i_contact.getFixtureB(), bB = fB.getBody();
+    this.celebrationLayer.addChild(this.fireworks1);
+    this.celebrationLayer.addChild(this.fireworks2);
+    this.celebrationLayer.addChild(this.fireworks3);
+    this.celebrationLayer.addChild(this.fireworks4);
+    this.celebrationLayer.addChild(this.horseGif);
+  }
+
+  handleContact(i_contact, i_impulse) {
+    var fA = i_contact.getFixtureA(),
+      bA = fA.getBody();
+    var fB = i_contact.getFixtureB(),
+      bB = fB.getBody();
 
     var objectTypeA = bA.getUserData().objectType;
     var objectTypeB = bB.getUserData().objectType;
 
     var racerBody1 = undefined;
     var racerBody2 = undefined;
-    if (objectTypeA == 'racer' && objectTypeB == 'racer')
-    {
+    if (objectTypeA == "racer" && objectTypeB == "racer") {
       racerBody1 = bA;
       racerBody2 = bB;
-    }
-    else if (objectTypeA == 'racer')
-    {
+    } else if (objectTypeA == "racer") {
       racerBody1 = bA;
-    }
-    else if (objectTypeB == 'racer')
-    {
+    } else if (objectTypeB == "racer") {
       racerBody1 = bB;
     }
 
-    if (racerBody1 !== undefined)
-    {
-      this.soundEffects["gallops"][racerBody1.getUserData().number].play({ loop: false, singleInstance: true });
+    if (racerBody1 !== undefined) {
+      this.soundEffects["gallops"][racerBody1.getUserData().number].play({
+        loop: false,
+        singleInstance: true,
+      });
     }
 
-    var goalBody = (objectTypeA == 'goal') ? bA : ((objectTypeB  == 'goal') ? bB : undefined);
-    var courseBody = (objectTypeA == 'course') ? bA : ((objectTypeB == 'course') ? bB : undefined);
+    var goalBody =
+      objectTypeA == "goal" ? bA : objectTypeB == "goal" ? bB : undefined;
+    var courseBody =
+      objectTypeA == "course" ? bA : objectTypeB == "course" ? bB : undefined;
 
-    if (racerBody1 !== undefined && goalBody !== undefined)
-    {
+    if (racerBody1 !== undefined && goalBody !== undefined) {
       this.winner = racerBody1;
       this.completed = true;
 
-      console.log("RNG Counter: " + this.rng.counter + ", Winner: " + racerBody1.getUserData().name + " @ " + racerBody1.getLinearVelocity().x + ", " + racerBody1.getLinearVelocity().y + " in " + this.frameCounter + " frames (" + (this.frameCounter * g_DeltaTime) + " seconds)");
+      this.handleVictory(racerBody1);
+
+      console.log(
+        "RNG Counter: " +
+          this.rng.counter +
+          ", Winner: " +
+          racerBody1.getUserData().name +
+          " @ " +
+          racerBody1.getLinearVelocity().x +
+          ", " +
+          racerBody1.getLinearVelocity().y +
+          " in " +
+          this.frameCounter +
+          " frames (" +
+          this.frameCounter * g_DeltaTime +
+          " seconds)",
+      );
     }
 
-    if (racerBody1 !== undefined && courseBody !== undefined)
-    {
+    if (racerBody1 !== undefined && courseBody !== undefined) {
       var vel = racerBody1.getLinearVelocity();
       var baseSpeed = racerBody1.getUserData().baseSpeed;
 
       var velMag = planck.Vec2.lengthOf(vel);
-      var newRest = Math.max(0.05, Math.min(1, (baseSpeed / velMag)));
+      var newRest = Math.max(0.05, Math.min(1, baseSpeed / velMag));
 
       i_contact.setRestitution(newRest);
 
       this.contactList.push(racerBody1);
     }
 
-    if (racerBody1 !== undefined && racerBody2 !== undefined)
-    {
+    if (racerBody1 !== undefined && racerBody2 !== undefined) {
       var vel1 = racerBody1.getLinearVelocity();
       var vel2 = racerBody2.getLinearVelocity();
 
@@ -1008,8 +1087,8 @@ class HorseGame
       var velMag1 = planck.Vec2.lengthOf(vel1);
       var velMag2 = planck.Vec2.lengthOf(vel2);
 
-      var ratio1 = (baseSpeed1 / velMag1);
-      var ratio2 = (baseSpeed2 / velMag2);
+      var ratio1 = baseSpeed1 / velMag1;
+      var ratio2 = baseSpeed2 / velMag2;
 
       var newRest = Math.max(0.05, Math.min(1, (ratio1 + ratio2) / 2));
 

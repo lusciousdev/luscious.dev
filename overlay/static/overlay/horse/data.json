@@ -7,7 +7,7 @@
         "weight": 0,
         "baseSpeed": 7.5,
         "acceleration": 9.0,
-        "maxSpeed": 25.0,
+        "maxSpeed": 27.0,
         "special": false
       },
       "orange": {
@@ -16,7 +16,7 @@
         "weight": 0,
         "baseSpeed": 7.5,
         "acceleration": 10.0,
-        "maxSpeed": 22.5,
+        "maxSpeed": 28.5,
         "special": false
       },
       "yellow": {
@@ -43,7 +43,7 @@
         "weight": 0,
         "baseSpeed": 7.5,
         "acceleration": 12.5,
-        "maxSpeed": 20.0,
+        "maxSpeed": 25.0,
         "special": false
       },
       "blue": {
@@ -70,7 +70,7 @@
         "weight": 0,
         "baseSpeed": 7.5,
         "acceleration": 12.5,
-        "maxSpeed": 50.0,
+        "maxSpeed": 25.0,
         "special": false
       },
       "rainbow": {
@@ -107,6 +107,15 @@
         "baseSpeed": 10.0,
         "acceleration": 8.0,
         "maxSpeed": 34.0,
+        "special": true
+      },
+      "kirbeter": {
+        "sprite": "Kirbeter.png",
+        "shape": "kirbeter",
+        "weight": 0,
+        "baseSpeed": 7.5,
+        "acceleration": 12.5,
+        "maxSpeed": 25.0,
         "special": true
       }
     },
@@ -151,6 +160,15 @@
           {"type":"polygon","points":[[21,8],[34,42],[45,22],[43,18],[29,9],[23,7]]},
           {"type":"circle","points":[28,5,5]},
           {"type":"circle","points":[43,14,5]}
+        ]
+      },
+      "kirbeter": {
+        "offset": -28,
+        "fixtures": [
+          {"type":"circle","points":[31,27,24]},
+          {"type":"circle","points":[17,27,15]},
+          {"type":"polygon","points":[[10,41],[5,44],[5,46],[8,49],[16,51],[28,46]]},
+          {"type":"polygon","points":[[24,48],[24,51],[29,53],[39,52],[44,50],[36,41]]}
         ]
       }
     }
