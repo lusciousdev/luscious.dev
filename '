@@ -8,19 +8,19 @@ from .models import *
 
 def get_lastfm_grid(request):
     if request.method != "GET":
-        return HttpResponse(b"Invalid request type.", 501)
+        return HttpResponse("Invalid request type.", 501)
 
     username = request.GET.get("username", None)
     period = request.GET.get("period", None)
-    width = int(request.GET.get("width", "3"))
-    height = int(request.GET.get("height", "3"))
+    width = request.GET.get("width", 3)
+    height = request.GET.get("height", 3)
 
     if username is None or period is None:
-        return HttpResponse(b"Incomplete request data.", 400)
+        return HttpResponse("Incomplete request data.", 400)
 
     try:
         grid: LastFMGrid = LastFMGrid.objects.get(
-            username=username, period=period, width=width, height=height
+            username=username, period=period, size=int(size)
         )
     except LastFMGrid.DoesNotExist:
         return JsonResponse({"ready": False, "message": "Grid does not exist."})

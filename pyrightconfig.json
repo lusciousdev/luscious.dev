@@ -6,6 +6,7 @@
   "reportAny": false,
   "reportUnknownVariableType": false,
   "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
   "reportImplicitOverride": false,
   "typeCheckingMode": "recommended"
 }

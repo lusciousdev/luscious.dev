@@ -2,7 +2,8 @@ const data = document.currentScript.dataset;
 
 const username = data.username;
 const period = data.period;
-const size = data.size;
+const width = data.width;
+const height = data.height;
 
 const getGridURL = data.getgridurl;
 
@@ -46,7 +47,7 @@ function handleAjaxError(data)
 
 function getLastFMGrid()
 {
-  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.GET, getGridURL, { "username": username, "period": period, "size": parseInt(size) }, handleGridSuccess, handleAjaxError))
+  QueueAjaxRequest(new AjaxRequest(AjaxRequestTypes.GET, getGridURL, { "username": username, "period": period, "width": parseInt(width), "height": parseInt(height) }, handleGridSuccess, handleAjaxError))
 }
 
 $(window).on("load", function() {

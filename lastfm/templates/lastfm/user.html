@@ -13,7 +13,8 @@
         defer
         data-username="{{ username }}"
         data-period="{{ period }}"
-        data-size="{{ size }}"
+        data-width="{{ width }}"
+        data-height="{{ height }}"
         data-getgridurl="{% url 'lastfm:api_get_lastfm_grid' %}">
 </script>
 
@@ -28,35 +29,7 @@
       <h1 class="site-title">last.fm Collage Generator</h1>
       <div class="generator-form">
         <div>
-          <form method="post" class="generator-form">
-              {% csrf_token %}
-              {% if form.errors %}
-              <div id="form-error-container">
-                <div id="form-error-title">
-                  Error:
-                </div>
-                <ul id="form-error-list">
-                {% for field in form.visible_fields %}
-                {% for error in field.errors %}
-                  <li>{{ error }}</li>
-                {% endfor %}
-                {% endfor %}
-                <ul>
-              </div>
-              {% endif %}
-              <table>
-              {% for field in form %}
-                <tr>
-                  <td><label class="label" for="{{ field.auto_id }}">{{ field.label }}:</label></td>
-                  <td>{{ field }}</td>
-                </tr>
-              {% endfor %}
-                <tr>
-                  <td></td>
-                  <td><input type="submit" value="Generate"></td>
-                </tr>
-              </table>
-          </form>
+          {% include "lastfm/form.html" with form=form %}
         </div>
       </div>
       <div>
