@@ -45,5 +45,5 @@ class InfoForm(forms.Form):
         label="Period",
         widget=forms.Select(attrs={"class": "choice-field"}),
     )
-    width = forms.IntegerField(min_value = 1, max_value = 10, step_size = 1)
-    height = forms.IntegerField(min_value = 1, max_value = 10, step_size = 1)
+    width = forms.IntegerField(min_value = 1, max_value = 10, step_size = 1, initial = 3)
+    height = forms.IntegerField(min_value = 1, max_value = 10, step_size = 1, initial = 3)
