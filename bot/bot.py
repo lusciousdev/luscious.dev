@@ -71,7 +71,7 @@ class BroadcasterType:
     PARTNER = 2
 
 
-class LusciousBot(twitchio_commands.Bot):
+class LusciousBot(twitchio_commands.AutoBot):
     channel_layer: RedisChannelLayer
 
     bot_group_name: str = "lusciousbot"
@@ -672,77 +672,46 @@ class LusciousBot(twitchio_commands.Bot):
             buid, "broadcaster_type", {"broadcaster_type": broadcaster_type}
         )
 
-        broadcaster_subscriptions: list[str] = []
-        for _, sub in self.websocket_subscriptions().items():
-            if sub.condition.get("broadcaster_user_id", "") == buid:
-                broadcaster_subscriptions.append(sub.type.value)
-
-        if "channel.chat.message" not in broadcaster_subscriptions:
-            subscription = twitchio.eventsub.ChatMessageSubscription(
+        subscriptions: list[twitchio.eventsub.SubscriptionPayload] = [
+            twitchio.eventsub.ChatMessageSubscription(
                 broadcaster_user_id=buid, user_id=self.bot_id
             )
-            _ = await self.subscribe_websocket(payload=subscription)
+        ]
 
         if broadcaster_type >= BroadcasterType.AFFILIATE:
-            if "channel.poll.begin" not in broadcaster_subscriptions:
-                subscription = twitchio.eventsub.ChannelPollBeginSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
+            subscriptions.extend(
+                [
+                    twitchio.eventsub.ChannelPollBeginSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPollProgressSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPollEndSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPredictionBeginSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPredictionProgressSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPredictionLockSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPredictionEndSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPointsRedeemAddSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                    twitchio.eventsub.ChannelPointsRedeemUpdateSubscription(
+                        broadcaster_user_id=buid
+                    ),
+                ]
+            )
 
-            if "channel.poll.progress" not in broadcaster_subscriptions:
-                subscription = twitchio.eventsub.ChannelPollProgressSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
-
-            if "channel.poll.end" not in broadcaster_subscriptions:
-                subscription = twitchio.eventsub.ChannelPollEndSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
-
-            if "channel.prediction.begin" not in broadcaster_subscriptions:
-                subscription = twitchio.eventsub.ChannelPredictionBeginSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
-
-            if "channel.prediction.progress" not in broadcaster_subscriptions:
-                subscription = twitchio.eventsub.ChannelPredictionProgressSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
-
-            if "channel.prediction.lock" not in broadcaster_subscriptions:
-                subscription = twitchio.eventsub.ChannelPredictionLockSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
-
-            if "channel.prediction.end" not in broadcaster_subscriptions:
-                subscription = twitchio.eventsub.ChannelPredictionEndSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
-
-            if (
-                "channel.channel_points_custom_reward_redemption.add"
-                not in broadcaster_subscriptions
-            ):
-                subscription = twitchio.eventsub.ChannelPointsRedeemAddSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
-
-            if (
-                "channel.channel_points_custom_reward_redemption.update"
-                not in broadcaster_subscriptions
-            ):
-                subscription = twitchio.eventsub.ChannelPointsRedeemUpdateSubscription(
-                    broadcaster_user_id=buid
-                )
-                _ = await self.subscribe_websocket(payload=subscription)
+        resp: twitchio.MultiSubscribePayload = await self.multi_subscribe(subscriptions = subscriptions)
 
 
 class LusciousBotComponent(twitchio_commands.Component):
