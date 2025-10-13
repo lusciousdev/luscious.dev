@@ -526,6 +526,9 @@ class HorseGame {
 
     this.collisionList = [];
 
+    this.randomMap = true;
+    this.selectedMap = 0;
+
     this.volume = 1.0;
     this.gallopVolume = 1.0;
   }
@@ -652,11 +655,41 @@ class HorseGame {
 
     var w = this.app.screen.width;
     var h = this.app.screen.height;
-    this.fireworks1 = new PIXI.GifSprite({ source: this.assets["images/fireworks1"], anchor: 0.5, x: 0.25*w, y: 0.25*h, scale: 1.0 });
-    this.fireworks2 = new PIXI.GifSprite({ source: this.assets["images/fireworks2"], anchor: 0.5, x: 0.75*w, y: 0.25*h, scale: 2.0 });
-    this.fireworks3 = new PIXI.GifSprite({ source: this.assets["images/fireworks3"], anchor: 0.5, x: 0.75*w, y: 0.75*h, scale: 1.0 });
-    this.fireworks4 = new PIXI.GifSprite({ source: this.assets["images/fireworks4"], anchor: 0.5, x: 0.25*w, y: 0.75*h, scale: 2.0 });
-    this.horseGif   = new PIXI.GifSprite({ source: this.assets["images/horse"],      anchor: 0.5, x: 0.50*w, y: 0.30*h, scale: 3.0 });
+    this.fireworks1 = new PIXI.GifSprite({
+      source: this.assets["images/fireworks1"],
+      anchor: 0.5,
+      x: 0.25 * w,
+      y: 0.25 * h,
+      scale: 1.0,
+    });
+    this.fireworks2 = new PIXI.GifSprite({
+      source: this.assets["images/fireworks2"],
+      anchor: 0.5,
+      x: 0.75 * w,
+      y: 0.25 * h,
+      scale: 2.0,
+    });
+    this.fireworks3 = new PIXI.GifSprite({
+      source: this.assets["images/fireworks3"],
+      anchor: 0.5,
+      x: 0.75 * w,
+      y: 0.75 * h,
+      scale: 1.0,
+    });
+    this.fireworks4 = new PIXI.GifSprite({
+      source: this.assets["images/fireworks4"],
+      anchor: 0.5,
+      x: 0.25 * w,
+      y: 0.75 * h,
+      scale: 2.0,
+    });
+    this.horseGif = new PIXI.GifSprite({
+      source: this.assets["images/horse"],
+      anchor: 0.5,
+      x: 0.5 * w,
+      y: 0.3 * h,
+      scale: 3.0,
+    });
     this.soundEffects = {};
     for (const [soundKey, soundFile] of Object.entries(
       this.extrasData.sounds,
@@ -719,9 +752,13 @@ class HorseGame {
   }
 
   populate() {
-    this.map = this.rng.choice(this.maps);
-    this.map.stage();
+    if (this.randomMap) {
+      this.map = this.rng.choice(this.maps);
+    } else {
+      this.map = this.maps[this.selectedMap];
+    }
 
+    this.map.stage();
     this.goal = this.rng.choice(this.goals);
 
     var goalLoc = this.rng.choice(this.map.goalPoints);
@@ -841,6 +878,12 @@ class HorseGame {
   step(t) {
     if (!this.renderFrames) {
       if (this.iterCount === undefined) this.iterCount = 0;
+      if (this.overFifteen === undefined) this.overFifteen = 0;
+      if (this.overThirty === undefined) this.overThirty = 0;
+      if (this.overOne === undefined) this.overOne = 0;
+      if (this.overTwo === undefined) this.overTwo = 0;
+      if (this.overFour === undefined) this.overFour = 0;
+      if (this.overEight === undefined) this.overEight = 0;
 
       while (!this.completed) {
         for (let i = 0; i < this.activeRacers.length; i++) {
@@ -865,19 +908,37 @@ class HorseGame {
       if (this.totalFrames === undefined) this.totalFrames = 0;
       this.totalFrames += this.frameCounter;
 
-      if (this.iterCount < 100) {
+      if (this.frameCounter > 15.0 / g_DeltaTime) this.overFifteen++;
+      if (this.frameCounter > 30.0 / g_DeltaTime) this.overThirty++;
+      if (this.frameCounter > 60.0 / g_DeltaTime) this.overOne++;
+      if (this.frameCounter > 120.0 / g_DeltaTime) this.overTwo++;
+      if (this.frameCounter > 240.0 / g_DeltaTime) this.overFour++;
+      if (this.frameCounter > 480.0 / g_DeltaTime) this.overEight++;
+
+      if (this.iterCount < 500) {
         this.setSeed(Math.floor(1_000_000 * Math.random() + 1));
         this.reset();
         setTimeout(() => this.step(0), 100);
       } else {
         console.log(
           "Longest: " +
-            this.longestLap * g_DeltaTime +
-            "s, Shortest: " +
-            this.shortestLap * g_DeltaTime +
-            "s, Average: " +
-            (this.totalFrames / this.iterCount) * g_DeltaTime +
-            "s",
+          this.longestLap * g_DeltaTime +
+          "s, Shortest: " +
+          this.shortestLap * g_DeltaTime +
+          "s, Average: " +
+          (this.totalFrames / this.iterCount) * g_DeltaTime +
+          "s, Over 15s: " +
+          this.overFifteen +
+          ", Over 30s: " +
+          this.overThirty +
+          ", Over 1m: " +
+          this.overOne +
+          ", Over 2m: " +
+          this.overTwo +
+          ", Over 4m: " +
+          this.overFour +
+          ", Over 8m: " +
+          this.overEight
         );
       }
     } else {
@@ -1001,8 +1062,7 @@ class HorseGame {
     if (racerList.length > 0) this.collisionList.push(racerList);
   }
 
-  handleVictory(i_victor)
-  {
+  handleVictory(i_victor) {
     this.celebrationLayer.addChild(this.fireworks1);
     this.celebrationLayer.addChild(this.fireworks2);
     this.celebrationLayer.addChild(this.fireworks3);
