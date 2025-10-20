@@ -56,7 +56,7 @@ jscolor.presets.default = {
         </div>
         <div class="sidebar-section" id="sidebar-controls">
           <table class="sidebar-item" id="page-settings">
-            <tr id="twitch-embed-checkbox" style="display: none;">
+            <tr class="twitch-setting">
               <td>
                 <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
               </td>
@@ -64,12 +64,18 @@ jscolor.presets.default = {
                 <label for="enable-embed">Embed Twitch Stream</label>
               </td>
             </tr>
-            <tr>
+            <tr class="twitch-setting">
               <td>
                 <input type="checkbox" id="embed-interact" name="interact-embed" value="Allow interaction with stream embed."/>
               </td>
               <td>
                 <label for="interact-embed">Allow interaction with embed</label>
+              </td>
+            </tr>
+            <tr id="no-twitch-info">
+              <td></td>
+              <td>
+                <small><i>This overlay's owner has not linked a Twitch account.</i></small>
               </td>
             </tr>
             <tr>

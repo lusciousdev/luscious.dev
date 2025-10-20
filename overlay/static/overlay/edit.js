@@ -2036,7 +2036,13 @@ $(window).on("load", function () {
 
   if (c_OwnerTwitchName != "")
   {
-    $("#twitch-embed-checkbox").css({ "display": "table-row" });
+    $(".twitch-setting").css({ "display": "table-row" });
+    $("#no-twitch-info").css({ "display": "none" });
+  }
+  else
+  {
+    $(".twitch-setting").css({ "display": "none" });
+    $("#no-twitch-info").css({ "display": "table-row" });
   }
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
