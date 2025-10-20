@@ -9,6 +9,7 @@ const c_EditOverlayItemsURL = editScriptData.edititemsurl;
 const c_DeleteOverlayItemURL = editScriptData.deleteitemurl;
 const c_OverlayOwner = editScriptData.overlayowner;
 const c_OverlayUserID = editScriptData.overlayuid;
+const c_OwnerTwitchName = editScriptData.twitchname;
 const c_NotificationURL = editScriptData.notificationurl;
 
 const c_EditView = true;
@@ -1909,15 +1910,14 @@ function toggleEmbeddedTwitchStream() {
   var checked = g_EmbedStream;
   var interactable = $("#embed-interact").is(":checked");
 
-  if (checked) {
-    $("#twitch-embed").empty();
-    g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", c_OverlayOwner);
+  $("#twitch-embed").empty();
+  if (checked && c_OwnerTwitchName != "") {
+    g_StreamEmbed = createTwitchStreamPlayer("twitch-embed", c_OwnerTwitchName);
 
     if (!interactable) {
       $("#twitch-embed iframe").addClass("noselect nopointer");
     }
   } else {
-    $("#twitch-embed").html("");
     g_StreamEmbed = null;
   }
 }
@@ -2033,6 +2033,11 @@ $(window).on("load", function () {
   initialResize();
 
   connectWebsocket();
+
+  if (c_OwnerTwitchName != "")
+  {
+    $("#twitch-embed-checkbox").css({ "display": "table-row" });
+  }
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
 

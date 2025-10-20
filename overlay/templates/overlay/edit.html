@@ -31,6 +31,7 @@ jscolor.presets.default = {
         data-deleteitemurl="{% url 'overlay:api_delete_overlay_item' %}"
         data-overlayowner="{{ collaborativeoverlay.owner.username }}"
         data-overlayuid="{{ overlayuid }}"
+        data-twitchname="{% if twitchlogin %}{{ twitchlogin }}{% endif %}"
         data-notificationurl="{% static 'overlay/notification.wav' %}">
 </script>
 {% endblock %}
@@ -55,7 +56,7 @@ jscolor.presets.default = {
         </div>
         <div class="sidebar-section" id="sidebar-controls">
           <table class="sidebar-item" id="page-settings">
-            <tr>
+            <tr id="twitch-embed-checkbox" style="display: none;">
               <td>
                 <input type="checkbox" id="embed-checkbox" name="enable-embed" value="Embed Twitch Stream">
               </td>

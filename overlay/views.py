@@ -192,11 +192,13 @@ class EditOverlayView(generic.DetailView):
     context['forms'] = FORMS_MAP
     context['overlayuid'] = OverlayUser.objects.get(id = self.request.user.id).overlay.identifier
     context['twitchuid'] = None
+    context['twitchlogin'] = None
     
     overlay = self.get_object()
     try:
       twitchaccount : SocialAccount = overlay.owner.socialaccount_set.get(provider="twitch")
       context['twitchuid'] = twitchaccount.uid
+      context['twitchlogin'] = twitchaccount.extra_data.get("login", None)
     except Exception as e:
       pass
     
