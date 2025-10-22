@@ -196,6 +196,10 @@ class GameObject {
     this.weight = i_weight;
     this.anchor = 0.5;
 
+    this.body = undefined;
+    this.debug = undefined;
+    this.container = undefined;
+
     this.x = 0;
     this.y = 0;
   }
@@ -288,10 +292,23 @@ class GameObject {
   }
 
   destroy() {
-    this.world.destroyBody(this.body);
+    if (this.body !== undefined)
+    {
+      this.world.destroyBody(this.body);
+      this.body = undefined;
+    }
 
-    this.game.debugLayer.removeChild(this.debug);
-    this.game.spriteLayer.removeChild(this.container);
+    if (this.debug !== undefined)
+    {
+      this.game.debugLayer.removeChild(this.debug);
+      this.debug = undefined;
+    }
+
+    if (this.container !== undefined)
+    {
+      this.game.spriteLayer.removeChild(this.container);
+      this.container = undefined;
+    }
   }
 
   objectType() {
@@ -827,6 +844,11 @@ class HorseGame {
 
     this.goal.destroy();
 
+    for (const [miscKey, miscItem] of Object.entries(this.misc))
+    {
+      this.misc[miscKey].destroy();
+    }
+
     this.gameTime = 0;
     this.frameCounter = 0;
     this.lastTime = undefined;
@@ -932,6 +954,7 @@ class HorseGame {
       if (this.overFour === undefined) this.overFour = 0;
       if (this.overEight === undefined) this.overEight = 0;
 
+      this.misc.barrier.destroy();
       while (!this.completed) {
         for (let i = 0; i < this.activeRacers.length; i++) {
           this.activeRacers[i].update(g_DeltaTime);
