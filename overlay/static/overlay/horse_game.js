@@ -2,6 +2,9 @@ const scriptData = document.currentScript.dataset;
 const dataPath = scriptData.datapath;
 const extrasPath = scriptData.extraspath;
 
+const dataVersion = scriptData.version;
+const versionAddendum = "?v=" + dataVersion;
+
 const g_PixelsPerMeter = 10.0;
 const g_MetersPerPixel = 1.0 / g_PixelsPerMeter;
 
@@ -534,7 +537,7 @@ class HorseGame {
   }
 
   async preload() {
-    await fetch(dataPath)
+    await fetch(dataPath + versionAddendum)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -545,7 +548,7 @@ class HorseGame {
         this.itemData = data;
       });
 
-    await fetch(extrasPath)
+    await fetch(extrasPath + versionAddendum)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -564,7 +567,7 @@ class HorseGame {
       for (const [itemKey, itemValue] of Object.entries(typeData["items"])) {
         assets.push({
           alias: itemType + "/" + itemKey,
-          src: "/static/overlay/horse/" + itemValue["sprite"],
+          src: "/static/overlay/horse/" + itemValue["sprite"] + versionAddendum,
         });
       }
 
@@ -578,7 +581,7 @@ class HorseGame {
     )) {
       assets.push({
         alias: "images/" + imageKey,
-        src: "/static/overlay/horse/" + imageFile,
+        src: "/static/overlay/horse/" + imageFile + versionAddendum,
       });
     }
 
@@ -696,7 +699,7 @@ class HorseGame {
     )) {
       if (typeof soundFile === "string") {
         this.soundEffects[soundKey] = PIXI.sound.Sound.from({
-          url: "/static/overlay/horse/" + soundFile,
+          url: "/static/overlay/horse/" + soundFile + versionAddendum,
           preload: true,
         });
       } else if (Array.isArray(soundFile)) {
@@ -704,7 +707,7 @@ class HorseGame {
         soundFile.forEach((v, i) =>
           this.soundEffects[soundKey].push(
             PIXI.sound.Sound.from({
-              url: "/static/overlay/horse/" + v,
+              url: "/static/overlay/horse/" + v + versionAddendum,
               preload: true,
             }),
           ),
