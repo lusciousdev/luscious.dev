@@ -194,6 +194,7 @@ class GameObject {
     this.speed = 1;
     this.angle = 0;
     this.weight = i_weight;
+    this.anchor = 0.5;
 
     this.x = 0;
     this.y = 0;
@@ -214,7 +215,7 @@ class GameObject {
     });
 
     this.sprite = new PIXI.Sprite({ texture: this.texture });
-    this.sprite.anchor.set(0.5);
+    this.sprite.anchor.set(this.anchor);
 
     for (var i = 0; i < this.shapes.length; i++) {
       this.body.createFixture({
@@ -367,12 +368,25 @@ class Goal extends GameObject {
 }
 
 class Course {
-  constructor(i_game, i_startingPoints, i_goalPoints, i_shapes, i_texture) {
+  constructor(
+    i_game,
+    i_startingPoints,
+    i_goalPoints,
+    i_shapes,
+    i_texture,
+    i_playDuringCountdown = false,
+    i_barrierDuringCountdown = false,
+    i_barrierLocation = [0, 0],
+  ) {
     this.game = i_game;
 
     this.startingPoints = i_startingPoints;
     this.goalPoints = i_goalPoints;
     this.shapes = i_shapes;
+
+    this.playDuringCountdown = i_playDuringCountdown;
+    this.barrierDuringCountdown = i_barrierDuringCountdown;
+    this.barrierLocation = i_barrierLocation;
 
     this.sprite = new PIXI.Sprite({
       texture: i_texture,
@@ -635,6 +649,26 @@ class HorseGame {
       }
     }
 
+    this.misc = {};
+    for (const [miscKey, miscData] of Object.entries(
+      this.itemData["misc"]["items"],
+    )) {
+      var shapeKey = miscData["shape"];
+
+      var miscItem = new GameObject(
+        miscKey,
+        this,
+        this.assets["misc/" + miscKey],
+        this.world,
+        shapes["misc"][shapeKey],
+        0,
+        "static",
+      );
+      miscItem.anchor = 0;
+
+      this.misc[miscKey] = miscItem;
+    }
+
     this.maps = [];
     this.specialMaps = {};
     for (const [mapKey, mapData] of Object.entries(
@@ -647,6 +681,9 @@ class HorseGame {
         mapData["goalPoints"],
         shapes["maps"][shapeKey],
         this.assets["maps/" + mapKey],
+        mapData["playDuringCountdown"],
+        mapData["barrierDuringCountdown"],
+        mapData["barrierLocation"],
       );
 
       if (!mapData["special"]) {
@@ -763,6 +800,13 @@ class HorseGame {
 
     this.map.stage();
     this.goal = this.rng.choice(this.goals);
+
+    if (this.map.barrierDuringCountdown) {
+      this.misc.barrier.spawn(
+        this.map.barrierLocation[0],
+        this.map.barrierLocation[1],
+      );
+    }
 
     var goalLoc = this.rng.choice(this.map.goalPoints);
     this.goal.spawn(goalLoc[0], goalLoc[1]);
@@ -925,23 +969,23 @@ class HorseGame {
       } else {
         console.log(
           "Longest: " +
-          this.longestLap * g_DeltaTime +
-          "s, Shortest: " +
-          this.shortestLap * g_DeltaTime +
-          "s, Average: " +
-          (this.totalFrames / this.iterCount) * g_DeltaTime +
-          "s, Over 15s: " +
-          this.overFifteen +
-          ", Over 30s: " +
-          this.overThirty +
-          ", Over 1m: " +
-          this.overOne +
-          ", Over 2m: " +
-          this.overTwo +
-          ", Over 4m: " +
-          this.overFour +
-          ", Over 8m: " +
-          this.overEight
+            this.longestLap * g_DeltaTime +
+            "s, Shortest: " +
+            this.shortestLap * g_DeltaTime +
+            "s, Average: " +
+            (this.totalFrames / this.iterCount) * g_DeltaTime +
+            "s, Over 15s: " +
+            this.overFifteen +
+            ", Over 30s: " +
+            this.overThirty +
+            ", Over 1m: " +
+            this.overOne +
+            ", Over 2m: " +
+            this.overTwo +
+            ", Over 4m: " +
+            this.overFour +
+            ", Over 8m: " +
+            this.overEight,
         );
       }
     } else {
@@ -962,8 +1006,17 @@ class HorseGame {
 
         if (this.countdown > 0) {
           this.countdown -= frameTime / 1000;
-          this.render(0);
-          return;
+
+          if (!this.map.playDuringCountdown)
+          {
+            this.render(0);
+            return;
+          }
+        }
+
+        if (this.countdown <= 0 && this.map.barrierDuringCountdown)
+        {
+          this.misc.barrier.destroy();
         }
 
         this.accumulator += frameTime;
