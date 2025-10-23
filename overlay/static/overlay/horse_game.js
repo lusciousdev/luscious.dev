@@ -487,7 +487,7 @@ class Course {
 }
 
 class HorseGame {
-  constructor(i_seed, i_numRacers = 4) {
+  constructor(i_seed, i_numRacers = 4, i_editWarning = false) {
     this.seed = i_seed;
     this.rng = new RNG(this.seed);
 
@@ -557,6 +557,8 @@ class HorseGame {
 
     this.randomizeBounces = true;
     this.contactList = [];
+
+    this.editWarning = i_editWarning;
 
     this.collisionList = [];
 
@@ -944,73 +946,98 @@ class HorseGame {
     }
   }
 
+  simulate()
+  {
+    if (this.iterCount === undefined) this.iterCount = 0;
+    if (this.timingStats === undefined) this.timingStats = { 15: 0, 30: 0, 60: 0, 120: 0, 240: 0, 480: 0 };
+
+    if (this.racerStats === undefined)
+    {
+      this.racerStats = {};
+
+      for (var i = 0; i < this.racers.length; i++)
+      {
+        this.racerStats[this.racers[i].name] = { "wins": 0, "races": 0 };
+      }
+
+      for (const [racerKey, racerObj] of Object.entries(this.specialRacers))
+      {
+        this.racerStats[racerKey] = { "wins": 0, "races": 0 };
+      }
+    }
+
+    this.misc.barrier.destroy();
+    while (!this.completed) {
+      for (let i = 0; i < this.activeRacers.length; i++) {
+        this.activeRacers[i].update(g_DeltaTime);
+      }
+
+      this.goal.update(g_DeltaTime);
+
+      this.world.step(g_DeltaTime, 16, 6);
+      this.gameTime += g_Timestep;
+      this.frameCounter += 1;
+
+      this.handleContacts();
+    }
+
+    for (var i = 0; i < this.activeRacers.length; i++)
+    {
+      this.racerStats[this.activeRacers[i].name]["races"]++;
+    }
+
+    this.racerStats[this.winner.getUserData().name]["wins"]++;
+
+    this.iterCount += 1;
+    if (this.longestLap === undefined) this.longestLap = 0;
+    this.longestLap = Math.max(this.longestLap, this.frameCounter);
+    if (this.shortestLap === undefined) this.shortestLap = 1000000;
+    this.shortestLap = Math.min(this.shortestLap, this.frameCounter);
+
+    if (this.totalFrames === undefined) this.totalFrames = 0;
+    this.totalFrames += this.frameCounter;
+
+    for (const [timeId, count] of Object.entries(this.timingStats))
+    {
+      if (this.frameCounter > timeId / g_DeltaTime) this.timingStats[timeId]++;
+    }
+
+    if (this.iterCount < 500) {
+      this.setSeed(Math.floor(1_000_000 * Math.random() + 1));
+      this.reset();
+      setTimeout(() => this.step(0), 100);
+    } else {
+      console.log(
+        "Longest: " +
+          this.longestLap * g_DeltaTime +
+          "s, Shortest: " +
+          this.shortestLap * g_DeltaTime +
+          "s, Average: " +
+          (this.totalFrames / this.iterCount) * g_DeltaTime +
+          "s, Over 15s: " +
+          this.timingStats[15] +
+          ", Over 30s: " +
+          this.timingStats[30] +
+          ", Over 1m: " +
+          this.timingStats[60] +
+          ", Over 2m: " +
+          this.timingStats[120] +
+          ", Over 4m: " +
+          this.timingStats[240] +
+          ", Over 8m: " +
+          this.timingStats[480],
+      );
+
+      for (const [racerName, racerStats] of Object.entries(this.racerStats))
+      {
+        console.log("\tRacer " + racerName + ": " + racerStats["wins"] + "/" + racerStats["races"]);
+      }
+    }
+  }
+
   step(t) {
     if (!this.renderFrames) {
-      if (this.iterCount === undefined) this.iterCount = 0;
-      if (this.overFifteen === undefined) this.overFifteen = 0;
-      if (this.overThirty === undefined) this.overThirty = 0;
-      if (this.overOne === undefined) this.overOne = 0;
-      if (this.overTwo === undefined) this.overTwo = 0;
-      if (this.overFour === undefined) this.overFour = 0;
-      if (this.overEight === undefined) this.overEight = 0;
-
-      this.misc.barrier.destroy();
-      while (!this.completed) {
-        for (let i = 0; i < this.activeRacers.length; i++) {
-          this.activeRacers[i].update(g_DeltaTime);
-        }
-
-        this.goal.update(g_DeltaTime);
-
-        this.world.step(g_DeltaTime, 16, 6);
-        this.gameTime += g_Timestep;
-        this.frameCounter += 1;
-
-        this.handleContacts();
-      }
-
-      this.iterCount += 1;
-      if (this.longestLap === undefined) this.longestLap = 0;
-      this.longestLap = Math.max(this.longestLap, this.frameCounter);
-      if (this.shortestLap === undefined) this.shortestLap = 1000000;
-      this.shortestLap = Math.min(this.shortestLap, this.frameCounter);
-
-      if (this.totalFrames === undefined) this.totalFrames = 0;
-      this.totalFrames += this.frameCounter;
-
-      if (this.frameCounter > 15.0 / g_DeltaTime) this.overFifteen++;
-      if (this.frameCounter > 30.0 / g_DeltaTime) this.overThirty++;
-      if (this.frameCounter > 60.0 / g_DeltaTime) this.overOne++;
-      if (this.frameCounter > 120.0 / g_DeltaTime) this.overTwo++;
-      if (this.frameCounter > 240.0 / g_DeltaTime) this.overFour++;
-      if (this.frameCounter > 480.0 / g_DeltaTime) this.overEight++;
-
-      if (this.iterCount < 500) {
-        this.setSeed(Math.floor(1_000_000 * Math.random() + 1));
-        this.reset();
-        setTimeout(() => this.step(0), 100);
-      } else {
-        console.log(
-          "Longest: " +
-            this.longestLap * g_DeltaTime +
-            "s, Shortest: " +
-            this.shortestLap * g_DeltaTime +
-            "s, Average: " +
-            (this.totalFrames / this.iterCount) * g_DeltaTime +
-            "s, Over 15s: " +
-            this.overFifteen +
-            ", Over 30s: " +
-            this.overThirty +
-            ", Over 1m: " +
-            this.overOne +
-            ", Over 2m: " +
-            this.overTwo +
-            ", Over 4m: " +
-            this.overFour +
-            ", Over 8m: " +
-            this.overEight,
-        );
-      }
+      simulate();
     } else {
       requestAnimationFrame(this.step.bind(this));
 
@@ -1035,11 +1062,17 @@ class HorseGame {
             this.render(0);
             return;
           }
+
+          if (this.countdown <= 0)
+          {
+            this.misc.barrier.destroy();
+          }
         }
 
-        if (this.countdown <= 0 && this.map.barrierDuringCountdown)
+        if (this.editWarning)
         {
-          this.misc.barrier.destroy();
+          this.render(0);
+          return;
         }
 
         this.accumulator += frameTime;
@@ -1080,6 +1113,8 @@ class HorseGame {
     } else if (this.countdown > 0) {
       this.countdownText.text =
         "Race begins in: \n" + this.countdown.toFixed(0) + " seconds";
+    } else if (this.editWarning) {
+      this.countdownText.text = "Check stream for results.";
     } else {
       this.countdownText.text = "";
     }

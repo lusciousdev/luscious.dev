@@ -757,7 +757,8 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
 
         $(itemInnerContainerId).append(GameTemplate.format(itemId));
 
-        g_ItemDict[itemId]['game'] = new HorseGame(g_ItemDict[itemId].item_data.seed, Math.max(2, Math.min(6, g_ItemDict[itemId].item_data.racers)));
+        var numRacers = Math.max(2, Math.min(6, g_ItemDict[itemId].item_data.racers));
+        g_ItemDict[itemId]['game'] = new HorseGame(g_ItemDict[itemId].item_data.seed, numRacers, c_EditView);
 
         g_ItemDict[itemId]['game'].setup().then(() => horseGameSetupDone(itemId));
 
