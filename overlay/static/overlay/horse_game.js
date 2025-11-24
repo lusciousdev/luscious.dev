@@ -292,20 +292,17 @@ class GameObject {
   }
 
   destroy() {
-    if (this.body !== undefined)
-    {
+    if (this.body !== undefined) {
       this.world.destroyBody(this.body);
       this.body = undefined;
     }
 
-    if (this.debug !== undefined)
-    {
+    if (this.debug !== undefined) {
       this.game.debugLayer.removeChild(this.debug);
       this.debug = undefined;
     }
 
-    if (this.container !== undefined)
-    {
+    if (this.container !== undefined) {
       this.game.spriteLayer.removeChild(this.container);
       this.container = undefined;
     }
@@ -846,8 +843,7 @@ class HorseGame {
 
     this.goal.destroy();
 
-    for (const [miscKey, miscItem] of Object.entries(this.misc))
-    {
+    for (const [miscKey, miscItem] of Object.entries(this.misc)) {
       this.misc[miscKey].destroy();
     }
 
@@ -946,23 +942,20 @@ class HorseGame {
     }
   }
 
-  simulate()
-  {
+  simulate() {
     if (this.iterCount === undefined) this.iterCount = 0;
-    if (this.timingStats === undefined) this.timingStats = { 15: 0, 30: 0, 60: 0, 120: 0, 240: 0, 480: 0 };
+    if (this.timingStats === undefined)
+      this.timingStats = { 15: 0, 30: 0, 60: 0, 120: 0, 240: 0, 480: 0 };
 
-    if (this.racerStats === undefined)
-    {
+    if (this.racerStats === undefined) {
       this.racerStats = {};
 
-      for (var i = 0; i < this.racers.length; i++)
-      {
-        this.racerStats[this.racers[i].name] = { "wins": 0, "races": 0 };
+      for (var i = 0; i < this.racers.length; i++) {
+        this.racerStats[this.racers[i].name] = { wins: 0, races: 0 };
       }
 
-      for (const [racerKey, racerObj] of Object.entries(this.specialRacers))
-      {
-        this.racerStats[racerKey] = { "wins": 0, "races": 0 };
+      for (const [racerKey, racerObj] of Object.entries(this.specialRacers)) {
+        this.racerStats[racerKey] = { wins: 0, races: 0 };
       }
     }
 
@@ -981,8 +974,7 @@ class HorseGame {
       this.handleContacts();
     }
 
-    for (var i = 0; i < this.activeRacers.length; i++)
-    {
+    for (var i = 0; i < this.activeRacers.length; i++) {
       this.racerStats[this.activeRacers[i].name]["races"]++;
     }
 
@@ -997,8 +989,7 @@ class HorseGame {
     if (this.totalFrames === undefined) this.totalFrames = 0;
     this.totalFrames += this.frameCounter;
 
-    for (const [timeId, count] of Object.entries(this.timingStats))
-    {
+    for (const [timeId, count] of Object.entries(this.timingStats)) {
       if (this.frameCounter > timeId / g_DeltaTime) this.timingStats[timeId]++;
     }
 
@@ -1028,9 +1019,15 @@ class HorseGame {
           this.timingStats[480],
       );
 
-      for (const [racerName, racerStats] of Object.entries(this.racerStats))
-      {
-        console.log("\tRacer " + racerName + ": " + racerStats["wins"] + "/" + racerStats["races"]);
+      for (const [racerName, racerStats] of Object.entries(this.racerStats)) {
+        console.log(
+          "\tRacer " +
+            racerName +
+            ": " +
+            racerStats["wins"] +
+            "/" +
+            racerStats["races"],
+        );
       }
     }
   }
@@ -1057,20 +1054,17 @@ class HorseGame {
         if (this.countdown > 0) {
           this.countdown -= frameTime / 1000;
 
-          if (!this.map.playDuringCountdown)
-          {
+          if (!this.map.playDuringCountdown) {
             this.render(0);
             return;
           }
 
-          if (this.countdown <= 0)
-          {
+          if (this.countdown <= 0) {
             this.misc.barrier.destroy();
           }
         }
 
-        if (this.editWarning)
-        {
+        if (this.editWarning) {
           this.render(0);
           return;
         }
@@ -1182,6 +1176,12 @@ class HorseGame {
     this.celebrationLayer.addChild(this.fireworks3);
     this.celebrationLayer.addChild(this.fireworks4);
     this.celebrationLayer.addChild(this.horseGif);
+
+    if (this.soundEffects[this.winner.getUserData().name] !== undefined) {
+      this.soundEffects[this.winner.getUserData().name]
+        .play({ loop: false, singleInstance: true })
+        .on("end", () => this.soundEffects["wins"].play({ loop: false, singleInstance: true }));
+    }
   }
 
   handleContact(i_contact, i_impulse) {

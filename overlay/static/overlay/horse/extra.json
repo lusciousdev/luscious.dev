@@ -8,7 +8,21 @@
       "gallop4.mp3",
       "gallop5.mp3",
       "gallop6.mp3"
-    ]
+    ],
+    "wins": "wins.mp3",
+    "red": "red.mp3",
+    "orange": "orange.mp3",
+    "yellow": "yellow.mp3",
+    "green": "green.mp3",
+    "cyan": "cyan.mp3",
+    "blue": "blue.mp3",
+    "purple": "purple.mp3",
+    "pink": "pink.mp3",
+    "rainbow": "rainbow.mp3",
+    "glorp": "glorp.mp3",
+    "garf": "garf.mp3",
+    "shoop": "shoop.mp3",
+    "kirbeter": "kirbeter.mp3"
   },
   "images": {
     "fireworks1": "fireworks1.gif",
