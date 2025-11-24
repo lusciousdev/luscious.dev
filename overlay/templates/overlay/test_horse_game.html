@@ -24,8 +24,8 @@ jscolor.presets.default = {
 {% endblock %}
 
 {% block content %}
-<div id="map-editor" style="margin-left: 20px; margin-bottom: 100px;">
-  <div id="position-container">
+<div id="map-editor" style="margin-left: 20px; margin-bottom: 100px; margin-top: 200px;">
+  <div id="position-container" style="position: fixed; top: 0; left: 0; z-index:999; width: 100%; background: #000;">
     <input type="radio" id="rectangle" name="shape_type" value="rectangle"><label for="rectangle">rectangle</label>
     <input type="radio" id="polygon" name="shape_type" value="polygon"><label for="polygon">polygon</label>
     <input type="radio" id="circle" name="shape_type" value="circle"><label for="circle">circle</label>
@@ -33,6 +33,14 @@ jscolor.presets.default = {
     <button name="finish-polygon" id="finish-polygon">end polygon</button>
     <br>
     <label for="circle-radius">circle radius: </label><input type="number" id="circle-radius">
+    <br>
+    <label for="rect-x">x:</label><input type="number" id="rect-x">
+    <label for="rect-y">y:</label><input type="number" id="rect-y">
+    <label for="rect-w">w:</label><input type="number" id="rect-w">
+    <label for="rect-h">h:</label><input type="number" id="rect-h">
+    <button name="add-rectangle" id="add-rectangle">add rectangle</button>
+    <br>
+    <label for="color">hit box color:</label><input type="text" id="color" value="#000">
     <br>
     <input name="background-path" id="background-path-input" /><button name="update-background" id="update-background">update background</button>
     <br>

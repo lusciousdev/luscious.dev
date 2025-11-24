@@ -32,6 +32,9 @@ function renderCanvas(t = undefined) {
     ctx.drawImage(g_BackgroundImage, 0, 0);
   }
 
+  ctx.fillStyle = $("#color").val();
+  ctx.strokeStyle = $("#color").val();
+
   var shapeType = $('input[name="shape_type"]:checked').val();
   switch (shapeType) {
     case "circle":
@@ -166,6 +169,25 @@ window.addEventListener(
       }
     });
 
+    $("#add-rectangle").click((e) => {
+      var x = parseInt($("#rect-x").val());
+      var y = parseInt($("#rect-y").val());
+      var w = parseInt($("#rect-w").val());
+      var h = parseInt($("#rect-h").val());
+
+      if (x == NaN || y == NaN || w == NaN || h == NaN)
+        return
+
+      g_Shapes.push({
+        type: "polygon",
+        points: [[x, y], [x, y+h], [x+w, y+h], [x+w, y]],
+      });
+    });
+
+    $("#set-color").click((e) => {
+      
+    });
+
     $("#remove-last-shape").click((e) => {
       g_Shapes.pop();
     });
@@ -207,8 +229,8 @@ window.addEventListener(
     (async () => {
       g_HorseGame = new HorseGame(Math.floor(1000 * Math.random() + 1), 6);
       g_HorseGame.renderFrames = false;
-      g_HorseGame.randomMap = true;
-      g_HorseGame.selectedMap = 3;
+      g_HorseGame.randomMap = false;
+      g_HorseGame.selectedMap = 6;
 
       await g_HorseGame.setup();
 

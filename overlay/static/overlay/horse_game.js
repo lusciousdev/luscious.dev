@@ -1037,7 +1037,7 @@ class HorseGame {
 
   step(t) {
     if (!this.renderFrames) {
-      simulate();
+      this.simulate();
     } else {
       requestAnimationFrame(this.step.bind(this));
 
