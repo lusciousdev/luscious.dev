@@ -277,7 +277,7 @@
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
-        "spawnPoints": [[980, 540, 180],[1060, 580, 180],[1060, 500, 180],[1140, 620, 180],[1140, 540, 180],[1140, 460, 180]],
+        "spawnPoints": [[900, 475, 180],[900, 605, 180],[984, 475, 180],[984, 605, 180],[1068, 475, 180],[1068, 605, 180]],
         "goalPoints": [[111, 515]],
         "special": false
       }
