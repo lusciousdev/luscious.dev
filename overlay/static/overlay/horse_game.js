@@ -187,7 +187,7 @@ class GameObject {
     this.name = i_name;
     this.game = i_game;
     this.world = i_world;
-    this.texture = i_texture;
+    this.textures = [ i_texture ];
     this.shapes = i_shapes;
     this.bodyType = i_bodyType;
 
@@ -218,8 +218,13 @@ class GameObject {
       userData: this.getUserData(),
     });
 
-    this.sprite = new PIXI.Sprite({ texture: this.texture });
-    this.sprite.anchor.set(this.anchor);
+    this.sprites = [];
+    this.textures.forEach((tex, i) => {
+      var sprite = new PIXI.Sprite({ texture: tex });
+      sprite.anchor.set(this.anchor);
+
+      this.sprites.push(sprite);
+    });
 
     for (var i = 0; i < this.shapes.length; i++) {
       this.body.createFixture({
@@ -236,12 +241,17 @@ class GameObject {
     );
     this.container.x = this.x;
     this.container.y = this.y;
-    this.container.addChild(this.sprite);
+    this.sprites.forEach((s, i) => this.container.addChild(s));
     this.game.spriteLayer.addChild(this.container);
 
     this.debug.x = this.container.x = this.x;
     this.debug.y = this.container.y = this.y;
     this.game.debugLayer.addChildAt(this.debug);
+  }
+
+  addSprite(i_texture)
+  {
+    this.textures.push(i_texture);
   }
 
   update(i_deltaTime) {}
@@ -415,7 +425,7 @@ class Course {
     this.sprite.x = 0;
     this.sprite.y = 0;
     this.sprite.scale.set(1);
-
+  
     this.game.mapLayer.addChild(this.sprite);
 
     this.body = this.game.world.createBody({
@@ -635,7 +645,14 @@ class HorseGame {
         racerData["maxSpeed"],
       );
 
+
       if (!racerData["special"]) {
+        var date = new Date();
+        if ((date.getDate() > 21 && date.getMonth() == 10) || date.getMonth() == 11)
+        {
+          racer.addSprite(this.assets["images/antlers"]);
+        }
+
         this.racers.push(racer);
       } else {
         this.specialRacers[racerKey] = racer;
@@ -1177,7 +1194,7 @@ class HorseGame {
     this.celebrationLayer.addChild(this.fireworks4);
     this.celebrationLayer.addChild(this.horseGif);
 
-    if (this.soundEffects[this.winner.getUserData().name] !== undefined) {
+    if (this.renderFrames && this.soundEffects[this.winner.getUserData().name] !== undefined) {
       this.soundEffects[this.winner.getUserData().name]
         .play({ loop: false, singleInstance: true })
         .on("end", () => this.soundEffects["wins"].play({ loop: false, singleInstance: true }));

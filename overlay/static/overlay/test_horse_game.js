@@ -230,7 +230,7 @@ window.addEventListener(
       g_HorseGame = new HorseGame(Math.floor(1000 * Math.random() + 1), 6);
       g_HorseGame.renderFrames = true;
       g_HorseGame.randomMap = false;
-      g_HorseGame.selectedMap = 6;
+      g_HorseGame.selectedMap = 7;
 
       await g_HorseGame.setup();
 
