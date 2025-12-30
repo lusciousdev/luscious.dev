@@ -1228,8 +1228,8 @@ class HorseGame {
 
           this.handleContacts();
 
-          this.gameTime += this.frameTime;
           this.accumulator -= this.frameTimeMs;
+          if (this.countdown <= 0) this.gameTime += this.frameTime;
           if (this.countdown <= 0) this.frameCounter += 1;
         }
 
