@@ -8,10 +8,6 @@ const versionAddendum = "?v=" + dataVersion;
 const g_PixelsPerMeter = 10.0;
 const g_MetersPerPixel = 1.0 / g_PixelsPerMeter;
 
-const g_PhysicsSteps = 60;
-const g_Timestep = 1000 / g_PhysicsSteps;
-const g_DeltaTime = g_Timestep / 1000;
-
 planck.Settings.maxPolygonVertices = 24;
 
 PIXI.sound.disableAutoPause = true;
@@ -567,6 +563,20 @@ class HorseGame {
     this.countdownText.anchor.y = 0.5;
     this.uiLayer.addChild(this.countdownText);
 
+    this.timeoutText = new PIXI.HTMLText({
+      text: "",
+      style: {
+        fill: "#FFFFFF",
+        stroke: { color: "#000000", width: 9 },
+        fontFamily: "Arial",
+        fontSize: 72,
+        align: "center",
+      },
+    });
+    this.timeoutText.anchor.x = 0.5;
+    this.timeoutText.anchor.y = 0.5;
+    this.uiLayer.addChild(this.timeoutText);
+
     this.raceTimerText = new PIXI.HTMLText({
       text: "<div>0:00</div>",
       style: {
@@ -577,7 +587,7 @@ class HorseGame {
         align: "center",
         cssOverrides: [
           "div { padding-left: 0.25em; padding-right: 0.25em; background: #000000; }",
-        ]
+        ],
       },
     });
     this.raceTimerText.anchor.x = 0.5;
@@ -601,9 +611,16 @@ class HorseGame {
     this.world = planck.World({ gravity: planck.Vec2(0, 0) });
     this.world.on("pre-solve", this.handleContact.bind(this));
 
+    this.targetFrameRate = 60;
+    this.frameTimeMs = 1000 / this.targetFrameRate;
+    this.frameTime = this.frameTimeMs / 1000;
+
     this.gameTime = 0;
     this.frameCounter = 0;
+    this.playbackSpeed = 1.0;
     this.countdown = 10;
+    this.timeoutCountdown = 0.0;
+    this.timeoutFirstPass = true;
     this.lastTime = undefined;
     this.accumulator = 0;
     this.renderFrames = true;
@@ -628,6 +645,10 @@ class HorseGame {
 
     this.volume = 1.0;
     this.gallopVolume = 1.0;
+  }
+
+  physicsTime() {
+    return this.playbackSpeed * this.frameTime;
   }
 
   async preload() {
@@ -793,7 +814,7 @@ class HorseGame {
         this.assets["backgrounds/" + mapKey],
       );
 
-      this.maps[mapKey] = course
+      this.maps[mapKey] = course;
       this.backgrounds[mapKey] = background;
 
       if (!mapData["special"]) {
@@ -871,8 +892,14 @@ class HorseGame {
       autoStart: false,
     });
 
-    this.countdownText.x = this.winText.x = this.app.screen.width / 2;
-    this.countdownText.y = this.winText.y = this.app.screen.height / 2;
+    this.countdownText.x =
+      this.timeoutText.x =
+      this.winText.x =
+        this.app.screen.width / 2;
+    this.countdownText.y =
+      this.timeoutText.y =
+      this.winText.y =
+        this.app.screen.height / 2;
 
     await this.preload();
 
@@ -955,8 +982,11 @@ class HorseGame {
     this.frameCounter = 0;
     this.lastTime = undefined;
     this.accumulator = 0;
+    this.playbackSpeed = 1;
 
     this.countdown = 10;
+    this.timeoutCountdown = 0.0;
+    this.timeoutFirstPass = true;
     this.paused = true;
     this.completed = false;
     this.winner = undefined;
@@ -1070,13 +1100,13 @@ class HorseGame {
     this.misc.barrier.destroy();
     while (!this.completed) {
       for (let i = 0; i < this.activeRacers.length; i++) {
-        this.activeRacers[i].update(g_DeltaTime);
+        this.activeRacers[i].update(this.frameTime);
       }
 
-      this.goal.update(g_DeltaTime);
+      this.goal.update(this.frameTime);
 
-      this.world.step(g_DeltaTime, 16, 6);
-      this.gameTime += g_Timestep;
+      this.world.step(this.frameTime, 16, 6);
+      this.gameTime += this.frameTime;
       this.frameCounter += 1;
 
       this.handleContacts();
@@ -1098,7 +1128,8 @@ class HorseGame {
     this.totalFrames += this.frameCounter;
 
     for (const [timeId, count] of Object.entries(this.timingStats)) {
-      if (this.frameCounter > timeId / g_DeltaTime) this.timingStats[timeId]++;
+      if (this.frameCounter > timeId / this.frameTime)
+        this.timingStats[timeId]++;
     }
 
     if (this.iterCount < 500) {
@@ -1108,11 +1139,11 @@ class HorseGame {
     } else {
       console.log(
         "Longest: " +
-          this.longestLap * g_DeltaTime +
+          this.longestLap * this.frameTime +
           "s, Shortest: " +
-          this.shortestLap * g_DeltaTime +
+          this.shortestLap * this.frameTime +
           "s, Average: " +
-          (this.totalFrames / this.iterCount) * g_DeltaTime +
+          (this.totalFrames / this.iterCount) * this.frameTime +
           "s, Over 15s: " +
           this.timingStats[15] +
           ", Over 30s: " +
@@ -1172,6 +1203,13 @@ class HorseGame {
           }
         }
 
+        if (this.timeoutCountdown > 0) {
+          this.timeoutCountdown -= frameTime / 1000;
+
+          this.render(0);
+          return
+        }
+
         if (this.editWarning) {
           this.render(0);
           return;
@@ -1179,23 +1217,23 @@ class HorseGame {
 
         this.accumulator += frameTime;
 
-        while (this.accumulator >= g_Timestep) {
+        while (this.accumulator >= this.frameTimeMs) {
           for (let i = 0; i < this.activeRacers.length; i++) {
-            this.activeRacers[i].update(g_DeltaTime);
+            this.activeRacers[i].update(this.physicsTime());
           }
 
-          this.goal.update(g_DeltaTime);
+          this.goal.update(this.physicsTime());
 
-          this.world.step(g_DeltaTime, 16, 6);
+          this.world.step(this.physicsTime(), 16, 6);
 
           this.handleContacts();
 
-          this.gameTime += g_Timestep;
-          this.accumulator -= g_Timestep;
+          this.gameTime += this.frameTime;
+          this.accumulator -= this.frameTimeMs;
           if (this.countdown <= 0) this.frameCounter += 1;
         }
 
-        this.render(this.accumulator / g_Timestep);
+        this.render(this.accumulator / this.frameTimeMs);
       }
     }
     this.lastTime = t;
@@ -1221,7 +1259,14 @@ class HorseGame {
       this.countdownText.text = "";
     }
 
-    var raceTime = this.frameCounter * g_DeltaTime;
+    if (this.timeoutCountdown > 0) {
+      this.timeoutText.text = "Time's up!\nSudden death in: {0}...".format(Math.ceil(this.timeoutCountdown).toFixed(0));
+    }
+    else {
+      this.timeoutText.text = "";
+    }
+
+    var raceTime = this.gameTime;
 
     if (this.timeLimit <= 0) {
       var raceSeconds = Math.floor(raceTime % 60);
@@ -1239,8 +1284,10 @@ class HorseGame {
         leftSeconds.toFixed(0).padStart(2, "0"),
       );
 
-      if (timeLeft <= 0 && !this.completed) {
+      if (timeLeft <= 0 && !this.completed && this.timeoutFirstPass) {
+        this.timeoutCountdown = 3.0;
         this.handleTimeout();
+        this.timeoutFirstPass = false;
       }
     }
 
@@ -1334,7 +1381,7 @@ class HorseGame {
         " in " +
         this.frameCounter +
         " frames (" +
-        this.frameCounter * g_DeltaTime +
+        this.gameTime +
         " seconds)",
     );
   }
@@ -1377,9 +1424,9 @@ class HorseGame {
     this.handleVictory(closestRacer.body);
   }
 
-  handleTimeout()
-  {
+  handleTimeout() {
     this.map.destroy();
+    this.playbackSpeed = 2.0;
   }
 
   handleContact(i_contact, i_impulse) {
