@@ -72,17 +72,23 @@ jscolor.presets.default = {
                 <label for="interact-embed">Allow interaction with embed</label>
               </td>
             </tr>
-            <tr id="no-twitch-info">
-              <td></td>
-              <td>
-                <small><i>This overlay's owner has not linked a Twitch account.</i></small>
-              </td>
-            </tr>
             <tr>
               <td></td>
               <td id="notification-volume-row">
                 <label for="noti-vol" id="notification-volume-label">Notification Volume:</label>
                 <input type="range" id="notification-volume" name="noti-vol" min="0" max="100">
+              </td>
+            </tr>
+            <tr id="no-twitch-info">
+              <td></td>
+              <td>
+                <small class="warning-text"><i>This overlay's owner has not linked a Twitch account.</i></small>
+              </td>
+            </tr>
+            <tr id="no-twitch-connection">
+              <td></td>
+              <td>
+                <small class="error-text"><i>Our Twitch connection is down. Twitch-specific features will not work. Feel free to ping luscious with this message.</i></small>
               </td>
             </tr>
           </table>

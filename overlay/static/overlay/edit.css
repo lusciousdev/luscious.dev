@@ -85,6 +85,12 @@ body {
   margin: 0px 3px;
 }
 
+.medium-button[disabled] {
+  color: light-dark(var(--light-text-blocked), var(--dark-text-blocked)) !important;
+  background-color: light-dark(var(--light-lighter), var(--dark-lighter)) !important;
+  cursor: default;
+}
+
 #item-filter-container {
   margin: 0 0 0.5em 0;
   width: 100%;

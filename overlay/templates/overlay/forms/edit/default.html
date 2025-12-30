@@ -33,7 +33,7 @@
       <td></td>
       <td>
         {% for button_type in extra_buttons.split %}
-        <div class="medium-button {{ button_type }}-item" id="play-{{ form.Meta.model.get_simple_type }}">{{ button_type|button_type_to_name }}</div>
+        <div class="medium-button {{ button_type }}-item {% if button_type == "predict" %}needs-twitch{% endif %}" id="{{ button_type }}-{{ form.Meta.model.get_simple_type }}">{{ button_type|button_type_to_name }}</div>
         {% endfor %}
         <div class="medium-button duplicate-item" id="duplicate-{{ form.Meta.model.get_simple_type }}">Duplicate</div>
         <div class="medium-button delete-item" id="delete-{{ form.Meta.model.get_simple_type }}">Delete</div>

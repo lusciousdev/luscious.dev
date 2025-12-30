@@ -485,6 +485,12 @@ function handleUserSettings(data) {
   toggleEmbeddedTwitchStream({});
 }
 
+function handleTwitchConnected(data)
+{
+  $(".needs-twitch").prop("disabled", false);
+  $("#no-twitch-connection").css({ "display": "none" });
+}
+
 function getChatHistory() {
   sendWebsocketMessage("get_chat_history", {});
 }
@@ -2030,6 +2036,8 @@ function setCanvasCursor() {
 }
 
 $(window).on("load", function () {
+  $(".needs-twitch").attr("disabled", "disabled");
+
   initialResize();
 
   connectWebsocket();
@@ -2043,6 +2051,7 @@ $(window).on("load", function () {
   {
     $(".twitch-setting").css({ "display": "none" });
     $("#no-twitch-info").css({ "display": "table-row" });
+    $("#no-twitch-connection").css({ "display": "none" });
   }
 
   $("#main-container").on("mousewheel DOMMouseScroll", onScroll);
@@ -2144,35 +2153,28 @@ $(window).on("load", function () {
     toggleEmbeddedStreamInteraction();
   });
 
-  $(".delete-item").click((e) => {
-    onDeleteItem(e);
-  });
+  $(".medium-button").click((e) => {
+    var elem = $(e.currentTarget);
+    
+    if (elem.attr("disabled") !== undefined)
+      return;
 
-  $(".duplicate-item").click((e) => {
-    onDuplicateItem(e);
-  });
-
-  $(".reset-item").click((e) => {
-    onResetItem(e);
-  });
-
-  $(".pause-item").click((e) => {
-    onPauseItem(e);
-  });
-
-  $(".play-item").click((e) => {
-    onPlayItem(e);
-  });
-
-  $(".predict-item").click((e) => {
-    onPredictItem(e);
-  });
-
-  $(".undo-item").click((e) => {
-    onUndoItem(e);
-  });
-  $(".clear-item").click((e) => {
-    onClearItem(e);
+    if (elem.hasClass("delete-item"))
+      onDeleteItem(e);
+    if (elem.hasClass("duplicate-item"))
+      onDuplicateItem(e);
+    if (elem.hasClass("reset-item"))
+      onResetItem(e);
+    if (elem.hasClass("pause-item"))
+      onPauseItem(e);
+    if (elem.hasClass("play-item"))
+      onPlayItem(e);
+    if (elem.hasClass("predict-item"))
+      onPredictItem(e);
+    if (elem.hasClass("undo-item"))
+      onUndoItem(e);
+    if (elem.hasClass("clear-item"))
+      onClearItem(e);
   });
 
   $(".edit-container input[id=id_visibility]").each((i, visibleCheckbox) => {

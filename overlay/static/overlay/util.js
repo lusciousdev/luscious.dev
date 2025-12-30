@@ -117,6 +117,7 @@ function handleWebsocketCommand(command, data)
     case "twitch_broadcaster_type":
       g_TwitchConnected = true;
       g_TwitchBroadcasterType = data.broadcaster_type;
+      handleTwitchConnected(data);
       break;
     case "twitch_chat_message":
       handleTwitchChatMessage(data);
