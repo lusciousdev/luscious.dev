@@ -128,12 +128,20 @@ window.addEventListener(
     $("#reset-game").click((e) => {
       g_HorseGame.setSeed(g_HorseGame.seed + 1);
       g_HorseGame.reset();
+      
+      $("#play-pause-game").html("Play");
     });
 
     $("#racer-count").change((e) => {
       var numRacers = parseInt($("#racer-count").val());
 
       g_HorseGame.setRacerCount(numRacers);
+    });
+
+    $("#time-limit-input").on("change textInput input", (e) => {
+      var val = parseFloat($("#time-limit-input").val());
+
+      g_HorseGame.setTimeLimit(val);
     });
 
     $("#volume-input").change((e) => {
@@ -157,7 +165,10 @@ window.addEventListener(
     });
 
     (async () => {
-      g_HorseGame = new HorseGame(Math.floor(1_000_000 * Math.random() + 1), 6);
+      var racers = parseInt($("#racer-count").val()); 
+      var timeLimit = parseFloat($("#time-limit-input").val());
+
+      g_HorseGame = new HorseGame(Math.floor(1_000_000 * Math.random() + 1), racers, false, timeLimit);
       await g_HorseGame.setup();
 
       var vol = parseFloat($("#volume-input").val());

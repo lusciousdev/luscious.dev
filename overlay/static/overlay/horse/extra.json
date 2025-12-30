@@ -1,35 +1,35 @@
 {
   "sounds": {
-    "start": "start.mp3",
+    "start": "sounds/start.mp3",
     "gallops": [
-      "gallop1.mp3",
-      "gallop2.mp3",
-      "gallop3.mp3",
-      "gallop4.mp3",
-      "gallop5.mp3",
-      "gallop6.mp3"
+      "sounds/gallop1.mp3",
+      "sounds/gallop2.mp3",
+      "sounds/gallop3.mp3",
+      "sounds/gallop4.mp3",
+      "sounds/gallop5.mp3",
+      "sounds/gallop6.mp3"
     ],
-    "wins": "wins.mp3",
-    "red": "red.mp3",
-    "orange": "orange.mp3",
-    "yellow": "yellow.mp3",
-    "green": "green.mp3",
-    "cyan": "cyan.mp3",
-    "blue": "blue.mp3",
-    "purple": "purple.mp3",
-    "pink": "pink.mp3",
-    "rainbow": "rainbow.mp3",
-    "glorp": "glorp.mp3",
-    "garf": "garf.mp3",
-    "shoop": "shoop.mp3",
-    "kirbeter": "kirbeter.mp3"
+    "wins": "sounds/wins.mp3",
+    "red": "sounds/red.mp3",
+    "orange": "sounds/orange.mp3",
+    "yellow": "sounds/yellow.mp3",
+    "green": "sounds/green.mp3",
+    "cyan": "sounds/cyan.mp3",
+    "blue": "sounds/blue.mp3",
+    "purple": "sounds/purple.mp3",
+    "pink": "sounds/pink.mp3",
+    "rainbow": "sounds/rainbow.mp3",
+    "glorp": "sounds/glorp.mp3",
+    "garf": "sounds/garf.mp3",
+    "shoop": "sounds/shoop.mp3",
+    "Kirbeter": "sounds/Kirbeter.mp3"
   },
   "images": {
-    "fireworks1": "fireworks1.gif",
-    "fireworks2": "fireworks2.gif",
-    "fireworks3": "fireworks3.gif",
-    "fireworks4": "fireworks4.gif",
-    "horse": "horse.gif",
-    "antlers": "antlers.png"
+    "fireworks1": "extra/fireworks1.gif",
+    "fireworks2": "extra/fireworks2.gif",
+    "fireworks3": "extra/fireworks3.gif",
+    "fireworks4": "extra/fireworks4.gif",
+    "horse": "extra/horse.gif",
+    "antlers": "extra/antlers.png"
   }
 }

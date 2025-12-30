@@ -758,7 +758,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         $(itemInnerContainerId).append(GameTemplate.format(itemId));
 
         var numRacers = Math.max(2, Math.min(6, g_ItemDict[itemId].item_data.racers));
-        g_ItemDict[itemId]['game'] = new HorseGame(g_ItemDict[itemId].item_data.seed, numRacers, c_EditView);
+        g_ItemDict[itemId]['game'] = new HorseGame(g_ItemDict[itemId].item_data.seed, numRacers, c_EditView, g_ItemDict[itemId].item_data.time_limit);
 
         g_ItemDict[itemId]['game'].setup().then(() => horseGameSetupDone(itemId));
 
@@ -928,6 +928,7 @@ function addOrUpdateItem(selfEdit, overlayElement, itemId, itemType, isDisplayed
         g_ItemDict[itemId]['game'].setRacerCount(Math.max(2, Math.min(6, g_ItemDict[itemId].item_data.racers)));
         g_ItemDict[itemId]['game'].setSeed(g_ItemDict[itemId].item_data.seed);
 
+        g_ItemDict[itemId]['game'].setTimeLimit(g_ItemDict[itemId].item_data.time_limit);
         g_ItemDict[itemId]['game'].setVolume((g_ItemDict[itemId].item_data.volume / 100));
         g_ItemDict[itemId]['game'].setGallopVolume((g_ItemDict[itemId].item_data.gallop_volume / 100));
         $(gameContainerId).css(getDefaultCSS(itemType, itemData));
@@ -1844,6 +1845,7 @@ function horseGameSetupDone(itemId)
 {
   g_ItemDict[itemId]['game'].addCanvas($("#item-{0}-game".format(itemId)));
 
+  g_ItemDict[itemId]['game'].setTimeLimit(g_ItemDict[itemId].item_data["time_limit"]);
   g_ItemDict[itemId]['game'].setVolume((g_ItemDict[itemId].item_data['volume'] / 100));
   g_ItemDict[itemId]['game'].setGallopVolume((g_ItemDict[itemId].item_data['gallop_volume'] / 100));
 }

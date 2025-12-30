@@ -66,16 +66,21 @@ jscolor.presets.default = {
             <span id="racer-count-container">
               <label for="racers">Racers: </label>
               <select name="racers" id="racer-count">
-                <option value="2">2</div>
-                <option value="3">3</div>
-                <option value="4">4</div>
-                <option value="5">5</div>
-                <option value="6" selected>6</div>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6" selected>6</option>
               </select>
             </span>
             <div class="medium-button" id="play-pause-game">Play</div>
             <div class="medium-button" id="reset-game">Reset</div>
             <div class="medium-button" id="predict-game" style="display: none;">Predict</div>
+          </div>
+          <div id="time-limit-container">
+            <label for="time-limit">Time Limit: </label>
+            <input type="number" name="time-limit" id="time-limit-input" min="-1" step="1" value="0" size="8"/>
+            <span>(&le;0 to disable)</span>
           </div>
           <div id="volume-container">
             <label for="volume">Volume: </label>

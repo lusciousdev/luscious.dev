@@ -187,7 +187,7 @@ class GameObject {
     this.name = i_name;
     this.game = i_game;
     this.world = i_world;
-    this.textures = [ i_texture ];
+    this.textures = [i_texture];
     this.shapes = i_shapes;
     this.bodyType = i_bodyType;
 
@@ -249,8 +249,7 @@ class GameObject {
     this.game.debugLayer.addChildAt(this.debug);
   }
 
-  addSprite(i_texture)
-  {
+  addSprite(i_texture) {
     this.textures.push(i_texture);
   }
 
@@ -391,6 +390,31 @@ class Goal extends GameObject {
   }
 }
 
+class Background {
+  constructor(i_game, i_texture) {
+    this.game = i_game;
+
+    this.sprite = new PIXI.Sprite({
+      texture: i_texture,
+      anchor: 0,
+    });
+  }
+
+  stage() {
+    this.sprite.x = 0;
+    this.sprite.y = 0;
+    this.sprite.scale.set(1);
+
+    this.game.backgroundLayer.addChild(this.sprite);
+  }
+
+  integrate(i_alpha) {}
+
+  destroy() {
+    this.game.backgroundLayer.removeChild(this.sprite);
+  }
+}
+
 class Course {
   constructor(
     i_game,
@@ -401,6 +425,7 @@ class Course {
     i_playDuringCountdown = false,
     i_barrierDuringCountdown = false,
     i_barrierLocation = [0, 0],
+    i_timerPosition = [0, 0],
   ) {
     this.game = i_game;
 
@@ -411,6 +436,8 @@ class Course {
     this.playDuringCountdown = i_playDuringCountdown;
     this.barrierDuringCountdown = i_barrierDuringCountdown;
     this.barrierLocation = i_barrierLocation;
+
+    this.timerPosition = i_timerPosition;
 
     this.sprite = new PIXI.Sprite({
       texture: i_texture,
@@ -425,7 +452,7 @@ class Course {
     this.sprite.x = 0;
     this.sprite.y = 0;
     this.sprite.scale.set(1);
-  
+
     this.game.mapLayer.addChild(this.sprite);
 
     this.body = this.game.world.createBody({
@@ -489,16 +516,24 @@ class Course {
     this.game.world.destroyBody(this.body);
 
     this.game.debugLayer.removeChild(this.debug);
-    this.game.spriteLayer.removeChild(this.sprite);
+    this.game.mapLayer.removeChild(this.sprite);
   }
 }
 
 class HorseGame {
-  constructor(i_seed, i_numRacers = 4, i_editWarning = false) {
+  constructor(
+    i_seed,
+    i_numRacers = 4,
+    i_editWarning = false,
+    i_timeLimit = -1,
+  ) {
     this.seed = i_seed;
     this.rng = new RNG(this.seed);
 
     this.app = new PIXI.Application();
+
+    this.backgroundLayer = new PIXI.Container();
+    this.app.stage.addChild(this.backgroundLayer);
 
     this.mapLayer = new PIXI.Container();
     this.app.stage.addChild(this.mapLayer);
@@ -531,6 +566,23 @@ class HorseGame {
     this.countdownText.anchor.x = 0.5;
     this.countdownText.anchor.y = 0.5;
     this.uiLayer.addChild(this.countdownText);
+
+    this.raceTimerText = new PIXI.HTMLText({
+      text: "<div>0:00</div>",
+      style: {
+        fill: "#FFFFFF",
+        // stroke: { color: "#000000", width: 6 },
+        fontFamily: "Arial",
+        fontSize: 48,
+        align: "center",
+        cssOverrides: [
+          "div { padding-left: 0.25em; padding-right: 0.25em; background: #000000; }",
+        ]
+      },
+    });
+    this.raceTimerText.anchor.x = 0.5;
+    this.raceTimerText.anchor.y = 1.0;
+    this.uiLayer.addChild(this.raceTimerText);
 
     this.winText = new PIXI.HTMLText({
       text: "",
@@ -566,6 +618,8 @@ class HorseGame {
     this.contactList = [];
 
     this.editWarning = i_editWarning;
+
+    this.timeLimit = i_timeLimit;
 
     this.collisionList = [];
 
@@ -609,6 +663,16 @@ class HorseGame {
           alias: itemType + "/" + itemKey,
           src: "/static/overlay/horse/" + itemValue["sprite"] + versionAddendum,
         });
+
+        if (itemType === "maps") {
+          assets.push({
+            alias: "backgrounds/" + itemKey,
+            src:
+              "/static/overlay/horse/" +
+              itemValue["background"] +
+              versionAddendum,
+          });
+        }
       }
 
       for (const [itemKey, shapeData] of Object.entries(typeData["shapes"])) {
@@ -645,11 +709,12 @@ class HorseGame {
         racerData["maxSpeed"],
       );
 
-
       if (!racerData["special"]) {
         var date = new Date();
-        if ((date.getDate() > 21 && date.getMonth() == 10) || date.getMonth() == 11)
-        {
+        if (
+          (date.getDate() > 21 && date.getMonth() == 10) ||
+          date.getMonth() == 11
+        ) {
           racer.addSprite(this.assets["images/antlers"]);
         }
 
@@ -702,8 +767,11 @@ class HorseGame {
       this.misc[miscKey] = miscItem;
     }
 
-    this.maps = [];
-    this.specialMaps = {};
+    this.mapKeys = [];
+    this.specialMapKeys = [];
+
+    this.maps = {};
+    this.backgrounds = {};
     for (const [mapKey, mapData] of Object.entries(
       this.itemData["maps"]["items"],
     )) {
@@ -717,12 +785,21 @@ class HorseGame {
         mapData["playDuringCountdown"],
         mapData["barrierDuringCountdown"],
         mapData["barrierLocation"],
+        mapData["timerPosition"],
       );
 
+      var background = new Background(
+        this,
+        this.assets["backgrounds/" + mapKey],
+      );
+
+      this.maps[mapKey] = course
+      this.backgrounds[mapKey] = background;
+
       if (!mapData["special"]) {
-        this.maps.push(course);
+        this.mapKeys.push(mapKey);
       } else {
-        this.specialMaps[mapKey] = course;
+        this.specialMapKeys.push(mapKey);
       }
     }
 
@@ -826,12 +903,20 @@ class HorseGame {
 
   populate() {
     if (this.randomMap) {
-      this.map = this.rng.choice(this.maps);
+      this.mapKey = this.rng.choice(this.mapKeys);
     } else {
-      this.map = this.maps[this.selectedMap];
+      this.mapKey = this.mapKeys[this.selectedMap];
     }
 
+    this.map = this.maps[this.mapKey];
+    this.background = this.backgrounds[this.mapKey];
+
     this.map.stage();
+    this.background.stage();
+
+    this.raceTimerText.x = this.map.timerPosition[0];
+    this.raceTimerText.y = this.map.timerPosition[1];
+
     this.goal = this.rng.choice(this.goals);
 
     if (this.map.barrierDuringCountdown) {
@@ -853,6 +938,8 @@ class HorseGame {
     this.celebrationLayer.removeChildren();
 
     this.map.destroy();
+    this.background.destroy();
+
     this.map = undefined;
 
     this.activeRacers.forEach((racer, idx) => racer.destroy());
@@ -930,6 +1017,10 @@ class HorseGame {
     this.numRacers = i_count;
   }
 
+  setTimeLimit(i_timeLimit) {
+    this.timeLimit = i_timeLimit;
+  }
+
   spawnRacers(i_numRacers) {
     this.activeRacers = this.rng.sample(this.racers, i_numRacers);
     var startingPoints = this.rng.sample(this.map.startingPoints, i_numRacers);
@@ -945,7 +1036,7 @@ class HorseGame {
         this.activeRacers[i] = this.specialRacers["shoop"];
       }
       if (this.activeRacers[i].name == "pink" && this.rng.random() < 0.125) {
-        this.activeRacers[i] = this.specialRacers["kirbeter"];
+        this.activeRacers[i] = this.specialRacers["Kirbeter"];
       }
 
       this.activeRacers[i].spawn(startingPoints[i][0], startingPoints[i][1]);
@@ -1101,7 +1192,7 @@ class HorseGame {
 
           this.gameTime += g_Timestep;
           this.accumulator -= g_Timestep;
-          this.frameCounter += 1;
+          if (this.countdown <= 0) this.frameCounter += 1;
         }
 
         this.render(this.accumulator / g_Timestep);
@@ -1128,6 +1219,29 @@ class HorseGame {
       this.countdownText.text = "Check stream for results.";
     } else {
       this.countdownText.text = "";
+    }
+
+    var raceTime = this.frameCounter * g_DeltaTime;
+
+    if (this.timeLimit <= 0) {
+      var raceSeconds = Math.floor(raceTime % 60);
+      var raceMinutes = Math.floor(raceTime / 60);
+      this.raceTimerText.text = "<div>{0}:{1}</div>".format(
+        raceMinutes.toFixed(0),
+        raceSeconds.toFixed(0).padStart(2, "0"),
+      );
+    } else {
+      var timeLeft = this.timeLimit - raceTime;
+      var leftSeconds = timeLeft > 0 ? Math.floor(timeLeft % 60) : 0;
+      var leftMinutes = timeLeft > 0 ? Math.floor(timeLeft / 60) : 0;
+      this.raceTimerText.text = "<div>{0}:{1}</div>".format(
+        leftMinutes.toFixed(0),
+        leftSeconds.toFixed(0).padStart(2, "0"),
+      );
+
+      if (timeLeft <= 0 && !this.completed) {
+        this.handleTimeout();
+      }
     }
 
     if (this.completed) {
@@ -1188,17 +1302,84 @@ class HorseGame {
   }
 
   handleVictory(i_victor) {
+    this.winner = i_victor;
+    this.completed = true;
+
     this.celebrationLayer.addChild(this.fireworks1);
     this.celebrationLayer.addChild(this.fireworks2);
     this.celebrationLayer.addChild(this.fireworks3);
     this.celebrationLayer.addChild(this.fireworks4);
     this.celebrationLayer.addChild(this.horseGif);
 
-    if (this.renderFrames && this.soundEffects[this.winner.getUserData().name] !== undefined) {
+    if (
+      this.renderFrames &&
+      this.soundEffects[this.winner.getUserData().name] !== undefined
+    ) {
       this.soundEffects[this.winner.getUserData().name]
         .play({ loop: false, singleInstance: true })
-        .on("end", () => this.soundEffects["wins"].play({ loop: false, singleInstance: true }));
+        .on("end", () =>
+          this.soundEffects["wins"].play({ loop: false, singleInstance: true }),
+        );
     }
+
+    console.log(
+      "RNG Counter: " +
+        this.rng.counter +
+        ", Winner: " +
+        i_victor.getUserData().name +
+        " @ " +
+        i_victor.getLinearVelocity().x +
+        ", " +
+        i_victor.getLinearVelocity().y +
+        " in " +
+        this.frameCounter +
+        " frames (" +
+        this.frameCounter * g_DeltaTime +
+        " seconds)",
+    );
+  }
+
+  closestWins() {
+    var closestDistance = undefined;
+    var closestRacer = undefined;
+
+    var goalPosition = this.goal.body.getPosition();
+
+    this.activeRacers.forEach((racer, i) => {
+      var racerPosition = racer.body.getPosition();
+      var racerDist = distance(
+        racerPosition.x,
+        racerPosition.y,
+        goalPosition.x,
+        goalPosition.y,
+      );
+
+      console.log(
+        racer.name,
+        "(",
+        racerPosition.x,
+        ", ",
+        racerPosition.y,
+        ") (",
+        goalPosition.x,
+        ", ",
+        goalPosition.y,
+        ") ",
+        racerDist,
+      );
+
+      if (closestDistance === undefined || racerDist < closestDistance) {
+        closestRacer = racer;
+        closestDistance = racerDist;
+      }
+    });
+
+    this.handleVictory(closestRacer.body);
+  }
+
+  handleTimeout()
+  {
+    this.map.destroy();
   }
 
   handleContact(i_contact, i_impulse) {
@@ -1234,26 +1415,7 @@ class HorseGame {
       objectTypeA == "course" ? bA : objectTypeB == "course" ? bB : undefined;
 
     if (racerBody1 !== undefined && goalBody !== undefined) {
-      this.winner = racerBody1;
-      this.completed = true;
-
       this.handleVictory(racerBody1);
-
-      console.log(
-        "RNG Counter: " +
-          this.rng.counter +
-          ", Winner: " +
-          racerBody1.getUserData().name +
-          " @ " +
-          racerBody1.getLinearVelocity().x +
-          ", " +
-          racerBody1.getLinearVelocity().y +
-          " in " +
-          this.frameCounter +
-          " frames (" +
-          this.frameCounter * g_DeltaTime +
-          " seconds)",
-      );
     }
 
     if (racerBody1 !== undefined && courseBody !== undefined) {

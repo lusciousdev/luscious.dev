@@ -2,7 +2,7 @@
   "racers": {
     "items": {
       "red": {
-        "sprite": "red.png",
+        "sprite": "racers/red.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -11,7 +11,7 @@
         "special": false
       },
       "orange": {
-        "sprite": "orange.png",
+        "sprite": "racers/orange.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -20,7 +20,7 @@
         "special": false
       },
       "yellow": {
-        "sprite": "yellow.png",
+        "sprite": "racers/yellow.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -29,7 +29,7 @@
         "special": false
       },
       "green": {
-        "sprite": "green.png",
+        "sprite": "racers/green.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -38,7 +38,7 @@
         "special": false
       },
       "cyan": {
-        "sprite": "cyan.png",
+        "sprite": "racers/cyan.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -47,7 +47,7 @@
         "special": false
       },
       "blue": {
-        "sprite": "blue.png",
+        "sprite": "racers/blue.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -56,7 +56,7 @@
         "special": false
       },
       "purple": {
-        "sprite": "purple.png",
+        "sprite": "racers/purple.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -65,7 +65,7 @@
         "special": false
       },
       "pink": {
-        "sprite": "pink.png",
+        "sprite": "racers/pink.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -74,7 +74,7 @@
         "special": false
       },
       "rainbow": {
-        "sprite": "rainbow.png",
+        "sprite": "racers/rainbow.png",
         "shape": "horse",
         "weight": 0,
         "baseSpeed": 15.0,
@@ -83,7 +83,7 @@
         "special": false
       },
       "glorp": {
-        "sprite": "glorp.png",
+        "sprite": "racers/glorp.png",
         "shape": "glorp",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -92,7 +92,7 @@
         "special": true
       },
       "garf": {
-        "sprite": "garf.png",
+        "sprite": "racers/garf.png",
         "shape": "garf",
         "weight": 0,
         "baseSpeed": 7.5,
@@ -101,7 +101,7 @@
         "special": true
       },
       "shoop": {
-        "sprite": "shoop.png",
+        "sprite": "racers/shoop.png",
         "shape": "shoop",
         "weight": 0,
         "baseSpeed": 10.0,
@@ -109,9 +109,9 @@
         "maxSpeed": 34.0,
         "special": true
       },
-      "kirbeter": {
-        "sprite": "Kirbeter.png",
-        "shape": "kirbeter",
+      "Kirbeter": {
+        "sprite": "racers/Kirbeter.png",
+        "shape": "Kirbeter",
         "weight": 0,
         "baseSpeed": 7.5,
         "acceleration": 12.5,
@@ -162,7 +162,7 @@
           {"type":"circle","points":[43,14,5]}
         ]
       },
-      "kirbeter": {
+      "Kirbeter": {
         "offset": -28,
         "fixtures": [
           {"type":"circle","points":[31,27,24]},
@@ -176,7 +176,7 @@
   "misc": {
     "items": {
       "barrier": {
-        "sprite": "barrier.png",
+        "sprite": "extra/barrier.png",
         "shape": "barrier",
         "special": false
       }
@@ -193,7 +193,7 @@
   "goals": {
     "items": {
       "carrots": {
-        "sprite": "goal.png",
+        "sprite": "goals/goal.png",
         "shape": "carrots",
         "special": false
       }
@@ -212,83 +212,99 @@
   "maps": {
     "items": {
       "map1": {
-        "sprite": "map1.png",
+        "sprite": "maps/map1.png",
+        "background": "maps/bg1.png",
         "shape": "map1",
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
         "spawnPoints": [[200, 300, 0], [ 40, 300, 0], [ 45,  55, 0], [180, 110, 0], [ 50, 190, 0], [125, 240, 0], [220, 200, 0]],
         "goalPoints": [[ 85, 660], [140, 515], [ 35, 575]],
+        "timerPosition": [640, 60],
         "special": false
       },
       "map2": {
-        "sprite": "map2.png",
+        "sprite": "maps/map2.png",
+        "background": "maps/bg2.png",
         "shape": "map2",
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
         "spawnPoints": [[116, 127, 0], [198, 72, 0], [198, 182, 0], [300, 72, 0], [300, 182, 0], [390, 127, 0]],
         "goalPoints": [[80, 274], [125, 643], [78, 518]],
+        "timerPosition": [1180, 60],
         "special": false
       },
       "map3": {
-        "sprite": "map3.png",
+        "sprite": "maps/map3.png",
+        "background": "maps/bg3.png",
         "shape": "map3",
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
         "spawnPoints": [[170, 655, 225], [170, 585, 225], [170, 515, 225], [1110, 655, 315], [1110, 585, 315], [1110, 515, 315]],
         "goalPoints": [[640, 640]],
+        "timerPosition": [640, 60],
         "special": false
       },
       "map4": {
-        "sprite": "map4.png",
+        "sprite": "maps/map4.png",
+        "background": "maps/bg4.png",
         "shape": "map4",
         "playDuringCountdown": true,
         "barrierDuringCountdown": true,
         "barrierLocation": [512, 84],
         "spawnPoints": [[118, 85, 0], [196, 317, 90], [98, 210, 0], [216, 209, 0], [231, 92, 0], [125, 279, 330], [304, 157, 0], [314, 62, 0]],
         "goalPoints": [[196, 411], [105, 637]],
+        "timerPosition": [640, 710],
         "special": false
       },
       "map5": {
-        "sprite": "map5.png",
+        "sprite": "maps/map5.png",
+        "background": "maps/bg5.png",
         "shape": "map5",
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
         "spawnPoints": [[382, 60, 180], [382, 128, 180], [282, 94, 135], [900, 60, 0], [900, 128, 0], [1000, 94, 45]],
         "goalPoints": [[640, 66]],
+        "timerPosition": [640, 710],
         "special": false
       },
       "map6": {
-        "sprite": "map6.png",
+        "sprite": "maps/map6.png",
+        "background": "maps/bg6.png",
         "shape": "map6",
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
         "spawnPoints": [[120, 120, 45],[100, 360, 0],[120, 600, 315],[1160, 120, 135],[1180, 360, 180],[1160, 600, 225]],
         "goalPoints": [[640, 50]],
+        "timerPosition": [320, 60],
         "special": false
       },
       "map7": {
-        "sprite": "map7.png",
+        "sprite": "maps/map7.png",
+        "background": "maps/bg7.png",
         "shape": "map7",
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
         "spawnPoints": [[900, 475, 180],[900, 605, 180],[984, 475, 180],[984, 605, 180],[1068, 475, 180],[1068, 605, 180]],
         "goalPoints": [[111, 515]],
+        "timerPosition": [100, 60],
         "special": false
       },
       "map8": {
-        "sprite": "map8.png",
+        "sprite": "maps/map8.png",
+        "background": "maps/bg8.png",
         "shape": "map8",
         "playDuringCountdown": false,
         "barrierDuringCountdown": false,
         "barrierLocation": [0, 0],
         "spawnPoints": [[75, 240, 270],[75, 480, 90],[144, 180, 0],[144, 540, 0],[1205, 240, 270],[1205, 480, 90],[1136, 180, 180],[1136,540,180]],
         "goalPoints": [[640, 360]],
+        "timerPosition": [640, 710],
         "special": false
       }
     },

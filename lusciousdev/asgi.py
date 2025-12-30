@@ -9,26 +9,31 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
 
 # lusciousdev/asgi.py
 import os
+
 from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lusciousdev.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lusciousdev.settings")
 django_asgi_app = get_asgi_application()
 
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
+import bot.routing
 import overlay.routing
 import quiz.routing
-import bot.routing
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         "websocket": AllowedHostsOriginValidator(
-          AuthMiddlewareStack(
-            URLRouter(overlay.routing.websocket_urlpatterns + quiz.routing.websocket_urlpatterns + bot.routing.websocket_urlpatterns)
+            AuthMiddlewareStack(
+                URLRouter(
+                    overlay.routing.websocket_urlpatterns
+                    + quiz.routing.websocket_urlpatterns
+                    + bot.routing.websocket_urlpatterns
+                )
             )
-          ),
+        ),
     }
 )
