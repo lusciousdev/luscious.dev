@@ -487,7 +487,7 @@ function handleUserSettings(data) {
 
 function handleTwitchConnected(data)
 {
-  $(".needs-twitch").prop("disabled", false);
+  $(".needs-twitch").removeAttr("disabled");
   $("#no-twitch-connection").css({ "display": "none" });
 }
 
